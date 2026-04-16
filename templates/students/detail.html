@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Chi Tiết Sinh Viên{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('students.list_students') }}" class="btn btn-outline-secondary border-0 p-2 me-3 text-muted hover-text-dark">
+            <i class="fas fa-arrow-left fs-5"></i>
+        </a>
+        <h3 class="fw-bold m-0"><i class="fas fa-user-circle text-secondary me-2"></i> Hồ Sơ: {{ student.ho_ten }}</h3>
+    </div>
+    <div>
+        <a href="{{ url_for('students.edit', id=student.id) }}" class="btn btn-outline-warning">
+            <i class="fas fa-edit me-1"></i> Chỉnh Sửa
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Info Panel -->
+    <div class="col-lg-4">
+        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 text-center h-100">
+            <div class="mb-4">
+                {% if student.avatar %}
+                <img src="{{ url_for('serve_database_file', filename=student.avatar) }}" class="rounded-circle border border-4 border-secondary border-opacity-50" width="160" height="160" style="object-fit: cover; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                {% else %}
+                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark mx-auto border border-4 border-dark" style="width: 160px; height: 160px; font-size: 4rem;">
+                    {{ student.ho_ten[0] }}
+                </div>
+                {% endif %}
+                
+                <h4 class="mt-3 fw-bold text-dark mb-1">{{ student.ho_ten }}</h4>
+                <div class="text-info fw-medium">{{ student.mssv }}</div>
+                <div class="badge bg-secondary mt-2 fs-6">{{ student.ma_lop or 'Không Thuộc Lớp Nào' }}</div>
+            </div>
+            
+            <div class="text-start mt-4 border-top border-light border-opacity-10 pt-4">
+                <p class="mb-2 text-muted small text-uppercase fw-bold">Thông tin Liên hệ</p>
+                <p class="mb-2"><i class="fas fa-envelope text-secondary me-2 w-15px"></i> {{ student.email or 'Chưa cập nhật' }}</p>
+                <p class="mb-2"><i class="fas fa-phone text-secondary me-2 w-15px"></i> {{ student.sdt or 'Chưa cập nhật' }}</p>
+                
+                <p class="mb-2 text-muted small text-uppercase fw-bold mt-4">Thông tin Cánh Nhân</p>
+                <p class="mb-2"><i class="fas fa-birthday-cake text-secondary me-2 w-15px"></i> {{ student.ngay_sinh or 'Chưa cập nhật' }}</p>
+                <p class="mb-2"><i class="fas fa-venus-mars text-secondary me-2 w-15px"></i> {% if student.gioi_tinh == 1 %}Nam{% elif student.gioi_tinh == 0 %}Nữ{% else %}Chưa cập nhật{% endif %}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI & Stats Data -->
+    <div class="col-lg-8 d-flex flex-column gap-4">
+        <!-- Trạng thái Kho AI -->
+        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 d-flex align-items-center p-4">
+            <div class="me-4 text-center">
+                {% if student.da_train == 1 %}
+                <i class="fas fa-brain text-success" style="font-size: 3rem;"></i>
+                {% else %}
+                <i class="fas fa-brain text-danger opacity-50" style="font-size: 3rem;"></i>
+                {% endif %}
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="fw-bold mb-1">Trạng thái Vector Khuôn Mặt</h5>
+                {% if student.da_train == 1 %}
+                <p class="text-success m-0 mb-2"><i class="fas fa-check-circle me-1"></i> AI có thể nhận diện sinh viên này</p>
+                {% else %}
+                <p class="text-danger m-0 mb-2"><i class="fas fa-times-circle me-1"></i> AI chưa thể nhận diện! Cần Train Data.</p>
+                {% endif %}
+                
+                <div class="d-flex align-items-center mt-3 pt-3 border-top border-secondary border-opacity-25">
+                    <div class="text-muted small me-4">
+                        <i class="fas fa-images me-1"></i> Hình ảnh để học: <span class="text-dark fw-bold">{{ image_count }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2">
+                <a href="{{ url_for('training.capture', mssv=student.mssv) }}" class="btn btn-sm btn btn-primary shadow-sm">
+                    <i class="fas fa-camera-retro me-1"></i> Thu Thập Ảnh (Webcam)
+                </a>
+                <button class="btn btn-sm btn-outline-info" onclick="trainSingle('{{ student.mssv }}')">
+                    <i class="fas fa-sync-alt me-1"></i> Train AI Gọi Đơn
+                </button>
+            </div>
+        </div>
+        
+        <!-- Logs Điểm Danh 50 lần gần nhất -->
+        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 flex-grow-1 p-0 overflow-hidden d-flex flex-column">
+            <div class="p-3 border-bottom border-light border-opacity-10 bg-light bg-opacity-50">
+                <h6 class="fw-bold m-0"><i class="fas fa-history text-warning me-2"></i> Lịch Sử Quét Bằng Máy (50 lần gần nhất)</h6>
+            </div>
+            
+            <div class="table-responsive flex-grow-1" style="max-height: 350px;">
+                <table class="table table-light-flat mb-0 table-sm">
+                    <thead class="sticky-top bg-light">
+                        <tr>
+                            <th class="ps-3 border-0">Thời Gian Quét</th>
+                            <th class="border-0">Khoảng Accuracy</th>
+                            <th class="border-0">Trạng Thái</th>
+                            <th class="border-0">Thuộc Lớp Lúc Điểm Danh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in history %}
+                        <tr>
+                            <td class="ps-3 text-dark">{{ log.thoi_gian.strftime('%H:%M %d/%m/%Y') }}</td>
+                            <td>
+                                {% if log.do_chinh_xac %}
+                                <div class="progress bg-light w-75" style="height: 5px;">
+                                    <div class="progress-bar bg-success" style="width: {{ (log.do_chinh_xac * 100)|int }}%"></div>
+                                </div>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.trang_thai == 'Co mat' %}
+                                <span class="text-success small fw-bold">Thành Công</span>
+                                {% else %}
+                                <span class="text-warning small fw-bold">{{ log.trang_thai }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted small">{{ log.ma_lop }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">Chưa từng được AI quét thấy lần nào.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function trainSingle(mssv) {
+    if(!confirm("Bạn muốn yêu cầu AI quét lại hình ảnh của sinh viên này để học dữ liệu khuôn mặt?")) return;
+    
+    try {
+        const res = await fetch(`/training/student/${mssv}`, {method: 'POST'});
+        const data = await res.json();
+        
+        if(data.success) {
+            alert('Quá trình học sinh viên này đã hoàn tất!');
+            window.location.reload();
+        } else {
+            alert('Lỗi: ' + data.msg);
+        }
+    } catch(err) {
+        alert('Server đang quá tải không thể phản hồi yêu cầu Neural Network lúc này!');
+    }
+}
+</script>
+{% endblock %}

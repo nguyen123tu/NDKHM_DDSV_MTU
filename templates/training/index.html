@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý Nhận Diện AI{% endblock %}
+{% block page_title %}Engine Nhận Diện AI{% endblock %}
+
+{% block content %}
+<!-- Engine Switcher -->
+<div class="flat-card mb-4 p-4 border-start border-4 border-info">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h5 class="fw-bold mb-1 text-dark"><i class="fas fa-microchip text-info me-2"></i> Mô Hình Đang Sử Dụng</h5>
+            <p class="text-muted small mb-0">Chuyển đổi giữa hai kiến trúc AI. Mỗi engine cần train riêng biệt.</p>
+        </div>
+        
+        <div class="d-flex align-items-center gap-2 bg-light p-2 rounded-3 border">
+            <!-- InsightFace Button -->
+            <button class="btn engine-btn px-4 py-2 rounded-3 d-flex align-items-center gap-2 {{ 'active' if current_engine == 'insightface' }}" 
+                    id="btnInsightFace" onclick="switchEngine('insightface')">
+                <div class="engine-icon text-primary">
+                    <i class="fas fa-atom fs-5"></i>
+                </div>
+                <div class="text-start">
+                    <div class="fw-bold small">InsightFace</div>
+                    <div class="engine-sub text-muted">ArcFace + SCRFD</div>
+                </div>
+                {% if insightface_ready %}
+                <span class="badge bg-success ms-2" style="font-size: 9px;">PKL ✓</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2" style="font-size: 9px;">Chưa Train</span>
+                {% endif %}
+            </button>
+            
+            <!-- YOLOv8 + ResNet50 Button -->
+            <button class="btn engine-btn px-4 py-2 rounded-3 d-flex align-items-center gap-2 {{ 'active' if current_engine == 'yolo_resnet' }}" 
+                    id="btnYoloResnet" onclick="switchEngine('yolo_resnet')">
+                <div class="engine-icon text-primary">
+                    <i class="fas fa-robot fs-5"></i>
+                </div>
+                <div class="text-start">
+                    <div class="fw-bold small">YOLO + ResNet50</div>
+                    <div class="engine-sub text-muted">Ultralytics + PyTorch</div>
+                </div>
+                {% if yolo_ready %}
+                <span class="badge bg-success ms-2" style="font-size: 9px;">PKL ✓</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2" style="font-size: 9px;">Chưa Train</span>
+                {% endif %}
+            </button>
+        </div>
+    </div>
+    
+    <!-- Current Engine Status -->
+    <div class="mt-3 pt-3 border-top">
+        <div class="d-flex align-items-center gap-2">
+            <span class="position-relative d-inline-block">
+                <span class="d-inline-block rounded-circle bg-success" style="width: 10px; height: 10px; animation: pulse 2s infinite;"></span>
+            </span>
+            <span class="small text-muted">Engine đang hoạt động:</span>
+            <span class="fw-bold text-dark" id="currentEngineLabel">
+                {% if current_engine == 'insightface' %}
+                InsightFace (ArcFace + SCRFD) — Vector 512 chiều
+                {% else %}
+                YOLOv8 + ResNet50 — Vector 2048 chiều
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Actions -->
+    <div class="col-lg-4">
+        <div class="flat-card p-4 h-100 flex-column d-flex border-0 shadow-sm">
+            <h5 class="fw-bold mb-3 text-dark"><i class="fas fa-satellite-dish text-info me-2"></i> Cập Nhật Não Bộ Đồng Loạt</h5>
+            <p class="text-muted small mb-4">
+                Quá trình này sẽ quét toàn bộ ảnh của sinh viên trong thư mục <code>database/</code> để trích xuất Embedding Vector. 
+                Quá trình có thể tốn vài phút tùy thuộc vào CPU máy chủ.
+            </p>
+            
+            <div class="mt-auto">
+                <button id="btnTrainAll" class="btn btn-primary w-100 p-3 fw-bold shadow-sm">
+                    <i class="fas fa-sync-alt me-2"></i> BẮT ĐẦU TRAINING TOÀN BỘ
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Panel -->
+    <div class="col-lg-8">
+        <div class="flat-card p-4 h-100 border-info border-opacity-25 bg-white shadow-sm" id="progressPanel" style="display: none;">
+            <h5 class="fw-bold mb-3 text-info"><i class="fas fa-cogs me-2"></i> Đang Xử Lý: Trích Xuất Vector</h5>
+            
+            <div class="d-flex justify-content-between mb-2 mt-4">
+                <span class="text-primary fw-bold" id="progressText">0%</span>
+                <span class="text-muted small" id="statusText">Đang tải mô hình...</span>
+            </div>
+            
+            <div class="progress bg-light" style="height: 12px; border-radius: 6px;">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%"></div>
+            </div>
+            
+            <p class="text-muted small mt-4 mb-0">
+                <i class="fas fa-exclamation-circle text-warning me-1"></i> Vui lòng không tải lại trang trong quá trình này.
+            </p>
+        </div>
+        
+        <div class="flat-card p-4 h-100 d-flex align-items-center justify-content-center bg-light shadow-sm" id="idlePanel" style="border: 2px dashed #cbd5e1;">
+            <div class="text-center text-muted">
+                <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 80px; height: 80px;">
+                    <i class="fas fa-check-double fs-1 text-success"></i>
+                </div>
+                <h5 class="text-dark">Não bộ AI đang ở trạng thái sẵn sàng</h5>
+                <p class="small mb-0">Lần cuối cập nhật: Không xác định (Đọc từ File)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="flat-card p-0 overflow-hidden mt-4 shadow-sm">
+    <div class="p-3 border-bottom bg-light">
+        <h6 class="fw-bold m-0 text-primary"><i class="fas fa-users-cog me-2"></i> Trạng thái Ảnh Sinh Viên</h6>
+    </div>
+    
+    <div class="table-responsive p-0" style="max-height: 500px;">
+        <table class="table table-light-flat mb-0">
+            <thead class="sticky-top bg-white shadow-sm">
+                <tr>
+                    <th>MSSV</th>
+                    <th>Họ và Tên</th>
+                    <th class="text-center">Số lượng Ảnh</th>
+                    <th>Trạng Thái Vector AI</th>
+                    <th class="text-end">Hành động AI</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sv in students %}
+                <tr>
+                    <td class="fw-bold text-dark">{{ sv.mssv }}</td>
+                    <td class="text-dark">{{ sv.ho_ten }}</td>
+                    <td class="text-center">
+                        {% if sv.image_count == 0 %}
+                        <span class="badge bg-danger">0 Ảnh</span>
+                        {% else %}
+                        <span class="badge bg-success">{{ sv.image_count }} Ảnh</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if sv.da_train == 1 %}
+                        <span class="text-success"><i class="fas fa-check-circle me-1"></i> Đã Có Não Bộ</span>
+                        {% else %}
+                        <span class="text-danger"><i class="fas fa-times-circle me-1"></i> Chưa Có Đặc Trưng</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if sv.image_count > 0 %}
+                        <button class="btn btn-sm btn-outline-primary btn-train-single" data-mssv="{{ sv.mssv }}">
+                            <i class="fas fa-brain me-1"></i> Train Cá Nhân
+                        </button>
+                        {% else %}
+                        <button class="btn btn-sm btn-light text-muted border" disabled>
+                            <i class="fas fa-camera me-1"></i> Cần Cập Nhật Ảnh
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btnTrainAll = document.getElementById('btnTrainAll');
+    const idlePanel = document.getElementById('idlePanel');
+    const progressPanel = document.getElementById('progressPanel');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const statusText = document.getElementById('statusText');
+    
+    // Train toàn bộ
+    btnTrainAll.addEventListener('click', async () => {
+        if(!confirm('Bạn có chắc chắn muốn chạy lại quá trình quét Model AI cho toàn bộ Sinh Viên? \n\nLưu ý: Camera nhận diện realtime cần phải được dập tắt/dừng lại trước khi chạy lệnh này.')) return;
+        
+        btnTrainAll.disabled = true;
+        idlePanel.style.display = 'none';
+        progressPanel.style.display = 'block';
+        
+        try {
+            // Kích hoạt API Start
+            await fetch('/training/start', {method: 'POST'});
+            
+            // Lắng nghe SSE Progress
+            const evtSource = new EventSource('/training/progress');
+            
+            evtSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                const pct = Math.round(data.progress * 100);
+                
+                progressBar.style.width = pct + '%';
+                progressText.innerText = pct + '%';
+                statusText.innerText = data.status === 'training' ? 'Đang trích xuất Vector từ Ảnh...' : data.status;
+                
+                if(data.status === 'done' || data.status === 'error') {
+                    evtSource.close();
+                    statusText.innerText = data.status === 'done' ? 'Ghi file embeddings.pkl thành công!' : 'Có lỗi xảy ra.';
+                    progressBar.classList.remove('progress-bar-animated');
+                    if(data.status === 'done') {
+                        progressBar.classList.replace('bg-info', 'bg-success');
+                        setTimeout(() => window.location.reload(), 2000);
+                    } else {
+                        progressBar.classList.replace('bg-info', 'bg-danger');
+                        btnTrainAll.disabled = false;
+                    }
+                }
+            };
+        } catch(err) {
+            alert('Lỗi kết nối Server');
+            btnTrainAll.disabled = false;
+        }
+    });
+    
+    // Train cá nhân
+    document.querySelectorAll('.btn-train-single').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const mssv = e.currentTarget.getAttribute('data-mssv');
+            e.currentTarget.disabled = true;
+            e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+            
+            try {
+                const res = await fetch(`/training/student/${mssv}`, {method: 'POST'});
+                const data = await res.json();
+                
+                if(data.success) {
+                    alert('Train cá nhân thành công!');
+                    window.location.reload();
+                } else {
+                    alert('Lỗi: ' + data.msg);
+                    e.currentTarget.disabled = false;
+                    e.currentTarget.innerHTML = '<i class="fas fa-brain me-1"></i> Train Cá Nhân';
+                }
+            } catch(err) {
+                alert('Lỗi Server');
+                e.currentTarget.disabled = false;
+            }
+        });
+    });
+});
+
+// Engine Switch Function
+async function switchEngine(engine) {
+    const currentLabel = document.getElementById('currentEngineLabel');
+    const btnIF = document.getElementById('btnInsightFace');
+    const btnYR = document.getElementById('btnYoloResnet');
+    
+    if(!confirm(`Bạn có muốn chuyển sang engine: ${engine === 'insightface' ? 'InsightFace' : 'YOLOv8 + ResNet50'}?\n\nLưu ý: Bạn cần TRAIN LẠI nếu engine mới chưa có file não bộ (pkl).`)) return;
+    
+    try {
+        const res = await fetch('/training/switch-engine', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({engine: engine})
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            btnIF.classList.toggle('active', engine === 'insightface');
+            btnYR.classList.toggle('active', engine === 'yolo_resnet');
+            
+            if(engine === 'insightface') {
+                currentLabel.textContent = 'InsightFace (ArcFace + SCRFD) — Vector 512 chiều';
+            } else {
+                currentLabel.textContent = 'YOLOv8 + ResNet50 — Vector 2048 chiều';
+            }
+            
+            // Reload page after short delay to reflect changes
+            setTimeout(() => window.location.reload(), 500);
+        } else {
+            alert('Lỗi: ' + data.msg);
+        }
+    } catch(err) {
+        alert('Lỗi kết nối Server');
+    }
+}
+</script>
+
+<style>
+    .engine-btn {
+        background: transparent;
+        border: 2px solid transparent;
+        color: #475569;
+        transition: all 0.2s ease;
+    }
+    .engine-btn:hover {
+        background: #f1f5f9;
+        color: #334155;
+    }
+    .engine-btn.active {
+        background: #ffffff;
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .engine-btn .engine-icon {
+        width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+    }
+</style>
+{% endblock %}

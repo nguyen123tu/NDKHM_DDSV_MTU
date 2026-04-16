@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Lỗi {{ error_code }}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-center" style="min-height: 70vh;">
+    <div class="text-center">
+        <!-- Animated Error Code -->
+        <div class="error-code-wrapper mb-4">
+            <h1 class="error-code" id="errorCode">{{ error_code }}</h1>
+            <div class="error-glow"></div>
+        </div>
+        
+        <!-- Error Message -->
+        <h3 class="fw-bold text-dark mb-2">{{ error_title }}</h3>
+        <p class="text-muted mb-4" style="max-width: 450px; margin: 0 auto;">{{ error_message }}</p>
+        
+        <!-- Error Icon Animation -->
+        <div class="error-icon mb-4">
+            {% if error_code == 404 %}
+            <i class="fas fa-ghost text-secondary" style="font-size: 4rem; animation: float 3s ease-in-out infinite;"></i>
+            {% elif error_code == 500 %}
+            <i class="fas fa-bug text-danger" style="font-size: 4rem; animation: shake 0.5s ease-in-out infinite;"></i>
+            {% elif error_code == 403 %}
+            <i class="fas fa-lock text-warning" style="font-size: 4rem; animation: pulse 2s infinite;"></i>
+            {% else %}
+            <i class="fas fa-exclamation-triangle text-info" style="font-size: 4rem; animation: pulse 2s infinite;"></i>
+            {% endif %}
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="/" class="btn btn btn-primary shadow-sm px-4 py-2">
+                <i class="fas fa-home me-2"></i> Về Dashboard
+            </a>
+            <button onclick="history.back()" class="btn btn-outline-secondary px-4 py-2">
+                <i class="fas fa-arrow-left me-2"></i> Quay Lại
+            </button>
+        </div>
+        
+        <!-- Tech Details -->
+        <div class="mt-5 pt-4 border-top border-secondary border-opacity-25">
+            <p class="text-muted small mb-0">
+                <i class="fas fa-server me-1"></i> Face Attendance System v2.0 
+                <span class="mx-2">|</span>
+                <i class="fas fa-clock me-1"></i> {{ now }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .error-code-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    .error-code {
+        font-size: 10rem;
+        font-weight: 900;
+        line-height: 1;
+        background: linear-gradient(135deg, 
+            {% if error_code == 404 %}#6a3cbc, #a364f3{% elif error_code == 500 %}#dc3545, #ff6b6b{% elif error_code == 403 %}#ffc107, #ff9800{% else %}#0dcaf0, #6ea8fe{% endif %}
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: glitch 3s ease-in-out infinite;
+    }
+    .error-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: radial-gradient(circle, 
+            {% if error_code == 404 %}rgba(106,60,188,0.15){% elif error_code == 500 %}rgba(220,53,69,0.15){% elif error_code == 403 %}rgba(255,193,7,0.15){% else %}rgba(13,202,240,0.15){% endif %} 
+            0%, transparent 70%);
+        filter: blur(30px);
+        z-index: -1;
+    }
+    
+    @keyframes glitch {
+        0%, 100% { transform: translate(0); }
+        20% { transform: translate(-2px, 2px); }
+        40% { transform: translate(2px, -2px); }
+        60% { transform: translate(-1px, -1px); }
+        80% { transform: translate(1px, 1px); }
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+    @keyframes shake {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-5deg); }
+        75% { transform: rotate(5deg); }
+    }
+</style>
+{% endblock %}

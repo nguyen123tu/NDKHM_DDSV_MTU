@@ -1,0 +1,145 @@
+/* Glassmorphism Design System */
+
+.glass-panel {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Navbar Glass */
+.glass-nav {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-nav .nav-link {
+    color: var(--text-light) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.glass-nav .nav-link:hover, .glass-nav .nav-link.active {
+    background: rgba(163, 100, 243, 0.15);
+    color: var(--secondary-color) !important;
+}
+
+/* Glass Buttons */
+.btn-glass-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 15px rgba(106, 60, 188, 0.4);
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-glass-primary:hover {
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(106, 60, 188, 0.6);
+}
+
+.btn-glass-danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-glass-danger:hover {
+    background: rgba(239, 68, 68, 0.4);
+    color: white;
+}
+
+/* Glass Inputs */
+.glass-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(163, 100, 243, 0.25);
+    color: white;
+    outline: none;
+}
+
+/* Fix dropdown options on Windows showing white text on white bg */
+.glass-input option {
+    background-color: #0f172a;
+    color: white;
+}
+
+/* Glass Table */
+.glass-table {
+    width: 100%;
+    color: var(--text-light);
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.glass-table th {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    border: none;
+}
+
+.glass-table th:first-child { border-radius: 8px 0 0 8px; }
+.glass-table th:last-child { border-radius: 0 8px 8px 0; }
+
+.glass-table td {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    vertical-align: middle;
+}
+
+.glass-table tr:hover td {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.glass-table td:first-child { 
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px 0 0 8px; 
+}
+.glass-table td:last-child { 
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0 8px 8px 0; 
+}
+
+/* Glass Modals / Cards */
+.glass-modal-content {
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border-radius: 16px;
+    color: white;
+}

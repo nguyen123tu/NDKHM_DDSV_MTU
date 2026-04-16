@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Chỉnh Sửa Lớp Học{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('classes.list_classes') }}" class="btn btn-outline-secondary border-0 p-2 me-3 text-muted hover-text-dark">
+                <i class="fas fa-arrow-left fs-5"></i>
+            </a>
+            <h3 class="fw-bold m-0"><i class="fas fa-edit text-secondary me-2"></i> Chỉnh Sửa {{ cls.ten_lop }}</h3>
+        </div>
+
+        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4">
+            <form method="POST" action="{{ url_for('classes.edit', id=cls.id) }}">
+                <div class="row g-3">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Mã Lớp</label>
+                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark bg-light border-secondary" name="ma_lop" value="{{ cls.ma_lop }}" readonly disabled>
+                        <div class="small text-muted mt-1">Không thể thay đổi mã.</div>
+                    </div>
+                    
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Tên Lớp (Môn học) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="ten_lop" required value="{{ cls.ten_lop }}">
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Học Kỳ</label>
+                        <select class="form-select border-light shadow-sm bg-white text-dark" name="hoc_ky">
+                            <option value="HK1" {% if cls.hoc_ky == 'HK1' %}selected{% endif %}>Học Kỳ 1</option>
+                            <option value="HK2" {% if cls.hoc_ky == 'HK2' %}selected{% endif %}>Học Kỳ 2</option>
+                            <option value="HK3" {% if cls.hoc_ky == 'HK3' %}selected{% endif %}>Học Kỳ 3 (Hè)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Năm Học</label>
+                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="nam_hoc" value="{{ cls.nam_hoc or '' }}">
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Khoa / Viện</label>
+                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="khoa" value="{{ cls.khoa or '' }}">
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Giảng Viên Quản Lý</label>
+                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="giao_vien" value="{{ cls.giao_vien or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Trạng Thái</label>
+                        <select class="form-select border-light shadow-sm bg-white text-dark {% if cls.trang_thai == 1 %}border-success text-success{% else %}border-danger text-danger{% endif %}" name="trang_thai">
+                            <option value="1" class="text-success" {% if cls.trang_thai == 1 %}selected{% endif %}>Đang Mở Điểm Danh</option>
+                            <option value="0" class="text-danger" {% if cls.trang_thai == 0 %}selected{% endif %}>Khóa Lớp Cấm Sửa</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Ghi chú thêm</label>
+                    <textarea class="form-control border-light shadow-sm bg-white text-dark" rows="3" name="mo_ta">{{ cls.mo_ta or '' }}</textarea>
+                </div>
+
+                <div class="d-flex justify-content-between pt-3 border-top border-secondary border-opacity-50">
+                    <!-- Form Xoá Lớp dán ngầm ở đây nhưng button được thiết kế tách biệt góc trái -->
+                    <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
+                        <i class="fas fa-trash me-1"></i> Khóa xóa sổ Lớp Dữ Liệu
+                    </button>
+                    
+                    <button type="submit" class="btn btn-glass-warning px-4">
+                        <i class="fas fa-save me-1"></i> Áp Dụng Thay Đổi
+                    </button>
+                </div>
+            </form>
+            
+            <form id="deleteForm" method="POST" action="{{ url_for('classes.delete', id=cls.id) }}" class="d-none">
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete() {
+        if(confirm("CẢNH BÁO: Hành động này sẽ xóa VĨNH VIỄN lớp học này khỏi CSDL. Sinh viên và lịch sử điểm danh thuộc lớp cũng sẽ bị ảnh hưởng. Bạn có chắc chắn?")) {
+            document.getElementById("deleteForm").submit();
+        }
+    }
+</script>
+<style>
+    .btn-glass-warning {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fcd34d;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        backdrop-filter: blur(4px);
+    }
+    .btn-glass-warning:hover {
+        background: rgba(245, 158, 11, 0.4);
+        color: #fff;
+    }
+</style>
+{% endblock %}

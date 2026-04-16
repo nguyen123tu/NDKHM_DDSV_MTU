@@ -1,0 +1,70 @@
+# ============================================================
+# Docker Compose: Face Attendance System
+# Bao gồm: App (Flask) + Database (MySQL 8)
+# ============================================================
+
+services:
+  # ---- MySQL Database ----
+  db:
+    image: mysql:8.0
+    container_name: face_attendance_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root123}
+      MYSQL_DATABASE: ${DB_NAME:-face_attendance_db}
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "3307:3306"  # Port 3307 bên ngoài để không xung đột MySQL local
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql  # Tự tạo bảng lần đầu
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-root123}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - face_net
+
+  # ---- Flask Application ----
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: face_attendance_app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-mtu_docker_secret_2026}
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-face_attendance_db}
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD:-root123}
+      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.45}
+      - MOTION_THRESHOLD=${MOTION_THRESHOLD:-3000}
+      - ALERT_COOLDOWN=${ALERT_COOLDOWN:-20}
+      - DB_LOG_COOLDOWN=${DB_LOG_COOLDOWN:-28800}
+      - AI_ENGINE=${AI_ENGINE:-insightface}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ./database:/app/database      # Ảnh sinh viên — persist
+      - ./models:/app/models           # File não bộ pkl — persist
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - face_net
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  face_net:
+    driver: bridge

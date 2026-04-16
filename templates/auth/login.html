@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập Quản trị viên - AI Attendance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            min-height: 600px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            display: flex;
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        /* --- LEFT PANEL --- */
+        .left-panel {
+            flex: 55%;
+            background: linear-gradient(135deg, #1fa2ff 0%, #12d8fa 50%, #06ffcb 100%);
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-title {
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 2.2rem;
+            text-align: center;
+            text-transform: uppercase;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 2;
+            margin-top: 1rem;
+        }
+
+        /* Hình minh hoạ trường học (Custom SVG/CSS Graphic) */
+        .illustration {
+            width: 300px;
+            height: 250px;
+            position: relative;
+            margin-top: 2rem;
+            z-index: 2;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        
+        .house {
+            width: 140px;
+            height: 160px;
+            background: #f8f9fa;
+            position: relative;
+            border: 2px solid #2b3035;
+        }
+        
+        .house::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: -10%;
+            width: 120%;
+            height: 60px;
+            background: #ff8c42; /* mái ngói */
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            border-bottom: 2px solid #2b3035;
+        }
+        
+        .door {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 50px;
+            background: #8b5a2b;
+            border: 2px solid #2b3035;
+            border-bottom: none;
+        }
+        
+        .door::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 5px;
+            width: 6px;
+            height: 6px;
+            background: #ffeb3b;
+            border-radius: 50%;
+        }
+
+        .window {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #87ceeb;
+            border: 2px solid #2b3035;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .window::before, .window::after {
+            content: '';
+            position: absolute;
+            background: #2b3035;
+        }
+        .window::before { top: 50%; left: 0; width: 100%; height: 2px; transform: translateY(-50%); }
+        .window::after { left: 50%; top: 0; height: 100%; width: 2px; transform: translateX(-50%); }
+
+        .w1 { top: 20px; left: 15px; }
+        .w2 { top: 20px; right: 15px; }
+        .w3 { top: 70px; left: 15px; }
+        .w4 { top: 70px; right: 15px; }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 30px;
+            background: #8fbc8f;
+            border: 2px solid #2b3035;
+        }
+        
+        .tree {
+            position: absolute;
+            bottom: 30px;
+            width: 10px;
+            height: 30px;
+            background: #8b4513;
+        }
+        .tree::before {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: #228b22;
+            border-radius: 50%;
+        }
+        .t1 { left: 20%; }
+        .t2 { right: 20%; }
+
+        .particles {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(#fff 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.15;
+            z-index: 1;
+        }
+
+        .feature-cards {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+            z-index: 2;
+        }
+
+        .feature-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 1.2rem 0.5rem;
+            text-align: center;
+            color: #ffffff;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .feature-card i {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+        
+        .feature-card p {
+            margin: 0;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* --- RIGHT PANEL --- */
+        .right-panel {
+            flex: 45%;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #ffffff;
+            color: #333;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #0d6efd;
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 16px;
+        }
+        
+        .logo h4 {
+            font-weight: 700;
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .form-title {
+            color: #1fa2ff;
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            padding: 0.8rem 1rem 0.8rem 2.8rem;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            background: #fdfdfd;
+        }
+        
+        .form-control:focus {
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+            border-color: #0d6efd;
+        }
+
+        .input-icon-wrapper {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #0d6efd;
+            z-index: 10;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #1fa2ff, #12d8fa);
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(31, 162, 255, 0.3);
+            color: white;
+        }
+
+        .options-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+        }
+        
+        .options-row a {
+            color: #0d6efd;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        @media (max-width: 991px) {
+            .left-panel { display: none; }
+            .right-panel { flex: 100%; padding: 3rem 2rem; }
+            .login-container { max-width: 450px; min-height: auto; height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        
+        <!-- LEFT PANEL -->
+        <div class="left-panel">
+            <div class="particles"></div>
+            
+            <h1 class="left-title">HỆ THỐNG ĐIỂM DANH SINH VIÊN<br>BẰNG NHẬN DIỆN KHUÔN MẶT</h1>
+            
+            <!-- Hình minh họa trường học CSS -->
+            <div class="illustration">
+                <div class="ground"></div>
+                <div class="tree t1"></div>
+                <div class="tree t2"></div>
+                <div class="house">
+                    <div class="window w1"></div>
+                    <div class="window w2"></div>
+                    <div class="window w3"></div>
+                    <div class="window w4"></div>
+                    <div class="door"></div>
+                </div>
+            </div>
+            
+            <!-- Cards tính năng -->
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <i class="fas fa-home"></i>
+                    <p>Quản lý sinh viên</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-list-check"></i>
+                    <p>Quản lý lớp học</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-bell"></i>
+                    <p>Thông báo</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+            <div class="logo">
+                <i class="fas fa-face-viewfinder"></i>
+                <h4>FaceManager</h4>
+            </div>
+            
+            <h3 class="form-title">Đăng nhập Quản trị viên</h3>
+            
+            <!-- Hiển thị lỗi đăng nhập -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'error' else 'danger' }} small py-2 mb-4 text-center">
+                            <i class="fas fa-exclamation-circle me-1"></i> {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                
+                <div class="mb-4">
+                    <label class="form-label">Tên đăng nhập</label>
+                    <div class="input-icon-wrapper">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" name="username" class="form-control" placeholder="Nhập tên đăng nhập" required autofocus>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu</label>
+                    <div class="input-icon-wrapper">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" name="password" id="passwordField" class="form-control" placeholder="Nhập mật khẩu" required>
+                        <i class="fas fa-eye toggle-password" onclick="togglePassword()" title="Hiển thị mật khẩu"></i>
+                    </div>
+                </div>
+                
+                <div class="options-row mt-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label text-muted" for="rememberMe">
+                            Ghi nhớ đăng nhập
+                        </label>
+                    </div>
+                    <a href="#">Quên mật khẩu?</a>
+                </div>
+                
+                <button type="submit" class="btn btn-login w-100">
+                    Đăng nhập
+                </button>
+            </form>
+            
+            <div class="text-center mt-5 pt-3 border-top border-light">
+                 <a href="{{ url_for('public.lookup') }}" class="text-muted text-decoration-none small hover-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Quay về Cổng sinh viên
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script Javascript nhỏ -->
+    <script>
+        function togglePassword() {
+            const pwdField = document.getElementById('passwordField');
+            const icon = document.querySelector('.toggle-password');
+            if (pwdField.type === 'password') {
+                pwdField.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwdField.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>

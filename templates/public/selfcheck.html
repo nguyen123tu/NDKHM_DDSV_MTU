@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Điểm Danh Sinh Viên - Nhận Diện Khuôn Mặt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --accent-gradient: linear-gradient(135deg, #5856D6, #a364f3);
+            --bg-body: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border-light: #e2e8f0;
+            --success-color: #22c55e;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        /* ===== Header Banner ===== */
+        .kiosk-header {
+            background: var(--accent-gradient);
+            color: white;
+            border-radius: 14px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 8px 24px rgba(88, 86, 214, 0.25);
+        }
+        .kiosk-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .kiosk-time {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* ===== Cards ===== */
+        .flat-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+        }
+        .card-title-bar {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafbfc;
+        }
+        .card-title-bar h6 {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        /* ===== Video Container ===== */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            background: #0f172a;
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+        }
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+        .camera-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--success-color);
+            color: white;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 10;
+            box-shadow: 0 3px 8px rgba(34,197,94,0.35);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ===== Scan Box (face tracking) ===== */
+        .scan-box {
+            position: absolute;
+            border: 2.5px solid var(--success-color);
+            z-index: 5;
+            display: none;
+            transition: left 0.25s ease-out, top 0.25s ease-out, width 0.25s ease-out, height 0.25s ease-out;
+            border-radius: 8px;
+        }
+        .scan-box::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+            animation: scanLine 2s infinite linear;
+        }
+        @keyframes scanLine {
+            0% { top: 0; } 50% { top: 100%; } 100% { top: 0; }
+        }
+        .scan-box .name-tag {
+            position: absolute;
+            top: -24px; left: 0;
+            background: var(--success-color);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px 4px 0 0;
+            white-space: nowrap;
+        }
+
+        /* ===== Info Panel ===== */
+        .info-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            color: var(--text-muted);
+        }
+        .info-success {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            padding: 2rem;
+            text-align: center;
+            animation: fadeSlideIn 0.4s ease;
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .avatar-circle {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(88,86,214,0.3);
+        }
+        .info-chip {
+            background: #f1f5f9;
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            flex: 1;
+        }
+        .info-chip small {
+            display: block;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.75rem;
+            margin-bottom: 2px;
+        }
+        .info-chip span {
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        /* ===== Table ===== */
+        .table-header-row th {
+            background: var(--primary-color) !important;
+            color: white !important;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 11px 16px;
+            border: none;
+            white-space: nowrap;
+        }
+        .table-body td {
+            padding: 10px 16px;
+            vertical-align: middle;
+            color: var(--text-dark);
+            font-weight: 500;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+        .img-log {
+            width: 38px; height: 38px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid var(--border-light);
+        }
+
+        /* ===== Badge ===== */
+        .counter-badge {
+            background: var(--primary-color);
+            color: white;
+            min-width: 26px; height: 26px;
+            border-radius: 13px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0 8px;
+        }
+
+        /* ===== Animations ===== */
+        .slide-in-row {
+            animation: slideRow 0.35s ease-out;
+        }
+        @keyframes slideRow {
+            from { opacity: 0; transform: translateX(-16px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ===== Footer ===== */
+        .kiosk-footer {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            padding: 1rem 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4 py-3">
+    
+    <!-- ===== Header ===== -->
+    <div class="kiosk-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-1"><i class="fas fa-camera me-2"></i> Điểm Danh Sinh Viên</h1>
+            <p class="mb-0 kiosk-time">Nhận diện khuôn mặt tự động bằng AI</p>
+        </div>
+        <div class="text-end">
+            <div class="kiosk-time" id="realtimeClock" style="font-size: 1rem;">--:--:--</div>
+        </div>
+    </div>
+
+    <!-- ===== Camera + Info ===== -->
+    <div class="row g-4 mb-4">
+        
+        <!-- Camera -->
+        <div class="col-lg-7">
+            <div class="flat-card h-100">
+                <div class="card-title-bar">
+                    <h6><i class="fas fa-video me-2"></i> Camera trực tiếp</h6>
+                    <span class="badge bg-light text-dark border" id="camStatusText">
+                        <i class="fas fa-spinner fa-spin me-1 text-muted"></i> Đang kết nối...
+                    </span>
+                </div>
+                <div class="p-3">
+                    <div class="video-wrapper">
+                        <div class="camera-badge" id="cameraBadge" style="display:none;">
+                            <span class="spinner-grow spinner-grow-sm" style="width:7px;height:7px;"></span>
+                            Camera đang hoạt động
+                        </div>
+                        <video id="webcamVideo" autoplay playsinline muted></video>
+                        <div class="scan-box" id="scanBox">
+                            <div class="name-tag" id="scanNameTag">Đang quét...</div>
+                        </div>
+                        <canvas id="captureCanvas" style="display:none;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="col-lg-5">
+            <div class="flat-card h-100">
+                <div class="card-title-bar">
+                    <h6><i class="fas fa-user-circle me-2"></i> Thông tin sinh viên</h6>
+                </div>
+                
+                <!-- Empty State -->
+                <div class="info-empty" id="infoEmptyState">
+                    <i class="fas fa-user-slash mb-3" style="font-size: 3.5rem; opacity: 0.25;"></i>
+                    <h6 class="fw-semibold mb-1">Chưa có sinh viên được nhận diện</h6>
+                    <p class="small mb-0">Hệ thống đang chờ nhận diện khuôn mặt</p>
+                </div>
+
+                <!-- Success State -->
+                <div class="info-success" id="infoSuccessState">
+                    <div class="avatar-circle mb-3" id="infoAvatar">?</div>
+                    <h4 class="fw-bold mb-1" id="infoName">Tên Sinh Viên</h4>
+                    <p class="text-muted mb-3" id="infoMssv">MSSV</p>
+                    <div class="d-flex gap-3 w-100">
+                        <div class="info-chip">
+                            <small><i class="fas fa-graduation-cap me-1"></i> Lớp học</small>
+                            <span class="text-primary" id="infoClass">--</span>
+                        </div>
+                        <div class="info-chip">
+                            <small><i class="fas fa-clock me-1"></i> Thời gian</small>
+                            <span class="text-success" id="infoTime">--:--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Bottom Table ===== -->
+    <div class="flat-card">
+        <div class="card-title-bar">
+            <h6><i class="fas fa-list-check me-2"></i> Danh sách điểm danh</h6>
+            <div class="counter-badge" id="logCounter">0</div>
+        </div>
+        <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+            <table class="table mb-0 align-middle">
+                <thead class="table-header-row sticky-top" style="z-index:1;">
+                    <tr>
+                        <th style="width:55px; padding-left:1.5rem;">STT</th>
+                        <th>Mã SV</th>
+                        <th>Họ tên</th>
+                        <th>Lớp</th>
+                        <th>Thời gian</th>
+                        <th class="text-center">Ảnh</th>
+                    </tr>
+                </thead>
+                <tbody id="logList" class="table-body">
+                    <tr id="emptyLogMsg">
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-inbox d-block mb-2" style="font-size:2rem; opacity:0.3;"></i>
+                            Chưa có ai điểm danh trong phiên này.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="kiosk-footer mt-3">
+        Dự án Tốt Nghiệp: Hệ Thống Điểm Danh Khuôn Mặt Bằng AI &bull; Phát triển với Flask & InsightFace
+    </div>
+</div>
+
+<script>
+// ========== Clock ==========
+function updateClock() {
+    const now = new Date();
+    const days = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+    const pad = n => (n < 10 ? '0' : '') + n;
+    document.getElementById('realtimeClock').innerText =
+        `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} — ${days[now.getDay()]}, ${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ========== Main Logic ==========
+document.addEventListener('DOMContentLoaded', () => {
+    const video = document.getElementById('webcamVideo');
+    const canvas = document.getElementById('captureCanvas');
+    const scanBox = document.getElementById('scanBox');
+    const scanNameTag = document.getElementById('scanNameTag');
+    const logList = document.getElementById('logList');
+
+    let isProcessing = false;
+    let logCount = 0;
+    let lastMSSV = '';
+    let lastTime = 0;
+
+    // Start Camera
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } })
+    .then(stream => {
+        video.srcObject = stream;
+        document.getElementById('cameraBadge').style.display = 'flex';
+        document.getElementById('camStatusText').innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Sẵn sàng';
+        setInterval(processFrame, 1500);
+    })
+    .catch(() => {
+        document.getElementById('camStatusText').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> Không truy cập được camera';
+    });
+
+    async function processFrame() {
+        if (isProcessing) return;
+        isProcessing = true;
+
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+
+        try {
+            const res = await fetch('/public/api/recognize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageData, lop_id: null })
+            });
+            const data = await res.json();
+
+            if (data.success && data.student) {
+                const now = Date.now();
+                if (data.student.mssv === lastMSSV && (now - lastTime) < 5000) {
+                    if (data.bbox) updateMask(data.bbox, data.student.ho_ten);
+                    isProcessing = false;
+                    return;
+                }
+                lastMSSV = data.student.mssv;
+                lastTime = now;
+                showResult(data.student, imageData, data.bbox);
+            } else {
+                hideScanBox();
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            isProcessing = false;
+        }
+    }
+
+    function showResult(sv, imgB64, bbox) {
+        if (bbox) updateMask(bbox, sv.ho_ten);
+        setTimeout(() => { if (Date.now() - lastTime > 1500) hideScanBox(); }, 2000);
+
+        // Update info panel
+        document.getElementById('infoEmptyState').style.display = 'none';
+        const panel = document.getElementById('infoSuccessState');
+        panel.style.display = 'flex';
+        panel.style.animation = 'none';
+        panel.offsetHeight; // reflow
+        panel.style.animation = null;
+
+        document.getElementById('infoAvatar').innerText = sv.ho_ten.charAt(0);
+        document.getElementById('infoName').innerText = sv.ho_ten;
+        document.getElementById('infoMssv').innerText = sv.mssv;
+        document.getElementById('infoClass').innerText = sv.ten_lop || sv.ma_lop || '--';
+
+        const now = new Date();
+        const pad = n => (n < 10 ? '0' : '') + n;
+        const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+        document.getElementById('infoTime').innerText = timeStr;
+
+        addLogEntry(sv, timeStr, dateStr, imgB64);
+
+        // Auto-hide info after 5s if no new face
+        setTimeout(() => {
+            if (Date.now() - lastTime >= 4500) {
+                document.getElementById('infoEmptyState').style.display = 'flex';
+                document.getElementById('infoSuccessState').style.display = 'none';
+            }
+        }, 5000);
+    }
+
+    function addLogEntry(sv, timeStr, dateStr, imgB64) {
+        const empty = document.getElementById('emptyLogMsg');
+        if (empty) empty.remove();
+
+        logCount++;
+        document.getElementById('logCounter').innerText = logCount;
+
+        const tr = document.createElement('tr');
+        tr.className = 'slide-in-row';
+        tr.innerHTML = `
+            <td style="padding-left:1.5rem;" class="text-muted">${logCount}</td>
+            <td class="fw-bold">${sv.mssv}</td>
+            <td>${sv.ho_ten}</td>
+            <td class="text-muted">${sv.ten_lop || sv.ma_lop || ''}</td>
+            <td class="text-primary fw-medium"><i class="fas fa-clock me-1 opacity-50"></i>${timeStr} - ${dateStr}</td>
+            <td class="text-center"><img src="${imgB64}" class="img-log" alt="face"></td>
+        `;
+        logList.prepend(tr);
+        while (logList.children.length > 50) logList.removeChild(logList.lastChild);
+    }
+
+    // ===== Face Tracking Mask =====
+    function updateMask(bbox, name) {
+        if (!bbox || bbox.length < 4) return;
+        scanBox.style.display = 'block';
+        scanNameTag.innerText = name;
+
+        const vW = video.videoWidth, vH = video.videoHeight;
+        const cW = video.offsetWidth, cH = video.offsetHeight;
+        if (!vW || !vH) return;
+
+        const vR = vW / vH, cR = cW / cH;
+        let scale, xOff = 0, yOff = 0;
+        if (vR > cR) { scale = cH / vH; xOff = (cW - vW * scale) / 2; }
+        else          { scale = cW / vW; yOff = (cH - vH * scale) / 2; }
+
+        // Mirror X (video is flipped)
+        const mX1 = vW - bbox[2], mX2 = vW - bbox[0];
+
+        const pad = 12;
+        scanBox.style.left   = (mX1 * scale + xOff - pad) + 'px';
+        scanBox.style.top    = (bbox[1] * scale + yOff - pad) + 'px';
+        scanBox.style.width  = ((mX2 - mX1) * scale + pad * 2) + 'px';
+        scanBox.style.height = ((bbox[3] - bbox[1]) * scale + pad * 2) + 'px';
+    }
+
+    function hideScanBox() {
+        scanBox.style.display = 'none';
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+"""
+Route Đăng nhập và Đăng xuất (Authentication)
+"""
+
+from flask import render_template, request, redirect, url_for, flash, session
+from werkzeug.security import check_password_hash
+from . import auth_bp
+from db.connection import execute_one
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    # Nếu đã login thì redirect thẳng vào dashboard
+    if 'admin_id' in session:
+        return redirect(url_for('dashboard.index'))
+        
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Query admin
+        admin = execute_one("SELECT * FROM admin WHERE username = %s AND role = 'admin'", (username,))
+        
+        if admin and check_password_hash(admin['password_hash'], password):
+            # Lưu session
+            session['admin_id'] = admin['id']
+            session['admin_username'] = admin['username']
+            session['admin_role'] = admin['role']
+            session['admin_name'] = admin['ho_ten']
+            
+            flash('Đăng nhập thành công', 'success')
+            
+            # Xử lý tham số 'next' nếu người dùng bị redirect từ route khác
+            next_url = request.args.get('next')
+            if next_url:
+                return redirect(next_url)
+            return redirect(url_for('dashboard.index'))
+        else:
+            flash('Sai tài khoản hoặc mật khẩu', 'danger')
+            
+    return render_template('auth/login.html')
+
+@auth_bp.route('/logout')
+def logout():
+    session.clear()
+    flash('Đã đăng xuất', 'info')
+    return redirect(url_for('auth.login'))

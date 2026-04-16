@@ -1,0 +1,53 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# === Virtual Environment ===
+venv/
+.venv/
+env/
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Docker ===
+.dockerignore
+docker-compose.override.yml
+
+# === Project specific ===
+_backup/
+*.pdf
+*.md
+insightface/
+haarcascade_frontalface_default.xml
+01_*.py
+02_*.py
+03_*.py
+04_*.py
+05_*.py
+_fix_db.py
+db_handler.py
+db_schema.sql
+web_admin.py
+setup.py
+migrate_old_database.py
+
+# === Git ===
+.git/
+.gitignore
+
+# === Env (dùng biến trong docker-compose) ===
+.env

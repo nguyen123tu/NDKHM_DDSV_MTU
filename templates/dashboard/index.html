@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Trang chủ{% endblock %}
+{% block page_title %}Trang chủ{% endblock %}
+
+{% block content %}
+<!-- Stats row -->
+<div class="row g-4 mb-4">
+    <!-- Tổng số lớp -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="flat-card h-100 p-4">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6 class="text-muted fw-normal mb-1">Tổng số lớp</h6>
+                    <h2 class="fw-bold text-primary mb-0">{{ total_classes }}</h2>
+                </div>
+                <div class="bg-primary bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="fas fa-chalkboard-user text-primary fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tổng số sinh viên -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="flat-card h-100 p-4">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6 class="text-muted fw-normal mb-1">Tổng số sinh viên</h6>
+                    <h2 class="fw-bold text-warning mb-0">{{ total_students }}</h2>
+                </div>
+                <div class="bg-warning bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="fas fa-users text-warning fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- SV đã điểm danh -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="flat-card h-100 p-4">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6 class="text-muted fw-normal mb-1">SV đã điểm danh (hôm nay)</h6>
+                    <h2 class="fw-bold text-success mb-0">{{ today_stats.co_mat }}</h2>
+                </div>
+                <div class="bg-success bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="fas fa-user-check text-success fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- SV Cảnh báo / Vắng -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="flat-card h-100 p-4 position-relative border-danger border-opacity-25">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6 class="text-muted fw-normal mb-1">Cảnh báo / Bất thường</h6>
+                    <h2 class="fw-bold text-danger mb-0">{{ today_stats.canh_bao }}</h2>
+                </div>
+                <div class="bg-danger bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="fas fa-user-times text-danger fs-4"></i>
+                </div>
+            </div>
+            {% if today_stats.canh_bao > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-white rounded-circle" style="animation: pulse 2s infinite;">
+                <span class="visually-hidden">Alerts</span>
+            </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Hoạt động gần đây (Mockup) -->
+    <div class="col-lg-12">
+        <div class="flat-card h-100">
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <h6 class="m-0 fw-bold text-primary">Hoạt động gần đây</h6>
+                <button class="btn btn-primary btn-sm"><i class="fas fa-sync-alt me-1"></i> Làm mới</button>
+            </div>
+            <div class="p-5 text-center text-muted">
+                <!-- Data placeholder -->
+                {% if today_stats.co_mat == 0 and today_stats.canh_bao == 0 %}
+                <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-info fs-4"></i>
+                </div>
+                <p>Chưa có hoạt động điểm danh hôm nay</p>
+                {% else %}
+                <div class="dashboard-chart-container mt-3">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Quick Actions -->
+    <div class="col-lg-12">
+        <div class="flat-card p-4">
+            <h6 class="fw-bold mb-4 text-dark"><i class="fas fa-bolt text-warning me-2"></i> Tác Vụ Nhanh</h6>
+            
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <a href="{{ url_for('attendance.live') }}" class="btn btn-primary w-100 p-3 text-start d-flex align-items-center rounded-3">
+                        <div class="bg-white bg-opacity-25 rounded p-2 me-3">
+                            <i class="fas fa-video fa-fw text-white"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white mb-1">Mở Camera Điểm Danh</div>
+                            <div class="small text-white-50 fw-normal">Theo dõi real-time lớp học</div>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="col-md-4">
+                    <a href="{{ url_for('attendance.history') }}" class="btn btn-light border w-100 p-3 text-start d-flex align-items-center rounded-3">
+                        <div class="bg-secondary bg-opacity-10 rounded p-2 me-3">
+                            <i class="fas fa-history fa-fw text-secondary"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark mb-1">Lịch sử điểm danh</div>
+                            <div class="small text-muted fw-normal">Xem lại lịch sử</div>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="col-md-4">
+                    <a href="{{ url_for('export.index') }}" class="btn btn-light border w-100 p-3 text-start d-flex align-items-center rounded-3">
+                        <div class="bg-secondary bg-opacity-10 rounded p-2 me-3">
+                            <i class="fas fa-file-export fa-fw text-secondary"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark mb-1">Xuất Báo Cáo</div>
+                            <div class="small text-muted fw-normal">Excel / PDF / CSV</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Sinh Viên Vắng Nhiều -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="flat-card p-0">
+            <div class="p-3 border-bottom">
+                <h6 class="m-0 fw-bold text-danger"><i class="fas fa-user-clock me-2"></i> Top Sinh Viên Vắng Nhiều <span class="text-muted fw-normal small">(30 ngày gần nhất)</span></h6>
+            </div>
+            
+            {% if top_absent and top_absent|length > 0 %}
+            <div class="table-responsive p-0">
+                <table class="table table-light-flat mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>MSSV</th>
+                            <th>Họ & Tên</th>
+                            <th>Lớp</th>
+                            <th class="text-center">Buổi Vắng</th>
+                            <th class="text-center">Tổng Buổi</th>
+                            <th style="width: 220px;">Tỷ Lệ Vắng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sv in top_absent %}
+                        <tr>
+                            <td>
+                                {% if loop.index == 1 %}
+                                    <span class="badge bg-danger rounded-pill px-2">1</span>
+                                {% elif loop.index == 2 %}
+                                    <span class="badge bg-warning text-dark rounded-pill px-2">2</span>
+                                {% elif loop.index == 3 %}
+                                    <span class="badge bg-info rounded-pill px-2">3</span>
+                                {% else %}
+                                    <span class="text-muted">{{ loop.index }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-medium font-monospace">{{ sv.mssv }}</td>
+                            <td class="fw-bold text-dark">{{ sv.ho_ten }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ sv.ten_lop }}</span></td>
+                            <td class="text-center"><span class="text-danger fw-bold">{{ sv.so_buoi_vang }}</span></td>
+                            <td class="text-center text-muted">{{ sv.tong_buoi }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px; border-radius: 4px;">
+                                        <div class="progress-bar {% if sv.ty_le_vang > 50 %}bg-danger{% elif sv.ty_le_vang > 30 %}bg-warning{% else %}bg-info{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ sv.ty_le_vang }}%">
+                                        </div>
+                                    </div>
+                                    <span class="small fw-bold {% if sv.ty_le_vang > 50 %}text-danger{% elif sv.ty_le_vang > 30 %}text-warning{% else %}text-info{% endif %}" style="min-width: 45px;">
+                                        {{ sv.ty_le_vang }}%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-check-circle text-success fs-1 mb-3 d-block"></i>
+                <p class="mb-0">Chưa có dữ liệu vắng mặt. Tất cả sinh viên đều đi học đầy đủ! 🎉</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<style>
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+</style>
+{% endblock %}

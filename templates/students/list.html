@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý Sinh Viên{% endblock %}
+{% block page_title %}Quản lý sinh viên{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="position-relative" style="max-width: 450px; width: 100%;">
+                <form method="GET" action="{{ url_for('students.list_students') }}" class="d-flex gap-2">
+                    <div class="position-relative flex-grow-1">
+                        <i class="fas fa-search position-absolute text-muted" style="left: 15px; top: 50%; transform: translateY(-50%);"></i>
+                        <input type="text" class="form-control border-light shadow-sm bg-white" name="search" placeholder="Nhập tên hoặc MSSV..." value="{{ current_search }}" style="padding-left: 40px; border-radius: 8px;">
+                    </div>
+                    <div style="min-width: 200px;">
+                        <select class="form-select border-light shadow-sm bg-white" name="lop_id" style="border-radius: 8px;">
+                            <option value="">-- Tất cả lớp học --</option>
+                            {% for lop in classes %}
+                            <option value="{{ lop.id }}" {% if current_lop_id == lop.id %}selected{% endif %}>{{ lop.ma_lop }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary px-3 rounded-3 shadow-sm d-none">Lọc</button>
+                </form>
+            </div>
+            
+            <button type="button" class="btn btn-primary px-4 rounded-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                <i class="fas fa-plus me-2"></i> Thêm sinh viên
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Table Header info -->
+<div class="d-flex justify-content-between align-items-center mb-2 px-1">
+    <h6 class="text-primary fw-bold mb-0">Danh sách sinh viên</h6>
+    <span class="text-muted small">Tổng: {{ pagination.total if pagination else students|length }} sinh viên</span>
+</div>
+
+<div class="flat-card p-0 overflow-hidden mb-4">
+    <div class="table-responsive p-0">
+        <table class="table table-light-flat mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Ảnh</th>
+                    <th>Mã SV</th>
+                    <th>Họ và Tên</th>
+                    <th>Lớp</th>
+                    <th>Trạng Thái AI</th>
+                    <th class="text-end" style="min-width: 150px;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sv in students %}
+                <tr>
+                    <td>
+                        {% if sv.avatar %}
+                        <img src="{{ url_for('serve_database_file', filename=sv.avatar) }}" class="rounded-circle shadow-sm" width="45" height="45" style="object-fit: cover;" alt="Avatar">
+                        {% else %}
+                        <div class="bg-light rounded-circle shadow-sm d-flex align-items-center justify-content-center text-primary fw-bold" style="width: 45px; height: 45px;">
+                            {{ sv.ho_ten[0] }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold text-dark">{{ sv.mssv }}</td>
+                    <td class="fw-medium text-dark">{{ sv.ho_ten }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ sv.ma_lop }}</span></td>
+                    <td>
+                        {% if sv.da_train == 1 %}
+                        <span class="badge badge-comat"><i class="fas fa-check-circle me-1"></i> Đã Train</span>
+                        {% else %}
+                        <span class="badge badge-canhbao"><i class="fas fa-times-circle me-1"></i> Chưa Train</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-info text-white btn-manage-images" data-mssv="{{ sv.mssv }}" data-name="{{ sv.ho_ten }}" data-lop="{{ sv.ma_lop }}" title="Quản lý ảnh"><i class="fas fa-images"></i></button>
+                        <a href="{{ url_for('students.edit', id=sv.id) }}" class="btn btn-sm btn-primary text-white mx-1" title="Sửa"><i class="fas fa-edit"></i></a>
+                        
+                        <form action="{{ url_for('students.delete', id=sv.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sinh viên này?');">
+                            <button type="submit" class="btn btn-sm btn-danger text-white" title="Xóa"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fas fa-info-circle fs-3 mb-2 d-block text-secondary opacity-50"></i>
+                        Vẫn chưa có sinh viên nào.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pagination and pagination.pages > 1 %}
+<nav class="mt-4" aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if pagination.current <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ pagination.current - 1 }}&search={{ current_search }}&lop_id={{ current_lop_id }}">Trước</a>
+        </li>
+        {% for p in range(1, pagination.pages + 1) %}
+        <li class="page-item {% if p == pagination.current %}active{% endif %}">
+            <a class="page-link" href="?page={{ p }}&search={{ current_search }}&lop_id={{ current_lop_id }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if pagination.current >= pagination.pages %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ pagination.current + 1 }}&search={{ current_search }}&lop_id={{ current_lop_id }}">Sau</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+<style>
+    /* Styling cho phân trang giao diện sáng */
+    .page-link {
+        color: var(--primary-color);
+        border: 1px solid #e2e8f0;
+        margin: 0 3px;
+        border-radius: 6px !important;
+    }
+    .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+    .page-item.disabled .page-link {
+        color: #94a3b8;
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+    }
+    
+    .img-thumbnail-capture {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .capture-item-wrapper {
+        position: relative;
+    }
+    .btn-remove-capture {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ef4444;
+        color: white;
+        border: none;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Header Gradient Modal */
+    .modal-header-gradient {
+        background: linear-gradient(135deg, rgba(88, 86, 214, 0.9), rgba(163, 100, 243, 0.9));
+        color: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+<!-- Modal Thêm Sinh Viên Mới -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-white border-bottom shadow-sm">
+        <h5 class="modal-title text-primary fw-bold">Thêm sinh viên mới</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="stopCamera()"></button>
+      </div>
+      <div class="modal-body p-4" style="background-color: #f8fafc;">
+          
+          <div class="flat-card mb-4 p-4 shadow-sm border-0 rounded-3 bg-white">
+              <h6 class="text-primary fw-bold mb-3 border-bottom pb-2"><i class="fas fa-user text-info me-2"></i>Thông tin sinh viên</h6>
+              <div class="row g-4">
+                  <div class="col-md-4">
+                      <label class="form-label text-muted small fw-bold">Mã sinh viên <span class="badge bg-danger rounded-pill px-2 py-1 ms-1" style="font-size: 0.6rem;">Bắt buộc</span></label>
+                      <input type="text" class="form-control bg-light border-0 shadow-none px-3 py-2" id="addMssv" required>
+                  </div>
+                  <div class="col-md-5">
+                      <label class="form-label text-muted small fw-bold">Họ và tên <span class="badge bg-danger rounded-pill px-2 py-1 ms-1" style="font-size: 0.6rem;">Bắt buộc</span></label>
+                      <input type="text" class="form-control bg-light border-0 shadow-none px-3 py-2" id="addHoTen" required>
+                  </div>
+                  <div class="col-md-3">
+                      <label class="form-label text-muted small fw-bold">Lớp học</label>
+                      <select class="form-select bg-light border-0 shadow-none px-3 py-2" id="addLopId">
+                          {% for lop in classes %}
+                          <option value="{{ lop.id }}">{{ lop.ma_lop }} - {{ lop.ten_lop }}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="flat-card p-4 shadow-sm border-0 rounded-3 bg-white">
+              <h6 class="text-primary fw-bold mb-3 border-bottom pb-2"><i class="fas fa-camera text-info me-2"></i>Chụp ảnh khuôn mặt</h6>
+              
+              <div class="d-flex gap-2 mb-3">
+                  <button type="button" class="btn btn-success px-4 bg-gradient shadow-sm border-0" id="btnModalCapture"><i class="fas fa-camera me-1"></i> Chụp ảnh</button>
+                  <button type="button" class="btn btn-danger px-4 shadow-sm border-0" id="btnModalStopCam" onclick="stopCamera()"><i class="fas fa-stop me-1"></i> Tất camera</button>
+                  <button type="button" class="btn btn-info text-white px-4 shadow-sm border-0" id="btnModalStartCam" onclick="startCamera()"><i class="fas fa-video me-1"></i> Bật camera</button>
+              </div>
+              
+              <div class="row g-4">
+                  <div class="col-md-7">
+                      <div class="bg-dark rounded-3 overflow-hidden position-relative shadow-inner d-flex justify-content-center align-items-center" style="height: 480px;">
+                          <video id="modalWebcamVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                          <canvas id="modalCaptureCanvas" class="d-none"></canvas>
+                          <div id="modalCamLoading" class="position-absolute text-center text-white" style="display: none;">
+                              <i class="fas fa-spinner fa-spin fs-1 mb-2"></i>
+                              <div>Đang tải Camera...</div>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="col-md-5">
+                      <div class="bg-light p-3 rounded-3 h-100 border border-light">
+                          <p class="text-muted small fw-bold mb-3 d-flex justify-content-between align-items-center">
+                              <span><i class="fas fa-images text-primary me-1"></i> <span class="badge bg-primary rounded-pill"><span id="capturedCount">0</span></span></span>
+                              <button class="btn btn-sm btn-outline-danger py-0" id="btnClearPhotos" style="font-size: 0.75rem;"><i class="fas fa-trash me-1"></i> Xoá hết</button>
+                          </p>
+                          <div class="row g-2" id="modalGallery" style="max-height: 400px; overflow-y: auto;">
+                              <!-- Images go here -->
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+      <div class="modal-footer bg-white border-top shadow-sm py-3">
+        <button type="button" class="btn btn-light px-4 border" data-bs-dismiss="modal" onclick="stopCamera()">Đóng</button>
+        <button type="button" class="btn btn-primary px-5 shadow-sm" id="btnSaveStudent"><i class="fas fa-save me-1"></i> Thêm sinh viên</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Quản Lý Ảnh Sinh Viên -->
+<div class="modal fade" id="imageManagerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-white border-bottom">
+        <h5 class="modal-title text-primary fw-bold"><i class="fas fa-images text-info me-2"></i> Quản lý ảnh sinh viên</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4 bg-light">
+          <!-- Thẻ Thông tin sinh viên Header Gradient -->
+          <div class="modal-header-gradient">
+              <h4 class="mb-2 fw-bold"><i class="fas fa-user-graduate me-2"></i> <span id="imgMgrName">Nguyễn Văn A</span></h4>
+              <div class="d-flex justify-content-center gap-3 opacity-75 small">
+                  <span><i class="fas fa-id-card me-1"></i> <span id="imgMgrMssv">MSSV</span></span>
+                  <span><i class="fas fa-chalkboard text-warning me-1"></i> <span id="imgMgrLop">Lớp</span></span>
+              </div>
+          </div>
+          
+          <div class="flat-card p-3 shadow-sm border-0 rounded-3 bg-white">
+              <div class="row g-3" id="imgMgrGallery">
+                  <!-- Ảnh từ server -->
+                  <div class="col-12 text-center text-muted py-5" id="imgMgrLoading">
+                      <i class="fas fa-spinner fa-spin fs-2 mb-2"></i>
+                      <p>Đang tải ảnh...</p>
+                  </div>
+              </div>
+          </div>
+      </div>
+      <div class="modal-footer bg-white border-top py-3">
+        <button type="button" class="btn btn-light px-4 border" data-bs-dismiss="modal">Đóng</button>
+        <button type="button" class="btn btn-info text-white px-4 shadow-sm" id="btnEditInfoLink"><i class="fas fa-edit me-1"></i> Sửa thông tin</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    let capturedImages = [];
+    let streamRef = null;
+    let addStudentModalObj = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const video = document.getElementById('modalWebcamVideo');
+        const canvas = document.getElementById('modalCaptureCanvas');
+        const camLoading = document.getElementById('modalCamLoading');
+        const gallery = document.getElementById('modalGallery');
+        const countBadge = document.getElementById('capturedCount');
+        
+        let lastStudentIdForEdit = null;
+
+        // Modal triggers
+        addStudentModalObj = new bootstrap.Modal(document.getElementById('addStudentModal'));
+        
+        document.getElementById('addStudentModal').addEventListener('hidden.bs.modal', function () {
+            stopCamera();
+            capturedImages = [];
+            gallery.innerHTML = '';
+            countBadge.innerText = '0';
+            document.getElementById('addMssv').value = '';
+            document.getElementById('addHoTen').value = '';
+        });
+
+        window.startCamera = async function() {
+            if (streamRef) return;
+            camLoading.style.display = 'block';
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480, facingMode: "user" } 
+                });
+                video.srcObject = stream;
+                streamRef = stream;
+                video.onloadeddata = () => {
+                    camLoading.style.display = 'none';
+                };
+            } catch (err) {
+                console.error(err);
+                camLoading.innerHTML = '<div class="text-danger"><i class="fas fa-exclamation-triangle"></i> Không cấp quyền Camera</div>';
+            }
+        };
+
+        window.stopCamera = function() {
+            if (streamRef) {
+                streamRef.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                streamRef = null;
+            }
+        };
+
+        document.getElementById('btnModalCapture').addEventListener('click', () => {
+            if (!streamRef) {
+                alert('Vui lòng bật camera trước khi chụp!');
+                return;
+            }
+            if (capturedImages.length >= 15) {
+                alert('Chỉ chụp tối đa 15 ảnh!');
+                return;
+            }
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const base64Image = canvas.toDataURL('image/jpeg', 0.85);
+            capturedImages.push(base64Image);
+            
+            renderGallery();
+        });
+        
+        document.getElementById('btnClearPhotos').addEventListener('click', () => {
+            capturedImages = [];
+            renderGallery();
+        });
+
+        function renderGallery() {
+            countBadge.innerText = capturedImages.length;
+            gallery.innerHTML = '';
+            capturedImages.forEach((src, idx) => {
+                const col = document.createElement('div');
+                col.className = 'col-4 col-sm-3 col-md-4 col-lg-3';
+                col.innerHTML = `
+                    <div class="capture-item-wrapper border border-secondary border-opacity-25 rounded-3 p-1 bg-white">
+                        <img src="${src}" class="img-thumbnail-capture shadow-sm">
+                        <button type="button" class="btn-remove-capture" onclick="removeImage(${idx})"><i class="fas fa-times"></i></button>
+                    </div>
+                `;
+                gallery.appendChild(col);
+            });
+        }
+
+        window.removeImage = function(idx) {
+            capturedImages.splice(idx, 1);
+            renderGallery();
+        };
+
+        document.getElementById('btnSaveStudent').addEventListener('click', async () => {
+            const mssv = document.getElementById('addMssv').value.trim();
+            const hoTen = document.getElementById('addHoTen').value.trim();
+            const lopId = document.getElementById('addLopId').value;
+
+            if(!mssv || !hoTen || !lopId) {
+                alert('Vui lòng nhập đầy đủ Mã sinh viên, Họ và tên và Lớp học!');
+                return;
+            }
+
+            const btnSave = document.getElementById('btnSaveStudent');
+            const originalText = btnSave.innerHTML;
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang lưu...';
+
+            try {
+                const res = await fetch('/students/api/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mssv: mssv, ho_ten: hoTen, lop_id: lopId, images: capturedImages })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert('Thêm sinh viên thành công!');
+                    window.location.reload();
+                } else {
+                    alert('Lỗi: ' + data.msg);
+                }
+            } catch(e) {
+                console.error(e);
+                alert('Lỗi kết nối tới Server!');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = originalText;
+            }
+        });
+        
+        // Quản lý ảnh sinh viên trigger
+        document.querySelectorAll('.btn-manage-images').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const mssv = e.currentTarget.getAttribute('data-mssv');
+                const name = e.currentTarget.getAttribute('data-name');
+                const lop = e.currentTarget.getAttribute('data-lop');
+                const svId = e.currentTarget.closest('tr').querySelector('.btn-sm.btn-primary').getAttribute('href').split('/').filter(Boolean).slice(-2, -1)[0];
+                
+                lastStudentIdForEdit = svId;
+                
+                document.getElementById('imgMgrName').textContent = name;
+                document.getElementById('imgMgrMssv').textContent = mssv;
+                document.getElementById('imgMgrLop').textContent = lop;
+                
+                const galleryContainer = document.getElementById('imgMgrGallery');
+                galleryContainer.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-spinner fa-spin fs-2 mb-2"></i><p>Đang tải ảnh...</p></div>';
+                
+                new bootstrap.Modal(document.getElementById('imageManagerModal')).show();
+                
+                try {
+                    const res = await fetch(`/students/api/images/${mssv}`);
+                    const images = await res.json();
+                    
+                    if (images.length === 0) {
+                        galleryContainer.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-images fs-1 mb-3 opacity-25"></i><h5>Chưa có ảnh nào</h5></div>';
+                        return;
+                    }
+                    
+                    galleryContainer.innerHTML = '';
+                    images.forEach(img => {
+                        const rootDir = '/database/';
+                        galleryContainer.innerHTML += `
+                            <div class="col-4 col-md-3">
+                                <div class="bg-light border rounded-3 p-1 text-center shadow-sm h-100">
+                                    <img src="${rootDir}${img}" class="img-fluid rounded border border-light" style="height:100px; width:100%; object-fit:cover;" >
+                                    <span class="small text-muted d-block mt-1">${img.split('/').pop()}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } catch(e) {
+                    console.error(e);
+                    galleryContainer.innerHTML = '<div class="col-12 text-center text-danger py-4">Lỗi không thể tải ảnh!</div>';
+                }
+            });
+        });
+        
+        document.getElementById('btnEditInfoLink').addEventListener('click', () => {
+            if (lastStudentIdForEdit) {
+                window.location.href = `/students/${lastStudentIdForEdit}/edit`;
+            }
+        });
+    });
+</script>
+{% endblock %}

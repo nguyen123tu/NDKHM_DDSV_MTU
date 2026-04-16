@@ -1,0 +1,36 @@
+# Biến môi trường
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# AI Models (file lớn, download riêng)
+models/*.pkl
+models/*.onnx
+*.pt
+
+# Database ảnh khuôn mặt (dữ liệu riêng tư)
+database/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backup
+_backup/
+
+# InsightFace model cache
+insightface/

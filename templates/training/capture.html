@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Thu Thập Dữ Liệu Khuôn Mặt{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('students.detail', id=student.id) }}" class="btn btn-outline-secondary border-0 p-2 me-3 text-muted hover-text-dark">
+                <i class="fas fa-arrow-left fs-5"></i>
+            </a>
+            <h3 class="fw-bold m-0"><i class="fas fa-camera text-secondary me-2"></i> Thu Thập Dữ Liệu AI: {{ student.ho_ten }}</h3>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Camera Viewer -->
+            <div class="col-lg-8">
+                <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 h-100 d-flex flex-column">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-video me-2 text-warning"></i>Webcam</h5>
+                    <div class="bg-black rounded border border-secondary border-opacity-50 overflow-hidden position-relative flex-grow-1 d-flex justify-content-center align-items-center" style="min-height: 480px;">
+                        
+                        <!-- Video để play stream từ Browser -->
+                        <video id="webcamVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                        
+                        <!-- Canvas ảo dùng để chụp hình (ẩn) -->
+                        <canvas id="captureCanvas" class="d-none"></canvas>
+
+                        <!-- HUD Guide Box -->
+                        <div class="position-absolute border border-success border-2 rounded" style="width: 250px; height: 300px; opacity: 0.5; border-style: dashed !important; pointer-events: none;"></div>
+                        
+                        <!-- Loading State -->
+                        <div id="camLoading" class="position-absolute text-center text-dark-50">
+                            <i class="fas fa-spinner fa-spin fs-1 mb-2"></i>
+                            <div>Đang yêu cầu quyền Camera...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="col-lg-4">
+                <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 h-100 d-flex flex-column">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-cogs me-2 text-info"></i>Điều Khiển</h5>
+                    
+                    <div class="text-center mb-4 mt-2">
+                        <div class="display-4 fw-bold text-success mb-1" id="photoCount">0</div>
+                        <div class="text-muted small text-uppercase">Trên tổng số 10 ảnh</div>
+                    </div>
+                    
+                    <div class="progress bg-light mb-4" style="height: 10px;">
+                        <div class="progress-bar bg-success transition-all duration-300" id="photoProgress" style="width: 0%"></div>
+                    </div>
+
+                    <p class="text-muted small mb-4">
+                        <i class="fas fa-info-circle me-1 text-warning"></i> 
+                        Hãy cho sinh viên xoay mặt các góc độ (nhìn thẳng, hơi nghiêng trái, phải, ngước lên, cúi xuống) rồi bấm chụp.
+                    </p>
+
+                    <button class="btn btn btn-primary shadow-sm w-100 py-3 fw-bold fs-5 mb-3" id="btnCapture" disabled>
+                        <i class="fas fa-camera me-2"></i> CHỤP ẢNH
+                    </button>
+                    
+                    <div class="mt-auto pt-3 border-top border-secondary border-opacity-50">
+                        <button class="btn btn-outline-info w-100" id="btnTrain" disabled>
+                            <i class="fas fa-brain me-1"></i> Bắt đầu Train AI Ngay
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hiển thị thư viện ảnh bị thu thập -->
+        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4">
+            <h5 class="fw-bold mb-3 border-bottom border-secondary pb-2"><i class="fas fa-images me-2"></i>Thư Viện Ảnh (Lưu trực tiếp vào CSDL)</h5>
+            <div class="row g-2" id="galleryContainer">
+                <!-- Chứa 10 placeholder -->
+                {% for i in range(1, 11) %}
+                <div class="col-2 col-md-auto">
+                    <div class="bg-light rounded border border-secondary border-opacity-25 d-flex justify-content-center align-items-center overflow-hidden" 
+                         style="width: 80px; height: 80px;" id="slot-{{ i }}">
+                        <span class="text-muted small opacity-25">Trống</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const video = document.getElementById('webcamVideo');
+        const canvas = document.getElementById('captureCanvas');
+        const btnCapture = document.getElementById('btnCapture');
+        const btnTrain = document.getElementById('btnTrain');
+        const countDisplay = document.getElementById('photoCount');
+        const progressBar = document.getElementById('photoProgress');
+        const camLoading = document.getElementById('camLoading');
+        
+        const MSSV = '{{ student.mssv }}';
+        const MAX_PHOTOS = 10;
+        let currentCount = 0;
+
+        // Bật webcam máy tính bằng HTML5 getUserMedia
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: 640, height: 480, facingMode: "user" } 
+            });
+            video.srcObject = stream;
+            
+            // Xong loading, bật nut chụp
+            video.onloadeddata = () => {
+                camLoading.style.display = 'none';
+                btnCapture.disabled = false;
+            };
+        } catch (err) {
+            console.error(err);
+            camLoading.innerHTML = '<i class="fas fa-exclamation-triangle text-danger fs-1 mb-2"></i><div class="text-danger">Không thể truy cập Webcam!<br>Vui lòng kiểm tra quyền trình duyệt.</div>';
+        }
+
+        // Sự kiện chụp ảnh
+        btnCapture.addEventListener('click', async () => {
+            if (currentCount >= MAX_PHOTOS) return;
+            
+            currentCount++;
+            
+            // Vẽ frame hiện tại từ video ra thẻ Canvas
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Đổi sang file base64
+            const base64Image = canvas.toDataURL('image/jpeg', 0.9);
+            
+            // Hiển thị tạm thời ở Gallery dưới đuôi
+            const slot = document.getElementById(`slot-${currentCount}`);
+            slot.innerHTML = `<img src="${base64Image}" class="w-100 h-100" style="object-fit: cover;">`;
+            
+            // Cập nhật giao diện số liệu
+            countDisplay.innerText = currentCount;
+            progressBar.style.width = (currentCount / MAX_PHOTOS) * 100 + "%";
+            
+            if (currentCount >= MAX_PHOTOS) {
+                btnCapture.disabled = true;
+                btnCapture.innerHTML = '<i class="fas fa-check-circle me-2"></i> ĐÃ ĐỦ TÀI NGUYÊN';
+                btnCapture.classList.replace('btn btn-primary shadow-sm', 'btn-success');
+                btnTrain.disabled = false;
+            }
+
+            // Gửi lên server lưu trữ ngay lập tức
+            try {
+                // Ta lưu tên ảnh theo index (1-10) là file số 1.jpg, 2.jpg...
+                // (Ảnh số 0 là avatar do Phase 2 thiết kế)
+                await fetch(`/training/capture/${MSSV}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        image: base64Image,
+                        index: currentCount
+                    })
+                });
+            } catch(e) {
+                console.error("Lỗi upload ảnh", e);
+            }
+        });
+
+        // Bấm Train AI
+        btnTrain.addEventListener('click', async () => {
+            btnTrain.disabled = true;
+            btnTrain.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tích hợp não bộ...';
+            
+            try {
+                const res = await fetch(`/training/student/${MSSV}`, {method: 'POST'});
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert('Học xong dữ liệu khuôn mặt thành công!');
+                    window.location.href = `{{ url_for('students.detail', id=student.id) }}`;
+                } else {
+                    alert('Lỗi khi training dữ liệu. Đảm bảo ảnh có rõ mặt!');
+                    btnTrain.innerHTML = '<i class="fas fa-brain me-1"></i> Bắt đầu Train AI Ngay';
+                    btnTrain.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Mất mạng/Không thể kết nối Server.');
+                btnTrain.disabled = false;
+            }
+        });
+
+    });
+</script>
+{% endblock %}

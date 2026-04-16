@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Thêm Lớp Học Mới{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('classes.list_classes') }}" class="btn btn-outline-secondary border-0 p-2 me-3 text-muted hover-text-dark">
+                <i class="fas fa-arrow-left fs-5"></i>
+            </a>
+            <h3 class="fw-bold m-0"><i class="fas fa-plus-circle text-secondary me-2"></i> Thêm Lớp Học Mới</h3>
+        </div>
+
+        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4">
+            <form method="POST" action="{{ url_for('classes.add') }}">
+                <div class="row g-3">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Mã Lớp <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="ma_lop" required placeholder="Ví dụ: CNTT01">
+                    </div>
+                    
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Tên Lớp (Môn học) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="ten_lop" required placeholder="Lập Trình Python">
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Học Kỳ</label>
+                        <select class="form-select border-light shadow-sm bg-white text-dark" name="hoc_ky">
+                            <option value="HK1">Học Kỳ 1</option>
+                            <option value="HK2">Học Kỳ 2</option>
+                            <option value="HK3">Học Kỳ 3 (Hè)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Năm Học</label>
+                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="nam_hoc" placeholder="2025-2026">
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Khoa / Viện</label>
+                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="khoa" placeholder="CNTT">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Giảng Viên Quản Lý</label>
+                    <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="giao_vien" placeholder="ThS. Nguyễn Văn A">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Ghi chú thêm</label>
+                    <textarea class="form-control border-light shadow-sm bg-white text-dark" rows="3" name="mo_ta" placeholder="Mô tả về lớp học này..."></textarea>
+                </div>
+
+                <div class="text-end pt-3 border-top border-secondary border-opacity-50">
+                    <button type="submit" class="btn btn btn-primary shadow-sm px-4">
+                        <i class="fas fa-save me-1"></i> Lưu Lớp Học
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
