@@ -102,12 +102,18 @@ def create(data):
     Returns:
         int: ID sinh viên mới, hoặc -1 nếu lỗi
     """
+    from werkzeug.security import generate_password_hash
+    
     sql = """
-        INSERT INTO sinh_vien (mssv, ho_ten, email, sdt, lop_id, avatar, ngay_sinh, gioi_tinh)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO sinh_vien (mssv, password_hash, ho_ten, email, sdt, lop_id, avatar, ngay_sinh, gioi_tinh)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
+    default_pwd = data.get("mssv")
+    pwd_hash = generate_password_hash(default_pwd, method='pbkdf2:sha256') if default_pwd else None
+    
     params = (
         data.get("mssv"),
+        pwd_hash,
         data.get("ho_ten"),
         data.get("email"),
         data.get("sdt"),

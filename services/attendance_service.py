@@ -91,6 +91,38 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat'):
         return False
 
 
+def mobile_checkout(mssv, lop_id=None, camera_id=0):
+    """
+    Checkout tường minh cho mobile:
+    - Chỉ cập nhật gio_ra cho bản ghi gần nhất trong ngày chưa có gio_ra.
+    """
+    sv = execute_one("SELECT id FROM sinh_vien WHERE mssv = %s", (mssv,))
+    sinh_vien_id = sv["id"] if sv else None
+    if not sinh_vien_id:
+        return {"success": False, "message": "Không tìm thấy sinh viên"}
+
+    existing = execute_one("""
+        SELECT id, thoi_gian, gio_ra
+        FROM diem_danh
+        WHERE sinh_vien_id = %s AND lop_id = %s
+          AND DATE(thoi_gian) = CURDATE()
+        ORDER BY thoi_gian DESC
+        LIMIT 1
+    """, (sinh_vien_id, lop_id))
+
+    if not existing:
+        return {"success": False, "message": "Chưa có check-in trong ngày"}
+
+    if existing.get("gio_ra") is not None:
+        return {"success": False, "message": "Đã checkout trước đó"}
+
+    result = execute_update(
+        "UPDATE diem_danh SET gio_ra = NOW(), camera_id = %s WHERE id = %s",
+        (camera_id, existing["id"]),
+    )
+    return {"success": result > 0, "message": "Checkout thành công" if result > 0 else "Checkout thất bại"}
+
+
 def log_unknown(camera_id=0, anh_chup=None, ghi_chu=None):
     """
     Ghi nhận cảnh báo người lạ vào bảng canh_bao.

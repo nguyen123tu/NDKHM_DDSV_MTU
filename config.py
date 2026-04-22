@@ -53,10 +53,19 @@ class Config:
     # Session
     SESSION_TYPE = 'filesystem'
 
+    # Mobile API auth (JWT)
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)
+    JWT_EXPIRE_HOURS = int(os.getenv('JWT_EXPIRE_HOURS', 24))
+
+    # Evidence image storage (MVP: local folder)
+    EVIDENCE_DIR = os.path.join(BASE_DIR, 'database', 'evidence')
+    MOBILE_ALLOWED_CHECKIN_EARLY_MIN = int(os.getenv('MOBILE_ALLOWED_CHECKIN_EARLY_MIN', 15))
+    MOBILE_ALLOWED_CHECKIN_LATE_MIN = int(os.getenv('MOBILE_ALLOWED_CHECKIN_LATE_MIN', 30))
+
     @classmethod
     def init_dirs(cls):
         """Tạo các thư mục cần thiết nếu chưa tồn tại"""
-        for path in [cls.DATABASE_DIR, cls.MODELS_DIR]:
+        for path in [cls.DATABASE_DIR, cls.MODELS_DIR, cls.EVIDENCE_DIR]:
             if not os.path.exists(path):
                 os.makedirs(path)
 

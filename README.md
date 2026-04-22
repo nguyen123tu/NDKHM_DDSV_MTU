@@ -1,48 +1,79 @@
-# NDKHM_DDSV_MTU - Hệ Thống Điểm Danh Sinh Viên Bằng Nhận Diện Khuôn Mặt
+# Face Recognition Attendance - MTU
 
-Đây là dự án hệ thống điểm danh sinh viên bằng công nghệ nhận diện khuôn mặt, trang bị các công nghệ AI hiện đại như InsightFace, YOLO, Flask và MySQL.
+He thong diem danh sinh vien bang nhan dien khuon mat, gom:
+- Backend Flask + SocketIO (web admin + mobile API)
+- AI engine (InsightFace hoac YOLO + ResNet)
+- MySQL (XAMPP phu hop cho local dev)
+- Flutter mobile app (`mobile_flutter/`)
 
-## Yêu cầu hệ thống
-- Python 3.8+
-- Cơ sở dữ liệu MySQL (hoặc Docker nếu chạy qua container)
-- Cài đặt các thư viện trong `requirements.txt`
+## 1) Yeu cau moi truong
 
-## Hướng dẫn Cài đặt
+- Python 3.10+ (khuyen nghi)
+- MySQL 8.x (XAMPP)
+- Pip packages trong `requirements.txt`
 
-**1. Clone dự án và cài đặt thư viện**
+## 2) Cau truc du an
+
+Xem chi tiet tai `docs/PROJECT_STRUCTURE.md`.
+
+Thu muc chinh:
+- `app.py`: Flask app factory
+- `run_server.py`: entrypoint chay server
+- `routes/`: API + web routes
+- `services/`: business logic
+- `core/`: AI core
+- `db/`: schema + connection + seed
+- `mobile_flutter/`: mobile app
+- `scripts/`: script van hanh (init db)
+
+## 3) Setup nhanh
+
+### B1. Tao virtual environment va cai dependencies
+
 ```bash
-git clone https://github.com/nguyen123tu/NDKHM_DDSV_MTU.git
-cd NDKHM_DDSV_MTU
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**2. Cấu hình Môi trường**
-- Copy file `.env.example` thành `.env`:
-```bash
-cp .env.example .env
-```
-- Mở file `.env` và cập nhật các thông số bảo mật, CSDL MySQL của bạn:
-  - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
-  - Bạn cũng có thể thiết lập cấu hình AI Engine mong muốn (`insightface` hoặc `yolo_resnet`).
+### B2. Cau hinh `.env`
 
-**3. Khởi tạo Cơ sở dữ liệu**
-- Import các bảng bằng file `db_schema.sql` vào MySQL bằng một công cụ quản lý CSDL (như phpMyAdmin, DBeaver) hoặc tạo tự động qua docker.
+Copy `.env.example` -> `.env` va cap nhat:
+- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+- `AI_ENGINE` (`insightface` hoac `yolo_resnet`)
+- Cac threshold can thiet
 
-## Sử dụng
+### B3. Khoi tao database
 
-Có khá nhiều script khác nhau để huấn luyện và điểm danh, tuỳ thuộc vào nhu cầu:
-- Khởi động hệ thống Web Admin (Quản lý Sinh viên/Lớp học/Dữ liệu):
 ```bash
-python app.py
-```
-- Nếu có file `05_main_system.py`, chạy nó để khởi chạy điểm danh trực tiếp qua Camera:
-```bash
-python 05_main_system.py
+python scripts/init_db.py
 ```
 
-## Chú ý (Cấu hình nâng cao)
-- **Cảnh báo Telegram**: Hãy điền `TELEGRAM_BOT_TOKEN` và `TELEGRAM_CHAT_ID` vào `.env` nếu bạn muốn nhận cảnh báo qua tin nhắn.
-- **Docker**: Dự án có hỗ trợ Docker Compose. Thay vì cài Python và MySQL ở ngoài, bạn có thể chạy:
+## 4) Chay he thong
+
 ```bash
-docker-compose up -d --build
+python run_server.py
 ```
+
+Server mac dinh: `http://localhost:5000`
+
+## 5) Mobile app
+
+Flutter app nam o `mobile_flutter/`.
+Chay:
+
+```bash
+cd mobile_flutter
+flutter pub get
+flutter run
+```
+
+## 6) Bao mat
+
+- Khong commit file `.env`.
+- Khong de token that trong source.
+- Neu token da lo, rotate ngay (Telegram BotFather, JWT secret, DB password).
+
+## 7) Docker (tuy chon)
+
+Du an co san `Dockerfile` va `docker-compose.yml` cho moi truong dong goi.

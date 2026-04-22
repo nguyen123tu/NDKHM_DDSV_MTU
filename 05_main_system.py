@@ -8,6 +8,10 @@ from insightface.app import FaceAnalysis
 
 # Import module tự viết
 from telegram_alert import send_telegram_photo
+from dotenv import load_dotenv
+
+# Load biến môi trường
+load_dotenv()
 
 # =========================================================================
 # 1. CẤU HÌNH THÔNG SỐ (CONFIGURATION)
@@ -75,12 +79,27 @@ print("[INFO] HỆ THỐNG ĐÃ SẴN SÀNG RUN!")
 # =========================================================================
 # 3. QUÁ TRÌNH CHẠY CHÍNH (MAIN Pipeline)
 # =========================================================================
-cap = cv2.VideoCapture(0)
+# Lấy nguồn camera từ .env (Mặc định là 0 nếu không có)
+cam_source = os.getenv("CAMERA_SOURCE", "0")
+if cam_source.isdigit():
+    cam_source = int(cam_source)
+
+print(f"[INFO] Đang kết nối tới Camera: {cam_source}")
+cap = cv2.VideoCapture(cam_source)
+
+# Đặt độ phân giải nếu là USB (IP Camera thường fix theo luồng)
+if isinstance(cam_source, int):
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 while True:
     ret, frame = cap.read()
     if not ret:
-        break
+        print("[LỖI] Không thể đọc frame từ Camera. Đang thử kết nối lại...")
+        cap.release()
+        time.sleep(2)
+        cap = cv2.VideoCapture(cam_source)
+        continue
         
     # a. KIỂM TRA CHUYỂN ĐỘNG BẰNG OPENCV
     fg_mask = bg_subtractor.apply(frame)

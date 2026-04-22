@@ -39,3 +39,12 @@ insightface/
 SO TAY SV 2020v4.pdf
 _fix_db.py
 migrate_old_database.py
+
+# Runtime artifacts
+*.log
+tmp/
+temp/
+
+# Evidence/media exports
+exports/
+evidence/

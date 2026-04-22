@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS lop_hoc (
 CREATE TABLE IF NOT EXISTS sinh_vien (
     id          INT AUTO_INCREMENT PRIMARY KEY,
     mssv        VARCHAR(20) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) COMMENT 'Mật khẩu mặc định là MSSV',
     ho_ten      VARCHAR(100) NOT NULL,
     email       VARCHAR(100),
     sdt         VARCHAR(15),

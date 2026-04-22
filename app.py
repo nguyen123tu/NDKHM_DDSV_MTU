@@ -8,8 +8,9 @@ import eventlet
 # Sử dụng eventlet cho WebSocket hiệu năng cao
 eventlet.monkey_patch()
 
-from flask import Flask, redirect, url_for, render_template
+from flask import Flask, render_template, send_from_directory
 from flask_socketio import SocketIO
+from flask_cors import CORS
 from config import config_map, Config
 
 # Global SocketIO object
@@ -18,6 +19,7 @@ socketio = SocketIO(cors_allowed_origins="*")
 def create_app(config_name='default'):
     """Tạo instance Flask ứng với config pattern"""
     app = Flask(__name__)
+    CORS(app) # Enable CORS for all routes
     
     # Nạp config
     app.config.from_object(config_map[config_name])
@@ -26,7 +28,7 @@ def create_app(config_name='default'):
     from routes import (
         auth_bp, dashboard_bp, students_bp, classes_bp,
         attendance_bp, training_bp, camera_mgmt_bp, 
-        export_bp, public_bp
+        export_bp, public_bp, api_mobile_bp
     )
     
     app.register_blueprint(auth_bp)
@@ -38,6 +40,7 @@ def create_app(config_name='default'):
     app.register_blueprint(camera_mgmt_bp)
     app.register_blueprint(export_bp)
     app.register_blueprint(public_bp)
+    app.register_blueprint(api_mobile_bp)
     
     # Init SocketIO
     socketio.init_app(app, async_mode='eventlet')
@@ -81,25 +84,19 @@ def create_app(config_name='default'):
             now=datetime.now().strftime("%H:%M:%S %d/%m/%Y")
         ), 405
         
-    # Tạo thư mục public/uploads ảnh
-    app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
-    app.add_url_rule(
-        '/uploads/<path:filename>',
-        endpoint='uploads',
-        view_func=app.send_static_file,
-        defaults={'filename': lambda: request.path[1:]} # Cần custom tĩnh
-    )
-    
     # Khởi tạo các thư mục rỗng
     Config.init_dirs()
+
+    @app.route('/uploads/<path:filename>')
+    def serve_uploaded_file(filename):
+        """Expose uploaded image files."""
+        return send_from_directory(Config.UPLOAD_FOLDER, filename)
     
     return app
 
 # Khởi tạo the app
 app = create_app(os.getenv('FLASK_ENV', 'development'))
 
-# Expose uploaded images as static paths (Vì mình lưu database/MSSV/* vào đây)
-from flask import send_from_directory
 @app.route('/database/<path:filename>')
 def serve_database_file(filename):
     return send_from_directory(Config.DATABASE_DIR, filename)
