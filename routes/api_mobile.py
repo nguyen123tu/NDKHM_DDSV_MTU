@@ -5,11 +5,12 @@ API Dành cho Mobile App (JSON Responses)
 import os
 import uuid
 import base64
+import time
 from datetime import datetime, timedelta
 
 import jwt
 from flask import Blueprint, request, jsonify
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from db.connection import execute_one, execute_query, execute_update
 from config import Config
 from services import attendance_service
@@ -334,8 +335,12 @@ def get_history():
     if auth_error:
         return auth_error
 
-    limit = request.args.get('limit', 20, type=int)
+    limit = request.args.get('limit', 200, type=int) # Tăng limit để dễ xuất báo cáo
     mssv_query = request.args.get('mssv')
+    lop_id = request.args.get('lop_id', type=int)
+    date_query = request.args.get('date') # YYYY-MM-DD
+    month_query = request.args.get('month', type=int)
+    year_query = request.args.get('year', type=int)
     
     # Nếu là sinh viên, CHỈ cho phép xem lịch sử của chính mình
     if payload and payload.get('role') == 'student':
@@ -349,10 +354,22 @@ def get_history():
             JOIN sinh_vien sv ON dd.sinh_vien_id = sv.id
             LEFT JOIN lop_hoc l ON dd.lop_id = l.id
             WHERE (%s IS NULL OR sv.mssv = %s)
+              AND (%s IS NULL OR l.id = %s)
+              AND (%s IS NULL OR DATE(dd.thoi_gian) = %s)
+              AND (%s IS NULL OR MONTH(dd.thoi_gian) = %s)
+              AND (%s IS NULL OR YEAR(dd.thoi_gian) = %s)
             ORDER BY dd.thoi_gian DESC
             LIMIT %s
         """
-        records = execute_query(sql, (mssv_query, mssv_query, limit))
+        params = (
+            mssv_query, mssv_query, 
+            lop_id, lop_id, 
+            date_query, date_query,
+            month_query, month_query,
+            year_query, year_query,
+            limit
+        )
+        records = execute_query(sql, params)
         
         # Chuyển đổi datetime sang chuỗi để JSON Serializable
         for row in records:
@@ -372,10 +389,8 @@ def get_history():
 
 @api_mobile_bp.route('/register_face', methods=['POST'])
 def mobile_register_face():
-    """API để Mobile App đăng ký khuôn mặt học sinh trực tiếp"""
-    _, auth_error = _require_mobile_auth()
-    if auth_error:
-        return auth_error
+    """API để Mobile App đăng ký khuôn mặt học sinh trực tiếp (Cho phép khách và sinh viên)"""
+    # Bỏ yêu cầu Token để sinh viên mới chưa có tài khoản vẫn đăng ký được
 
     data = request.get_json(silent=True) or {}
     mssv = (data.get("mssv") or "").strip()
@@ -391,27 +406,37 @@ def mobile_register_face():
         
     from services import student_service
     
-    # Kiểm tra xem sinh viên đã tồn tại chưa bằng query trực tiếp (đề phòng)
-    sv = execute_one("SELECT id FROM sinh_vien WHERE mssv = %s", (mssv,))
-    if sv:
-        return jsonify({"success": False, "message": "MSSV đã tồn tại trong hệ thống"}), 409
-        
-    student_data = {
-        'mssv': mssv,
-        'ho_ten': ho_ten,
-        'lop_id': int(lop_id),
-        'avatar': f"{mssv}/0.jpg" if images else None
-    }
+    # Kiểm tra xem sinh viên có tồn tại trong hệ thống không
+    sv = execute_one("SELECT id, ho_ten FROM sinh_vien WHERE mssv = %s", (mssv,))
     
-    try:
-        student_id = student_service.create(student_data)
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Lỗi tạo dữ liệu sinh viên: {str(e)}'}), 500
+    if not sv:
+        # TRƯỜNG HỢP 1: Sinh viên chưa có trong hệ thống -> Tự động đăng ký mới
+        print(f"[REGISTRATION] Creating new student record for MSSV: {mssv}")
+        try:
+            # Tạo mật khẩu mặc định là MSSV hoặc 123456
+            default_password = generate_password_hash("123456", method='pbkdf2:sha256')
+            
+            new_id = execute_update(
+                """INSERT INTO sinh_vien (mssv, ho_ten, lop_id, avatar, password_hash, trang_thai, trang_thai_face, created_at) 
+                   VALUES (%s, %s, %s, %s, %s, 1, 1, NOW())""",
+                (mssv, ho_ten, lop_id, f"{mssv}/0.jpg", default_password)
+            )
+            sv_id = new_id
+        except Exception as e:
+            return jsonify({"success": False, "message": f"Không thể tạo hồ sơ sinh viên mới: {e}"}), 500
+    else:
+        # TRƯỜNG HỢP 2: Sinh viên đã tồn tại -> Cập nhật thông tin và đưa vào trạng thái chờ duyệt
+        sv_id = sv['id']
+        # Kiểm tra họ tên khớp (không phân biệt hoa thường) để tránh đăng ký nhầm MSSV của người khác
+        if ho_ten.lower() != sv['ho_ten'].lower():
+            return jsonify({"success": False, "message": "Họ tên không khớp với dữ liệu hệ thống của MSSV này"}), 400
         
-    if student_id is None or student_id < 0:
-        return jsonify({'success': False, 'message': 'Không thể thêm dữ liệu sinh viên vào DB. Kiểm tra lại bảng sinh_vien.'}), 500
+        student_service.update(sv_id, {
+            'avatar': f"{mssv}/0.jpg",
+            'trang_thai_face': 1
+        })
         
-    # Tạo thư mục
+    # Tạo thư mục chứa ảnh
     student_dir = os.path.join(Config.DATABASE_DIR, mssv)
     os.makedirs(student_dir, exist_ok=True)
     
@@ -442,5 +467,249 @@ def get_classes():
         # Chỉ lấy id, ma_lop, ten_lop
         res_data = [{"id": c["id"], "ma_lop": c["ma_lop"], "ten_lop": c["ten_lop"]} for c in classes]
         return jsonify({"success": True, "data": res_data}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@api_mobile_bp.route('/profile', methods=['GET'])
+def get_profile():
+    """Lấy thông tin chi tiết sinh viên/admin đang đăng nhập"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+    
+    user_id = payload.get('sub')
+    role = payload.get('role')
+
+    if role == 'student':
+        # Join với lớp học để lấy tên lớp
+        sql = """
+            SELECT sv.*, lh.ten_lop, lh.ma_lop 
+            FROM sinh_vien sv
+            LEFT JOIN lop_hoc lh ON sv.lop_id = lh.id
+            WHERE sv.id = %s
+        """
+        user = execute_one(sql, (user_id,))
+    else:
+        user = execute_one("SELECT * FROM admin WHERE id = %s", (user_id,))
+
+    if not user:
+        return jsonify({"success": False, "message": "Không tìm thấy người dùng"}), 404
+        
+    # Xóa password_hash trước khi trả về
+    if 'password_hash' in user:
+        del user['password_hash']
+    
+    # Format datetime
+    if 'created_at' in user and user['created_at']:
+        user['created_at'] = user['created_at'].strftime("%Y-%m-%d %H:%M:%S")
+    if 'ngay_sinh' in user and user['ngay_sinh']:
+        user['ngay_sinh'] = user['ngay_sinh'].strftime("%Y-%m-%d")
+
+    return jsonify({"success": True, "data": user}), 200
+
+
+@api_mobile_bp.route('/change-password', methods=['POST'])
+def change_password():
+    """Đổi mật khẩu cho người dùng hiện tại"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+    
+    data = request.get_json(silent=True) or {}
+    old_pwd = data.get('old_password')
+    new_pwd = data.get('new_password')
+    
+    if not old_pwd or not new_pwd:
+        return jsonify({"success": False, "message": "Thiếu thông tin mật khẩu"}), 400
+        
+    user_id = payload.get('sub')
+    role = payload.get('role')
+    
+    # Lấy hash cũ
+    table = "sinh_vien" if role == "student" else "admin"
+    user = execute_one(f"SELECT password_hash FROM {table} WHERE id = %s", (user_id,))
+    
+    if not user or not check_password_hash(user['password_hash'], old_pwd):
+        return jsonify({"success": False, "message": "Mật khẩu cũ không chính xác"}), 401
+    
+    # Hash mật khẩu mới
+    new_hash = generate_password_hash(new_pwd, method='pbkdf2:sha256')
+    execute_update(f"UPDATE {table} SET password_hash = %s WHERE id = %s", (new_hash, user_id))
+    
+    return jsonify({"success": True, "message": "Đổi mật khẩu thành công"}), 200
+
+
+@api_mobile_bp.route('/schedule', methods=['GET'])
+def get_schedule():
+    """Lấy lịch học của sinh viên"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+    
+    if payload.get('role') != 'student':
+        return jsonify({"success": False, "message": "Chỉ sinh viên mới có lịch học"}), 403
+
+    user_id = payload.get('sub')
+    student = execute_one("SELECT lop_id FROM sinh_vien WHERE id = %s", (user_id,))
+    
+    if not student or not student['lop_id']:
+        return jsonify({"success": True, "data": [], "message": "Sinh viên chưa được xếp lớp"}), 200
+        
+    # Lấy lịch học theo lớp
+    sql = "SELECT * FROM lich_hoc WHERE lop_id = %s ORDER BY thu ASC, tiet_bat_dau ASC"
+    schedules = execute_query(sql, (student['lop_id'],))
+    
+    return jsonify({"success": True, "data": schedules}), 200
+
+
+@api_mobile_bp.route('/update-avatar', methods=['POST'])
+def update_avatar():
+    """Cập nhật ảnh đại diện người dùng"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+    
+    data = request.get_json(silent=True) or {}
+    image_base64 = data.get('image') # base64 string
+    
+    if not image_base64:
+        return jsonify({"success": False, "message": "Thiếu dữ liệu ảnh"}), 400
+        
+    user_id = payload.get('sub')
+    role = payload.get('role')
+    username = payload.get('username') # MSSV
+    
+    # Tạo thư mục nếu chưa có
+    avatar_dir = os.path.join('static', 'uploads', 'avatars')
+    os.makedirs(avatar_dir, exist_ok=True)
+    
+    # Dùng timestamp để tránh cache ảnh cũ
+    filename = f"{username}_{int(time.time())}.jpg"
+    filepath = os.path.join(avatar_dir, filename)
+    db_path = f"uploads/avatars/{filename}"
+    
+    try:
+        if "," in image_base64:
+            image_base64 = image_base64.split(",", 1)[1]
+        img_data = base64.b64decode(image_base64)
+        with open(filepath, 'wb') as f:
+            f.write(img_data)
+            
+        # Cập nhật DB
+        table = "sinh_vien" if role == "student" else "admin"
+        execute_update(f"UPDATE {table} SET avatar = %s WHERE id = %s", (db_path, user_id))
+        
+        return jsonify({"success": True, "message": "Cập nhật ảnh đại diện thành công", "avatar_url": db_path}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/pending-faces', methods=['GET'])
+def get_pending_faces():
+    """Lấy danh sách sinh viên đang chờ duyệt khuôn mặt"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error or payload.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Quyền truy cập bị từ chối"}), 403
+
+    try:
+        sql = """
+            SELECT sv.id, sv.mssv, sv.ho_ten, sv.avatar, lh.ma_lop 
+            FROM sinh_vien sv
+            LEFT JOIN lop_hoc lh ON sv.lop_id = lh.id
+            WHERE sv.trang_thai_face = 1
+        """
+        records = execute_query(sql)
+        return jsonify({"success": True, "data": records}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/approve-face', methods=['POST'])
+def approve_face():
+    """Phê duyệt hoặc từ chối khuôn mặt sinh viên"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error or payload.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Quyền truy cập bị từ chối"}), 403
+
+    data = request.get_json(silent=True) or {}
+    sv_id = data.get('id')
+    status = data.get('status') # 2: Approved, 3: Rejected
+    
+    if not sv_id or status not in [2, 3]:
+        return jsonify({"success": False, "message": "Dữ liệu không hợp lệ"}), 400
+
+    try:
+        execute_update("UPDATE sinh_vien SET trang_thai_face = %s WHERE id = %s", (status, sv_id))
+        msg = "Đã duyệt khuôn mặt" if status == 2 else "Đã từ chối khuôn mặt"
+        return jsonify({"success": True, "message": msg}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/update-profile', methods=['POST'])
+def update_profile():
+    """Cập nhật thông tin chi tiết sinh viên/admin"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+    
+    data = request.get_json(silent=True) or {}
+    user_id = payload.get('sub')
+    role = payload.get('role')
+    
+    try:
+        if role == 'student':
+            sql = """
+                UPDATE sinh_vien 
+                SET email = %s, sdt = %s, que_quan = %s, dan_toc = %s
+                WHERE id = %s
+            """
+            execute_update(sql, (data.get('email'), data.get('sdt'), data.get('que_quan'), data.get('dan_toc'), user_id))
+        else:
+            execute_update("UPDATE admin SET email = %s, sdt = %s WHERE id = %s", (data.get('email'), data.get('sdt'), user_id))
+            
+        return jsonify({"success": True, "message": "Cập nhật thông tin thành công"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/face-gallery', methods=['GET'])
+def get_face_gallery():
+    """Lấy danh sách các ảnh khuôn mặt đã đăng ký của sinh viên"""
+    from flask import session
+    
+    # Check if there's a mobile JWT
+    payload, auth_error = _require_mobile_auth()
+    
+    # If no JWT, check if there's a web admin session
+    if auth_error and not session.get('admin_id'):
+        return auth_error
+    
+    role = payload.get('role') if payload else 'admin'
+    user_id = payload.get('sub') if payload else session.get('admin_id')
+    
+    # Chỉ lấy MSSV nếu là sinh viên
+    if role == 'student':
+        user = execute_one("SELECT mssv FROM sinh_vien WHERE id = %s", (user_id,))
+        if not user:
+            return jsonify({"success": False, "message": "Không tìm thấy sinh viên"}), 404
+        mssv = user['mssv']
+    else:
+        # Admin có thể xem ảnh của một sinh viên cụ thể qua query param
+        mssv = request.args.get('mssv')
+        if not mssv:
+            return jsonify({"success": False, "message": "Thiếu MSSV"}), 400
+
+    student_dir = os.path.join(Config.DATABASE_DIR, mssv)
+    if not os.path.exists(student_dir):
+        return jsonify({"success": True, "data": []}), 200
+        
+    try:
+        # Lấy danh sách tệp .jpg hoặc .png
+        images = [f for f in os.listdir(student_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+        # Tạo đường dẫn URL
+        image_urls = [f"{mssv}/{img}" for img in images]
+        
+        return jsonify({"success": True, "data": image_urls}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500

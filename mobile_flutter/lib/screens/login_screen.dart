@@ -1,6 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,8 +28,9 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: const Color(0xFFE63946),
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -37,126 +41,244 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Container(
-            height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Logo
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF2E96EB).withOpacity(0.1),
-                    border: Border.all(color: const Color(0xFF2E96EB).withOpacity(0.3), width: 2),
-                  ),
-                  child: const Icon(Icons.face_retouching_natural, size: 44, color: Color(0xFF2E96EB)),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  "Đăng Nhập",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  "Hệ thống điểm danh khuôn mặt MTU",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFF6C757D), fontSize: 14),
-                ),
-                const SizedBox(height: 36),
-
-                // Card form
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFEDF2F9)),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8)),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Username
-                      TextField(
-                        controller: _usernameController,
-                        style: const TextStyle(color: Color(0xFF2C3E50)),
-                        decoration: InputDecoration(
-                          labelText: "Tài khoản / MSSV",
-                          labelStyle: const TextStyle(color: Color(0xFF6C757D), fontSize: 14),
-                          prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF2E96EB), size: 22),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEDF2F9))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E96EB), width: 1.5)),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Password
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: !_isPasswordVisible,
-                        style: const TextStyle(color: Color(0xFF2C3E50)),
-                        decoration: InputDecoration(
-                          labelText: "Mật khẩu",
-                          labelStyle: const TextStyle(color: Color(0xFF6C757D), fontSize: 14),
-                          prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF2E96EB), size: 22),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                              color: const Color(0xFF6C757D),
-                              size: 20,
-                            ),
-                            onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEDF2F9))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E96EB), width: 1.5)),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Nút đăng nhập
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: auth.isLoading ? null : _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E96EB),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 0,
-                          ),
-                          child: auth.isLoading
-                              ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                              : const Text("ĐĂNG NHẬP", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 0.5)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-                const Text(
-                  "© 2026 MTU University - Graduation Project",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                ),
-              ],
+      body: Stack(
+        children: [
+          // Background Gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF1B3A5C), // MTU Deep Blue
+                  Color(0xFF2E96EB), // MTU Action Blue
+                ],
+              ),
             ),
           ),
+          
+          // Decorative elements (Shapes)
+          Positioned(
+            top: -100,
+            right: -100,
+            child: CircleAvatar(radius: 150, backgroundColor: Colors.white.withOpacity(0.05)),
+          ),
+          Positioned(
+            bottom: -50,
+            left: -50,
+            child: CircleAvatar(radius: 100, backgroundColor: Colors.black.withOpacity(0.05)),
+          ),
+
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 30),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Glass Card
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 30,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Logo Section
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF1B3A5C).withOpacity(0.1),
+                                  blurRadius: 10,
+                                )
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: Image.asset(
+                                "assets/images/logo_MTU.png",
+                                width: 85,
+                                height: 85,
+                                fit: BoxFit.contain,
+                                errorBuilder: (c, e, s) => Image.network(
+                                  "logo_MTU.png",
+                                  width: 85,
+                                  height: 85,
+                                  errorBuilder: (c, e, s) => const Icon(Icons.school, size: 50, color: Color(0xFF1B3A5C)),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          
+                          const Text(
+                            "MTU FACE ID",
+                            style: TextStyle(
+                              fontSize: 24, 
+                              fontWeight: FontWeight.w900, 
+                              color: Color(0xFF1B3A5C),
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "ĐẲNG CẤP QUỐC TẾ - CHẤT LƯỢNG HÀNG ĐẦU (BAO NGẦU) ",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10, 
+                              fontWeight: FontWeight.bold, 
+                              color: Color(0xFF2E96EB),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 35),
+
+                          // Login Fields
+                          _buildTextField(
+                            controller: _usernameController,
+                            label: "Tài khoản / MSSV",
+                            icon: Icons.person_outline,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildTextField(
+                            controller: _passwordController,
+                            label: "Mật khẩu",
+                            icon: Icons.lock_outline,
+                            isPassword: true,
+                          ),
+                          
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {},
+                              child: const Text(
+                                "Quên mật khẩu?",
+                                style: TextStyle(color: Color(0xFF6C757D), fontSize: 13),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+                          
+                          // Sign In Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: ElevatedButton(
+                              onPressed: auth.isLoading ? null : _handleLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1B3A5C),
+                                foregroundColor: Colors.white,
+                                elevation: 4,
+                                shadowColor: const Color(0xFF1B3A5C).withOpacity(0.5),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
+                              child: auth.isLoading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text(
+                                      "ĐĂNG NHẬP",
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1),
+                                    ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Register Support
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Chưa có tài khoản?",
+                                style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                                  );
+                                },
+                                child: const Text(
+                                  "Đăng ký ngay",
+                                  style: TextStyle(
+                                    color: Color(0xFF2E96EB),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    const Text(
+                      "Đại học Xây dựng Miền Tây",
+                      style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, letterSpacing: 0.5),
+                    ),
+                    const Text(
+                      "MTU Face Attendance System v2.0",
+                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isPassword = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword && !_isPasswordVisible,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+        prefixIcon: Icon(icon, color: const Color(0xFF2E96EB), size: 22),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+                onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+              )
+            : null,
+        filled: true,
+        fillColor: Colors.grey[50]!.withOpacity(0.8),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey[200]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFF2E96EB), width: 1.5),
         ),
       ),
     );

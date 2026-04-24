@@ -60,7 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/attendance/start', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ lop_id: lopId, camera_id: camId })
+                body: JSON.stringify({ 
+                    lop_id: lopId, 
+                    camera_id: camId,
+                    mode: document.getElementById('selectMode').value
+                })
             });
             const data = await res.json();
             

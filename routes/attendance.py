@@ -26,14 +26,16 @@ def live():
 @attendance_bp.route('/start', methods=['POST'])
 @login_required
 def start():
-    lop_id = request.json.get('lop_id')
-    camera_id = request.json.get('camera_id', 0)
+    data = request.json or {}
+    lop_id = data.get('lop_id')
+    camera_id = data.get('camera_id', 0)
+    mode = data.get('mode', 'AUTO')
     
     if not lop_id:
         return jsonify({"success": False, "msg": "Thiếu thông tin lớp"}), 400
         
     socketio = current_app.extensions['socketio']
-    if start_session(lop_id, camera_id, socketio):
+    if start_session(lop_id, camera_id, socketio, mode=mode):
         return jsonify({"success": True})
     return jsonify({"success": False, "msg": "Không thể khởi động camera"}), 500
 

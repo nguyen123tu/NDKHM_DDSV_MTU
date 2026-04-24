@@ -12,30 +12,25 @@ from config import Config
 _last_log_times = {}  # {mssv: timestamp}
 
 
-def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat'):
+def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', ghi_chu=None, mode='AUTO'):
     """
     Ghi nhận điểm danh: Giờ Vào / Giờ Ra.
     
-    Logic:
-    - Lần quét đầu tiên trong ngày → INSERT mới (giờ vào)
-    - Lần quét sau (cách >= 30 phút) → UPDATE gio_ra (giờ ra)
-    - Lần quét trong cooldown 60s → Bỏ qua (tránh spam)
-    
     Args:
-        mssv, lop_id, do_chinh_xac, camera_id, trang_thai
+        mssv, lop_id, do_chinh_xac, camera_id, trang_thai, ghi_chu
+        mode: 'AUTO' (logic 30p), 'IN' (ép check-in), 'OUT' (ép check-out)
         
     Returns:
         dict: {'action': 'checkin'/'checkout'/'skip', 'success': bool}
-              hoặc False nếu bỏ qua hoàn toàn
     """
     current_time = time.time()
     
-    # Cooldown ngắn 60s chống spam (tránh ghi liên tục khi đứng trước camera)
+    # Cooldown ngắn 60s chống spam
     SPAM_COOLDOWN = 60
     cache_key = f"{mssv}_{lop_id}"
     last_time = _last_log_times.get(cache_key, 0)
     if current_time - last_time < SPAM_COOLDOWN:
-        return False  # Quá gần → bỏ qua
+        return False
 
     # Tìm sinh_vien_id
     sv = execute_one("SELECT id FROM sinh_vien WHERE mssv = %s", (mssv,))
@@ -53,42 +48,60 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat'):
         LIMIT 1
     """, (sinh_vien_id, lop_id))
 
-    if existing is None:
-        # === CHƯA CÓ → GHI GIỜ VÀO (CHECK-IN) ===
+    # --- LOGIC THEO MODE ---
+    
+    if mode == 'IN':
+        if existing:
+            return False # Đã vào rồi, không ghi nữa
+        # INSERT mới
         sql = """
-            INSERT INTO diem_danh (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO diem_danh (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
-        result = execute_update(sql, (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id))
+        result = execute_update(sql, (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu))
         if result > 0:
             _last_log_times[cache_key] = current_time
             return {'action': 'checkin', 'success': True}
-        return False
-    
-    else:
-        # === ĐÃ CÓ BẢN GHI HÔM NAY ===
-        if existing.get('gio_ra') is not None:
-            # Đã có cả giờ vào + giờ ra → hoàn tất, không ghi nữa
+            
+    elif mode == 'OUT':
+        if not existing or existing.get('gio_ra'):
+            return False # Chưa vào hoặc đã ra rồi
+        # UPDATE gio_ra
+        sql = "UPDATE diem_danh SET gio_ra = NOW() WHERE id = %s"
+        result = execute_update(sql, (existing['id'],))
+        if result > 0:
             _last_log_times[cache_key] = current_time
-            return False
-        
-        # Chưa có giờ ra → cập nhật giờ ra (nếu cách giờ vào >= 30 phút)
-        from datetime import datetime, timedelta
-        gio_vao = existing['thoi_gian']
-        now = datetime.now()
-        
-        # Phải cách ít nhất 30 phút so với giờ vào mới coi là "giờ ra"
-        MIN_CHECKOUT_GAP = timedelta(minutes=30)
-        if now - gio_vao >= MIN_CHECKOUT_GAP:
-            sql = "UPDATE diem_danh SET gio_ra = NOW() WHERE id = %s"
-            result = execute_update(sql, (existing['id'],))
+            return {'action': 'checkout', 'success': True}
+
+    else: # mode == 'AUTO'
+        if existing is None:
+            # CHECK-IN
+            sql = """
+                INSERT INTO diem_danh (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            result = execute_update(sql, (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu))
             if result > 0:
                 _last_log_times[cache_key] = current_time
-                return {'action': 'checkout', 'success': True}
-        
-        # Chưa đủ 30 phút → bỏ qua
-        _last_log_times[cache_key] = current_time
-        return False
+                return {'action': 'checkin', 'success': True}
+        else:
+            if existing.get('gio_ra') is not None:
+                return False
+            
+            from datetime import datetime, timedelta
+            gio_vao = existing['thoi_gian']
+            now = datetime.now()
+            
+            # Tự động checkout sau 30 phút
+            MIN_CHECKOUT_GAP = timedelta(minutes=30)
+            if now - gio_vao >= MIN_CHECKOUT_GAP:
+                sql = "UPDATE diem_danh SET gio_ra = NOW() WHERE id = %s"
+                result = execute_update(sql, (existing['id'],))
+                if result > 0:
+                    _last_log_times[cache_key] = current_time
+                    return {'action': 'checkout', 'success': True}
+    
+    return False
 
 
 def mobile_checkout(mssv, lop_id=None, camera_id=0):

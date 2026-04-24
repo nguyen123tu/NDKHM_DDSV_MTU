@@ -4,6 +4,12 @@ import '../providers/attendance_provider.dart';
 import '../providers/auth_provider.dart';
 import 'scan_screen.dart' as scan_screen;
 import 'register_screen.dart' as reg_screen;
+import 'profile_screen.dart';
+import 'schedule_screen.dart';
+import 'device_settings_screen.dart';
+import 'history_report_screen.dart';
+import 'face_approval_screen.dart';
+import '../services/export_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,52 +56,93 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 20),
 
                   // ====== TOP BAR ======
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Logo
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1B3A5C),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.face_retouching_natural, color: Colors.white, size: 22),
-                      ),
-                      // Actions
-                      Row(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      bool isNarrow = constraints.maxWidth < 300;
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          if (isAdmin)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1B3A5C).withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.admin_panel_settings, color: Color(0xFF1B3A5C), size: 14),
-                                  SizedBox(width: 4),
-                                  Text("Admin", style: TextStyle(color: Color(0xFF1B3A5C), fontSize: 11, fontWeight: FontWeight.w600)),
+                          // Logo
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                               children: [
+                                 Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+                                  ),
+                                  child: Image.asset(
+                                    "assets/images/logo_MTU.png", 
+                                    width: 32, 
+                                    height: 32,
+                                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.face_retouching_natural, color: Color(0xFF1B3A5C), size: 22),
+                                  ),
+                                ),
+                                if (!isNarrow) ...[
+                                   const SizedBox(width: 10),
+                                   const Text("MTU FACE", style: TextStyle(color: Color(0xFF1B3A5C), fontWeight: FontWeight.bold, fontSize: 16)),
                                 ],
-                              ),
+                               ],
                             ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () => auth.logout(),
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(Icons.logout, color: Colors.red.withOpacity(0.7), size: 20),
+                          ),
+                          // Actions
+                          Flexible(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (isAdmin && !isNarrow)
+                                  Flexible(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1B3A5C).withOpacity(0.08),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.admin_panel_settings, color: Color(0xFF1B3A5C), size: 14),
+                                          SizedBox(width: 4),
+                                          Flexible(child: Text("Admin", overflow: TextOverflow.ellipsis, style: TextStyle(color: Color(0xFF1B3A5C), fontSize: 11, fontWeight: FontWeight.w600))),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1B3A5C).withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.person_outline, color: Color(0xFF1B3A5C), size: 20),
+                                  ),
+                                ),
+                                if (!isNarrow) ...[
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () => auth.logout(),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF1B3A5C).withOpacity(0.08),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(Icons.logout, color: Color(0xFF1B3A5C), size: 20),
+                                      ),
+                                    ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 28),
@@ -165,11 +212,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Stats row
                         Row(
                           children: [
-                            _buildNavyStat("Sĩ số", "${attendance.stats?.total ?? '--'}"),
+                            Expanded(child: _buildNavyStat("Sĩ số", "${attendance.stats?.total ?? '--'}")),
                             Container(width: 1, height: 36, color: Colors.white.withOpacity(0.2)),
-                            _buildNavyStat("Có mặt", "${attendance.stats?.present ?? '--'}"),
+                            Expanded(child: _buildNavyStat("Có mặt", "${attendance.stats?.present ?? '--'}")),
                             Container(width: 1, height: 36, color: Colors.white.withOpacity(0.2)),
-                            _buildNavyStat("Vắng", "${attendance.stats?.absent ?? '--'}"),
+                            Expanded(child: _buildNavyStat("Vắng", "${attendance.stats?.absent ?? '--'}")),
                           ],
                         ),
                       ],
@@ -182,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Chức năng", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C))),
+                      const Expanded(child: Text("Chức năng", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C)))),
                       Text("Xem tất cả", style: TextStyle(fontSize: 13, color: const Color(0xFF1B3A5C).withOpacity(0.4))),
                     ],
                   ),
@@ -190,36 +237,80 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Feature Grid
                   if (isAdmin)
+                    Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildFeatureCard(
+                                icon: Icons.face_retouching_natural,
+                                title: "Điểm danh",
+                                subtitle: "Quét khuôn mặt",
+                                iconBgColor: const Color(0xFF10B981),
+                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const scan_screen.ScanScreen())),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: _buildFeatureCard(
+                                icon: Icons.person_add_alt_1,
+                                title: "Đăng ký",
+                                subtitle: "Khuôn mặt mới",
+                                iconBgColor: const Color(0xFF2E96EB),
+                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const reg_screen.RegisterScreen())),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildFeatureCard(
+                                icon: Icons.settings_suggest,
+                                title: "Cấu hình AI",
+                                subtitle: "Thiết bị & Ngưỡng",
+                                iconBgColor: const Color(0xFF6366F1),
+                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeviceSettingsScreen())),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: _buildFeatureCard(
+                                icon: Icons.fact_check_outlined,
+                                title: "Duyệt ảnh",
+                                subtitle: "Xác minh SV",
+                                iconBgColor: const Color(0xFFF59E0B),
+                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FaceApprovalScreen())),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  else
                     Row(
                       children: [
                         Expanded(
                           child: _buildFeatureCard(
-                            icon: Icons.face_retouching_natural,
-                            title: "Điểm danh",
-                            subtitle: "Quét khuôn mặt",
-                            iconBgColor: const Color(0xFF10B981),
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const scan_screen.ScanScreen())),
+                            icon: Icons.person_add_alt_1,
+                            title: "Đăng ký",
+                            subtitle: "Khuôn mặt",
+                            iconBgColor: const Color(0xFF2E96EB),
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const reg_screen.RegisterScreen())),
                           ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: _buildFeatureCard(
-                            icon: Icons.person_add_alt_1,
-                            title: "Đăng ký",
-                            subtitle: "Khuôn mặt mới",
-                            iconBgColor: const Color(0xFF2E96EB),
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const reg_screen.RegisterScreen())),
+                            icon: Icons.calendar_month_outlined,
+                            title: "Lịch học",
+                            subtitle: "Thời khóa biểu",
+                            iconBgColor: const Color(0xFFF59E0B),
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScheduleScreen())),
                           ),
                         ),
                       ],
-                    )
-                  else
-                    _buildFeatureCard(
-                      icon: Icons.person_add_alt_1,
-                      title: "Đăng ký khuôn mặt",
-                      subtitle: "Chụp ảnh để hệ thống nhận diện",
-                      iconBgColor: const Color(0xFF2E96EB),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const reg_screen.RegisterScreen())),
                     ),
 
                   const SizedBox(height: 28),
@@ -228,17 +319,47 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Hoạt động gần đây", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C))),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1B3A5C).withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          "${attendance.history.length} bản ghi",
-                          style: const TextStyle(color: Color(0xFF1B3A5C), fontSize: 11, fontWeight: FontWeight.w600),
-                        ),
+                      const Expanded(
+                        child: Text("Hoạt động gần đây", 
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C), overflow: TextOverflow.ellipsis)
+                        )
+                      ),
+                      const SizedBox(width: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isAdmin)
+                            GestureDetector(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryReportScreen())),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                margin: const EdgeInsets.only(right: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.filter_list, color: Color(0xFF10B981), size: 12),
+                                    SizedBox(width: 4),
+                                    Text("Lọc", style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1B3A5C).withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "${attendance.history.length}",
+                              style: const TextStyle(color: Color(0xFF1B3A5C), fontSize: 11, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -384,7 +505,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(record.hoTen, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1B3A5C), fontSize: 14.5)),
+                Text(record.hoTen, 
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1B3A5C), fontSize: 14.5)
+                ),
                 const SizedBox(height: 3),
                 Row(
                   children: [

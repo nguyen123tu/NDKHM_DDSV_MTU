@@ -30,7 +30,7 @@ def _get_pool():
                 collation='utf8mb4_unicode_ci',
                 autocommit=False
             )
-            print(f"[DB] Connection pool đã khởi tạo (pool_size=5)")
+            print(f"[DB] Connection pool initialized (pool_size=5)")
         except Error as e:
             print(f"[DB LỖI] Không thể tạo connection pool: {e}")
             raise

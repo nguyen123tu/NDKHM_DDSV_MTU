@@ -16,30 +16,34 @@ _instance = None
 
 class YOLOFaceDetector:
     """
-    Phát hiện khuôn mặt bằng YOLOv8n-face.
+    Phát hiện khuôn mặt bằng YOLOv11 hoặc YOLOv8.
     
-    YOLOv8 detect nhanh hơn SCRFD, trả về bounding box + confidence.
-    KHÔNG trả về embedding — cần kết hợp với ResNet50Embedder.
+    YOLOv11 (mới nhất) cung cấp độ chính xác cao hơn và tốc độ nhanh hơn.
+    Model nên được train trên face dataset (VD: yolov11n-face.pt).
     """
 
     def __init__(self, model_path=None, conf_threshold=0.5):
-        """
-        Args:
-            model_path: Đường dẫn model YOLOv8-face (.pt)
-            conf_threshold: Ngưỡng confidence tối thiểu
-        """
         self._conf = conf_threshold
         
-        # Sử dụng yolov8n-face nếu có, fallback sang yolov8n
-        if model_path and os.path.exists(model_path):
-            self._model_path = model_path
-        else:
-            # Dùng yolov8n pretrained (sẽ detect person, ta lọc class 0)
-            self._model_path = 'yolov8n.pt'
+        # Danh sách các model ưu tiên
+        priority_models = [
+            model_path,
+            os.path.join(Config.MODELS_DIR, 'yolo11n-face.pt'),
+            os.path.join(Config.MODELS_DIR, 'yolov8n-face.pt'),
+            'yolo11n.pt', # Tự động tải nếu không có file local
+            'yolov8n.pt'
+        ]
         
-        print(f"[YOLO] Đang tải YOLOv8 model: {self._model_path}...")
-        self._model = YOLO(self._model_path)
-        print(f"[YOLO] YOLOv8 đã sẵn sàng (conf={self._conf})")
+        selected_model = 'yolov8n.pt'
+        for m in priority_models:
+            if m and (os.path.exists(m) or not m.endswith('.pt')): # .pt check cho file local
+                selected_model = m
+                break
+        
+        print(f"[YOLO] Đang khởi tạo model: {selected_model}...")
+        self._model = YOLO(selected_model)
+        self._model_name = selected_model
+        print(f"[YOLO] {selected_model} đã sẵn sàng (conf={self._conf})")
 
     def detect(self, frame):
         """

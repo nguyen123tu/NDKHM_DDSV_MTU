@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -20,6 +21,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   bool _isScanning = false;
   bool _autoScan = true;
   final ApiService _apiService = ApiService();
+  double _threshold = 0.45;
+  bool _antiFake = false;
+  bool _allowMask = true;
 
   // Animation
   late AnimationController _scanLineController;
@@ -39,6 +43,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _loadSettings();
     _initCamera();
 
     _scanLineController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2500))..repeat();
@@ -53,24 +58,47 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _initCamera() async {
-    _cameras = await availableCameras();
-    if (_cameras != null && _cameras!.isNotEmpty) {
-      final frontCamera = _cameras!.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.front,
-        orElse: () => _cameras![0],
-      );
-      _controller = CameraController(frontCamera, ResolutionPreset.low);
-      await _controller!.initialize();
-      if (!mounted) return;
-      setState(() => _isInitialized = true);
+    try {
+      _cameras = await availableCameras();
+      if (_cameras != null && _cameras!.isNotEmpty) {
+        final frontCamera = _cameras!.firstWhere(
+          (c) => c.lensDirection == CameraLensDirection.front,
+          orElse: () => _cameras![0],
+        );
+        _controller = CameraController(frontCamera, ResolutionPreset.low);
+        await _controller!.initialize();
+        if (!mounted) return;
+        setState(() => _isInitialized = true);
 
-      // Bắt đầu auto scan sau 1.5 giây
-      _autoScanTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-        if (_autoScan && !_isScanning && mounted) {
-          _captureAndRecognize();
-        }
-      });
+        // Bắt đầu auto scan sau 1.5 giây
+        _autoScanTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+          if (_autoScan && !_isScanning && mounted) {
+            _captureAndRecognize();
+          }
+        });
+      } else {
+         throw Exception("Không tìm thấy camera");
+      }
+    } catch (e) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text("Lỗi Khởi Tạo"),
+          content: Text("Không thể truy cập camera. Vui lòng cấp quyền và thử lại: $e"),
+          actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text("Đóng"))],
+        ),
+      );
     }
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _threshold = prefs.getDouble('ai_threshold') ?? 0.45;
+      _antiFake = prefs.getBool('anti_fake') ?? false;
+      _allowMask = prefs.getBool('allow_mask') ?? true;
+    });
   }
 
   @override

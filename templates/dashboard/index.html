@@ -51,24 +51,21 @@
         </div>
     </div>
     
-    <!-- SV Cảnh báo / Vắng -->
+    <!-- SV Đợi Duyệt -->
     <div class="col-12 col-sm-6 col-lg-3">
-        <div class="flat-card h-100 p-4 position-relative border-danger border-opacity-25">
-            <div class="d-flex justify-content-between">
-                <div>
-                    <h6 class="text-muted fw-normal mb-1">Cảnh báo / Bất thường</h6>
-                    <h2 class="fw-bold text-danger mb-0">{{ today_stats.canh_bao }}</h2>
-                </div>
-                <div class="bg-danger bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                    <i class="fas fa-user-times text-danger fs-4"></i>
+        <a href="{{ url_for('students.pending_faces') }}" class="text-decoration-none">
+            <div class="flat-card h-100 p-4 border-start border-warning border-4">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted fw-normal mb-1">Yêu cầu đăng ký Face</h6>
+                        <h2 class="fw-bold text-dark mb-0">{{ total_pending }}</h2>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-id-card-clip text-warning fs-4"></i>
+                    </div>
                 </div>
             </div>
-            {% if today_stats.canh_bao > 0 %}
-            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-white rounded-circle" style="animation: pulse 2s infinite;">
-                <span class="visually-hidden">Alerts</span>
-            </span>
-            {% endif %}
-        </div>
+        </a>
     </div>
 </div>
 

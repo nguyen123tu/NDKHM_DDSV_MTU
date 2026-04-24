@@ -74,21 +74,32 @@
                 <thead>
                     <tr>
                         <th class="py-3 px-3 fw-bold align-middle" style="width: 70px;">STT</th>
-                        <th class="py-3 fw-bold align-middle">Thời gian</th>
+                        <th class="py-3 fw-bold align-middle">Thời gian vào</th>
+                        <th class="py-3 fw-bold align-middle">Thời gian ra</th>
                         <th class="py-3 fw-bold align-middle">Mã SV</th>
                         <th class="py-3 fw-bold align-middle">Họ tên</th>
-                        <th class="py-3 fw-bold align-middle">Lớp</th>
-                        <th class="py-3 fw-bold align-middle text-center" style="width: 180px;">Trạng thái</th>
+                        <th class="py-3 fw-bold align-middle text-center">Bằng chứng</th>
+                        <th class="py-3 fw-bold align-middle text-center" style="width: 150px;">Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in history %}
                     <tr>
                         <td class="px-3 fw-medium" style="color: #64748b;">{{ loop.index + ((pagination.current - 1) * 50) }}</td>
-                        <td class="fw-medium text-primary" style="opacity: 0.85;">{{ item.thoi_gian.strftime('%H:%M:%S %d/%m/%Y') if item.thoi_gian else '' }}</td>
-                        <td class="fw-medium text-primary" style="opacity: 0.85;">{{ item.mssv }}</td>
-                        <td class="fw-medium text-primary" style="opacity: 0.85;">{{ item.ho_ten }}</td>
-                        <td class="fw-medium text-primary" style="opacity: 0.85;">{{ item.ma_lop }}</td>
+                        <td class="fw-medium text-primary">{{ item.thoi_gian.strftime('%H:%M:%S %d/%m/%Y') if item.thoi_gian else '--:--' }}</td>
+                        <td class="fw-medium text-success">{{ item.gio_ra.strftime('%H:%M:%S') if item.gio_ra else '--:--' }}</td>
+                        <td class="fw-medium text-dark">{{ item.mssv }}</td>
+                        <td class="fw-medium text-dark">{{ item.ho_ten }}</td>
+                        <td class="text-center">
+                            {% set note = item.ghi_chu or "" %}
+                            {% if note.startswith("EVIDENCE:") %}
+                                <a href="/{{ note.replace('EVIDENCE:', '', 1) }}" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-3" style="font-size: 0.7rem;">
+                                    <i class="fas fa-eye me-1"></i> Xem ảnh
+                                </a>
+                            {% else %}
+                                <span class="text-muted small">N/A</span>
+                            {% endif %}
+                        </td>
                         <td class="text-center">
                             {% if item.trang_thai == 'Co mat' %}
                             <span class="badge-outline-success px-3 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">ĐÃ ĐIỂM DANH</span>

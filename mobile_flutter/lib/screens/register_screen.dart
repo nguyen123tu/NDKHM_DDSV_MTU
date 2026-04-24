@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -30,6 +32,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.initState();
     _initCamera();
     _loadClasses();
+    _prefillUserInfo();
+  }
+
+  void _prefillUserInfo() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      if (auth.user != null) {
+        setState(() {
+          _mssvCtrl.text = auth.user!.username;
+          _nameCtrl.text = auth.user!.name;
+          // Nếu đã có thông tin lớp thì pre-select (nếu khớp ID trong danh sách lớp)
+          // Tuy nhiên ID lớp của sinh viên hiện chưa được trả về trong login payload 
+          // nên sẽ dựa vào MSSV để API backend xử lý.
+        });
+      }
+    });
   }
 
   Future<void> _loadClasses() async {
@@ -51,16 +69,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _initCamera() async {
-    _cameras = await availableCameras();
-    if (_cameras != null && _cameras!.isNotEmpty) {
-      final frontCamera = _cameras!.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.front,
-        orElse: () => _cameras![0],
-      );
-      _controller = CameraController(frontCamera, ResolutionPreset.medium);
-      await _controller!.initialize();
+    try {
+      _cameras = await availableCameras();
+      if (_cameras != null && _cameras!.isNotEmpty) {
+        final frontCamera = _cameras!.firstWhere(
+          (c) => c.lensDirection == CameraLensDirection.front,
+          orElse: () => _cameras![0],
+        );
+        _controller = CameraController(frontCamera, ResolutionPreset.medium);
+        await _controller!.initialize();
+        if (!mounted) return;
+        setState(() => _isCameraReady = true);
+      } else {
+        throw Exception("Không tìm thấy camera trên thiết bị");
+      }
+    } catch (e) {
       if (!mounted) return;
-      setState(() => _isCameraReady = true);
+      showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text("Lỗi Camera"),
+          content: Text("Không thể khởi động camera. Vui lòng kiểm tra quyền truy cập: $e"),
+          actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text("Đóng"))],
+        ),
+      );
     }
   }
 
@@ -87,10 +119,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _submitRegistration() async {
-    if (_mssvCtrl.text.isEmpty || _nameCtrl.text.isEmpty || _selectedLopId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng nhập đủ thông tin và chọn lớp học!")));
+    if (_mssvCtrl.text.isEmpty || _nameCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng nhập đủ thông tin!")));
       return;
     }
+    
+    // Nếu là admin thì bắt buộc chọn lớp, nếu là sinh viên có thể dùng lớp cũ
+    if (_selectedLopId == null) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng chọn lớp học!")));
+       return;
+    }
+
     if (_capturedImages.length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng chụp đủ 5 bức ảnh!")));
       return;
@@ -142,16 +181,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  Widget _buildInputField({required TextEditingController controller, required String label, required IconData icon}) {
+  Widget _buildInputField({required TextEditingController controller, required String label, required IconData icon, bool readOnly = false}) {
     return TextField(
       controller: controller,
-      style: const TextStyle(color: Color(0xFF2C3E50)),
+      readOnly: readOnly,
+      style: TextStyle(color: readOnly ? const Color(0xFF94A3B8) : const Color(0xFF2C3E50)),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Color(0xFF6C757D), fontSize: 14),
         prefixIcon: Icon(icon, color: const Color(0xFF2E96EB), size: 22),
         filled: true,
-        fillColor: const Color(0xFFF8FAFC),
+        fillColor: readOnly ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEDF2F9))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E96EB), width: 1.5)),
@@ -202,9 +242,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               child: Column(
                 children: [
-                  _buildInputField(controller: _mssvCtrl, label: "Mã Sinh Viên (MSSV)", icon: Icons.badge),
+                  _buildInputField(
+                    controller: _mssvCtrl,
+                    label: "Mã Sinh Viên (MSSV)",
+                    icon: Icons.badge,
+                    readOnly: Provider.of<AuthProvider>(context, listen: false).user?.role == 'student',
+                  ),
                   const SizedBox(height: 14),
-                  _buildInputField(controller: _nameCtrl, label: "Họ và Tên", icon: Icons.person),
+                  _buildInputField(
+                    controller: _nameCtrl,
+                    label: "Họ và Tên",
+                    icon: Icons.person,
+                    readOnly: Provider.of<AuthProvider>(context, listen: false).user?.role == 'student',
+                  ),
                   const SizedBox(height: 14),
                   // Dropdown
                   if (_classes.isEmpty)
@@ -213,23 +263,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Center(child: CircularProgressIndicator(color: Color(0xFF2E96EB), strokeWidth: 2)),
                     )
                   else
-                    DropdownButtonFormField<int>(
-                      decoration: InputDecoration(
-                        labelText: "Lớp Học",
-                        labelStyle: const TextStyle(color: Color(0xFF6C757D), fontSize: 14),
-                        prefixIcon: const Icon(Icons.school, color: Color(0xFF2E96EB), size: 22),
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEDF2F9))),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E96EB), width: 1.5)),
+                    IgnorePointer(
+                      ignoring: Provider.of<AuthProvider>(context, listen: false).user?.role == 'student',
+                      child: DropdownButtonFormField<int>(
+                        decoration: InputDecoration(
+                          labelText: "Lớp Học",
+                          labelStyle: const TextStyle(color: Color(0xFF6C757D), fontSize: 14),
+                          prefixIcon: const Icon(Icons.school, color: Color(0xFF2E96EB), size: 22),
+                          filled: true,
+                          fillColor: Provider.of<AuthProvider>(context, listen: false).user?.role == 'student' 
+                            ? const Color(0xFFF1F5F9) 
+                            : const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEDF2F9))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E96EB), width: 1.5)),
+                        ),
+                        value: _selectedLopId,
+                        style: TextStyle(
+                          color: Provider.of<AuthProvider>(context, listen: false).user?.role == 'student' 
+                            ? const Color(0xFF94A3B8) 
+                            : const Color(0xFF2C3E50), 
+                          fontSize: 15
+                        ),
+                        items: _classes.map<DropdownMenuItem<int>>((dynamic c) {
+                          return DropdownMenuItem<int>(value: c['id'] as int, child: Text("${c['ten_lop']} (${c['ma_lop']})"));
+                        }).toList(),
+                        onChanged: (int? newValue) { setState(() { _selectedLopId = newValue; }); },
                       ),
-                      value: _selectedLopId,
-                      style: const TextStyle(color: Color(0xFF2C3E50), fontSize: 15),
-                      items: _classes.map<DropdownMenuItem<int>>((dynamic c) {
-                        return DropdownMenuItem<int>(value: c['id'] as int, child: Text("${c['ten_lop']} (${c['ma_lop']})"));
-                      }).toList(),
-                      onChanged: (int? newValue) { setState(() { _selectedLopId = newValue; }); },
                     ),
                 ],
               ),

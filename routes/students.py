@@ -9,6 +9,7 @@ from . import students_bp
 from utils.decorators import login_required
 from utils.helpers import allowed_image
 from services import student_service, class_service
+from db.connection import execute_query, execute_update
 from config import Config
 
 import base64
@@ -201,3 +202,48 @@ def delete(id):
     else:
         flash("Lỗi khi xóa", "danger")
     return redirect(url_for('students.list_students'))
+@students_bp.route('/pending')
+@login_required
+def pending_faces():
+    """Danh sách SV đang chờ duyệt khuôn mặt"""
+    sql = """
+        SELECT sv.id, sv.mssv, sv.ho_ten, sv.avatar, lh.ten_lop 
+        FROM sinh_vien sv
+        LEFT JOIN lop_hoc lh ON sv.lop_id = lh.id
+        WHERE sv.trang_thai_face = 1
+    """
+    pending_list = execute_query(sql)
+    return render_template('students/pending.html', students=pending_list)
+
+@students_bp.route('/approve-face/<int:id>', methods=['POST'])
+@login_required
+def approve_face(id):
+    """Phê duyệt khuôn mặt cho SV"""
+    # Cập nhật trạng thái trang_thai_face = 2 (Đã duyệt)
+    if execute_update("UPDATE sinh_vien SET trang_thai_face = 2 WHERE id = %s", (id,)):
+        flash("Đã phê duyệt khuôn mặt thành công!", "success")
+    else:
+        flash("Có lỗi khi phê duyệt", "danger")
+    return redirect(url_for('students.pending_faces'))
+
+@students_bp.route('/approve-all', methods=['POST'])
+@login_required
+def approve_all_faces():
+    """Phê duyệt TẤT CẢ khuôn mặt đang chờ"""
+    count = execute_update("UPDATE sinh_vien SET trang_thai_face = 2 WHERE trang_thai_face = 1")
+    if count > 0:
+        flash(f"Đã phê duyệt thành công {count} sinh viên!", "success")
+    else:
+        flash("Không có sinh viên nào cần phê duyệt", "info")
+    return redirect(url_for('students.pending_faces'))
+
+@students_bp.route('/reject-face/<int:id>', methods=['POST'])
+@login_required
+def reject_face(id):
+    """Từ chối khuôn mặt (yêu cầu chụp lại)"""
+    # Cập nhật trạng thái trang_thai_face = 3 (Từ chối)
+    if execute_update("UPDATE sinh_vien SET trang_thai_face = 3 WHERE id = %s", (id,)):
+        flash("Đã từ chối khuôn mặt sinh viên.", "info")
+    else:
+        flash("Có lỗi xảy ra", "danger")
+    return redirect(url_for('students.pending_faces'))

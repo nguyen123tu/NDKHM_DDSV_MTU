@@ -1,45 +1,51 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Face Attendance System{% endblock %}</title>
-    
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     {% block extra_css %}{% endblock %}
 
     <style>
         /* Specific Basic Layout Styles */
-        body { background-color: #f4f6f9 !important; color: #333; }
-        
+        body {
+            background-color: #f4f6f9 !important;
+            color: #333;
+        }
+
         .sidebar {
             width: 260px;
-            background-color: #3498db; /* Blue sidebar */
+            background-color: #3498db;
+            /* Blue sidebar */
             color: #fff;
             position: fixed;
-            top: 0; left: 0;
+            top: 0;
+            left: 0;
             height: 100vh;
             z-index: 1000;
             transition: all 0.3s;
             overflow-y: auto;
         }
-        
+
         .sidebar-brand {
             padding: 1.5rem;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         .sidebar-brand a {
             color: #fff;
             font-weight: 700;
@@ -47,40 +53,41 @@
             letter-spacing: 1px;
             text-transform: uppercase;
         }
-        
+
         .sidebar-nav {
             padding: 1rem 0.5rem;
             list-style: none;
             margin: 0;
         }
-        
+
         .sidebar-nav li {
             margin-bottom: 5px;
         }
-        
+
         .sidebar-nav .nav-link {
-            color: rgba(255,255,255,0.85);
+            color: rgba(255, 255, 255, 0.85);
             padding: 12px 20px;
             display: flex;
             align-items: center;
             border-radius: 8px;
             font-weight: 500;
         }
-        
+
         .sidebar-nav .nav-link i {
             width: 24px;
             font-size: 1.1rem;
             margin-right: 10px;
             text-align: center;
         }
-        
+
         .sidebar-nav .nav-link:hover {
-            background-color: rgba(255,255,255,0.1);
+            background-color: rgba(255, 255, 255, 0.1);
             color: #fff;
         }
-        
+
         .sidebar-nav .nav-link.active {
-            background-color: #ffb822; /* Yellow highlight */
+            background-color: #ffb822;
+            /* Yellow highlight */
             color: #333 !important;
             font-weight: 600;
         }
@@ -104,21 +111,21 @@
             top: 0;
             z-index: 999;
         }
-        
+
         .topbar-title {
             color: #3498db;
             font-weight: 600;
             font-size: 1.25rem;
             margin: 0;
         }
-        
+
         .topbar-datetime {
             text-align: right;
             color: #6c757d;
             font-size: 0.85rem;
             line-height: 1.4;
         }
-        
+
         .topbar-datetime .time {
             color: #3498db;
             font-weight: 600;
@@ -131,6 +138,7 @@
         }
     </style>
 </head>
+
 <body>
 
     {% if session.get('admin_id') %}
@@ -141,37 +149,52 @@
                 ĐIỂM DANH ONLINE
             </a>
         </div>
-        
+
         <ul class="sidebar-nav">
             <li>
-                <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('dashboard') %}active{% endif %}">
+                <a href="{{ url_for('dashboard.index') }}"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('dashboard') %}active{% endif %}">
                     <i class="fas fa-home"></i> Trang chủ
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'kiosk' %}active{% endif %}" href="{{ url_for('dashboard.kiosk') }}" target="_blank">
+                    <i class="fas fa-desktop me-2"></i> Kiosk Mode
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'pending' %}active{% endif %}" href="{{ url_for('students.pending_faces') }}">
+                    <i class="fas fa-user-check me-2"></i> Duyệt khuôn mặt
+                </a>
+            </li>
             <li>
-                <a href="{{ url_for('students.list_students') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('students') %}active{% endif %}">
+                <a href="{{ url_for('students.list_students') }}"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('students') and request.endpoint != 'students.pending_faces' %}active{% endif %}">
                     <i class="fas fa-user-graduate"></i> Quản lý sinh viên
                 </a>
             </li>
             <li>
-                <a href="{{ url_for('classes.list_classes') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('classes') %}active{% endif %}">
+                <a href="{{ url_for('classes.list_classes') }}"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('classes') %}active{% endif %}">
                     <i class="fas fa-chalkboard-user"></i> Quản lý lớp học
                 </a>
             </li>
             <li>
-                <a href="{{ url_for('attendance.live') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('attendance') %}active{% endif %}">
+                <a href="{{ url_for('attendance.live') }}"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('attendance') %}active{% endif %}">
                     <i class="fas fa-video"></i> Ghi nhận ra/vào
                 </a>
             </li>
             <!-- Thêm mục Lịch sử ra/vào mốc placeholder -->
             <li>
-                <a href="#" class="nav-link">
+                <a href="{{ url_for('attendance.history') }}" class="nav-link">
                     <i class="fas fa-history"></i> Lịch sử ra/vào
                 </a>
             </li>
-            
+
             <li class="mt-4">
-                <a href="{{ url_for('training.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('training') %}active{% endif %}">
+                <a href="{{ url_for('training.index') }}"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('training') %}active{% endif %}">
                     <i class="fas fa-brain"></i> Training Dữ Liệu
                 </a>
             </li>
@@ -185,8 +208,8 @@
     {% endif %}
 
     <!-- MAIN TEMPLATE -->
-    <div class="main-wrapper" {% if not session.get('admin_id') %}style="margin-left: 0;"{% endif %}>
-        
+    <div class="main-wrapper" {% if not session.get('admin_id') %}style="margin-left: 0;" {% endif %}>
+
         {% if session.get('admin_id') %}
         <!-- TOPBAR -->
         <header class="topbar">
@@ -200,33 +223,35 @@
 
         <!-- CONTENT AREA -->
         <main class="content-area">
-            
+
             <!-- Xử lý Flask flash messages -->
             <div class="flash-container">
                 {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                        <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm bg-white" role="alert" style="border-left: 4px solid var(--{{ category if category != 'error' else 'danger' }});">
-                            {% if category == 'success' %}
-                                <i class="fas fa-check-circle text-success me-2"></i>
-                            {% elif category == 'danger' or category == 'error' %}
-                                <i class="fas fa-exclamation-circle text-danger me-2"></i>
-                            {% elif category == 'warning' %}
-                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                            {% else %}
-                                <i class="fas fa-info-circle text-info me-2"></i>
-                            {% endif %}
-                            
-                            <span class="text-dark">{{ message }}</span>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                        {% endfor %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm bg-white"
+                    role="alert"
+                    style="border-left: 4px solid var(--{{ category if category != 'error' else 'danger' }});">
+                    {% if category == 'success' %}
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    {% elif category == 'danger' or category == 'error' %}
+                    <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                    {% elif category == 'warning' %}
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    {% else %}
+                    <i class="fas fa-info-circle text-info me-2"></i>
                     {% endif %}
+
+                    <span class="text-dark">{{ message }}</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
                 {% endwith %}
             </div>
 
             {% block content %}{% endblock %}
-            
+
         </main>
     </div>
 
@@ -235,43 +260,44 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Auto ẩn flash msg
-            setTimeout(function() {
-                $('.alert').fadeOut('slow', function() { $(this).remove(); });
+            setTimeout(function () {
+                $('.alert').fadeOut('slow', function () { $(this).remove(); });
             }, 5000);
 
             // Cập nhật ngày giờ topbar
             function updateDateTime() {
                 const now = new Date();
-                
+
                 // Giờ
                 const hours = String(now.getHours()).padStart(2, '0');
                 const minutes = String(now.getMinutes()).padStart(2, '0');
                 const seconds = String(now.getSeconds()).padStart(2, '0');
-                if(document.getElementById('timeDisplay')) {
+                if (document.getElementById('timeDisplay')) {
                     document.getElementById('timeDisplay').innerText = `${hours}:${minutes}:${seconds}`;
                 }
-                
+
                 // Ngày
                 const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
                 const dayName = days[now.getDay()];
                 const date = now.getDate();
                 const month = now.getMonth() + 1;
                 const year = now.getFullYear();
-                
-                if(document.getElementById('dateDisplay')) {
+
+                if (document.getElementById('dateDisplay')) {
                     document.getElementById('dateDisplay').innerText = `${dayName}, ${date} tháng ${month}, ${year}`;
                 }
             }
-            
+
             updateDateTime();
             setInterval(updateDateTime, 1000);
         });
     </script>
-    
+
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>

@@ -134,14 +134,45 @@ def api_recognize():
     # Ghi điểm danh nếu có chọn lớp (hoặc dùng lớp mặc định của SV)
     check_lop_id = lop_id if lop_id else sv.get('lop_id')
     attendance_info = None
+    
+    # [NEW] Lưu ảnh bằng chứng để chống gian lận (audit trail)
+    evidence_path = None
+    try:
+        from config import Config
+        import os
+        import uuid
+        from datetime import datetime
+        
+        date_folder = datetime.now().strftime("%Y%m%d")
+        save_dir = os.path.join(Config.EVIDENCE_DIR, date_folder)
+        os.makedirs(save_dir, exist_ok=True)
+        
+        filename = f"kiosk_{mssv}_{datetime.now().strftime('%H%M%S')}_{uuid.uuid4().hex[:6]}.jpg"
+        abs_path = os.path.join(save_dir, filename)
+        cv2.imwrite(abs_path, frame)
+        rel_path = os.path.relpath(abs_path, Config.BASE_DIR).replace('\\', '/')
+        evidence_path = f"EVIDENCE:{rel_path}"
+    except Exception as e:
+        print(f"[KIOSK] Lỗi lưu bằng chứng: {e}")
+
     if check_lop_id:
         log_result = attendance_service.log(
-            mssv=mssv, lop_id=check_lop_id, do_chinh_xac=sim, camera_id=0
+            mssv=mssv, 
+            lop_id=check_lop_id, 
+            do_chinh_xac=sim, 
+            camera_id=0,
+            ghi_chu=evidence_path
         )
         if log_result and isinstance(log_result, dict):
+            status_msg = "Điểm danh vào thành công!"
+            if log_result['action'] == 'checkout':
+                status_msg = "Hẹn gặp lại! Đã ghi nhận giờ ra."
+            elif log_result['action'] == 'skip':
+                status_msg = "Bạn đã điểm danh trước đó rồi."
+                
             attendance_info = {
                 'action': log_result['action'],
-                'msg': 'Điểm danh vào thành công!' if log_result['action'] == 'checkin' else 'Ghi nhận giờ ra!'
+                'msg': status_msg
             }
     
     # Lấy lịch sử hôm nay

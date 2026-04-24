@@ -6,52 +6,60 @@
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="d-flex align-items-center mb-4">
-            <a href="{{ url_for('students.detail', id=student.id) }}" class="btn btn-outline-secondary border-0 p-2 me-3 text-muted hover-text-dark">
-                <i class="fas fa-arrow-left fs-5"></i>
+            <a href="{{ url_for('students.detail', id=student.id) }}" class="btn-back-square me-3">
+                <i class="fas fa-chevron-left"></i>
             </a>
-            <h3 class="fw-bold m-0"><i class="fas fa-user-edit text-secondary me-2"></i> Chỉnh Sửa Thông Tin Sinh Viên</h3>
+            <div>
+                <h3 class="fw-bold m-0 text-navy">Chỉnh Sửa Thông Tin</h3>
+                <p class="text-muted small m-0">Cập nhật hồ sơ sinh viên: {{ student.ho_ten }}</p>
+            </div>
         </div>
 
-        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4">
+        <div class="premium-card p-0 overflow-hidden">
             <form method="POST" action="{{ url_for('students.edit', id=student.id) }}" enctype="multipart/form-data">
-                <div class="row g-4 mb-4">
-                    <!-- Ảnh đại diện -->
-                    <div class="col-md-4 text-center">
-                        <div class="mb-3 position-relative">
-                            <div class="bg-light border border-secondary border-opacity-50 rounded-circle overflow-hidden mx-auto d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; border-style: dashed !important;">
-                                <!-- Nếu đã có ảnh thì hiện luôn -->
+                <div class="row g-0">
+                    <!-- Sidebar Ảnh đại diện -->
+                    <div class="col-md-4 border-end border-light bg-light-subtle p-4 d-flex flex-column align-items-center justify-content-center">
+                        <div class="avatar-edit-wrapper mb-3">
+                            <div class="avatar-circle-large">
                                 {% if student.avatar %}
-                                <img src="{{ url_for('serve_database_file', filename=student.avatar) }}" id="avatarPreview" class="w-100 h-100" style="object-fit: cover;">
+                                <img src="{{ url_for('serve_database_file', filename=student.avatar) }}" id="avatarPreview" class="w-100 h-100 object-fit-cover">
                                 {% else %}
-                                <i class="fas fa-camera fs-1 text-muted" id="avatarIcon"></i>
-                                <img src="" id="avatarPreview" class="d-none w-100 h-100" style="object-fit: cover;">
+                                <div id="avatarPlaceholder" class="w-100 h-100 d-flex align-items-center justify-content-center bg-gray-200">
+                                    <i class="fas fa-user-graduate fs-1 text-secondary"></i>
+                                </div>
+                                <img src="" id="avatarPreview" class="d-none w-100 h-100 object-fit-cover">
                                 {% endif %}
                             </div>
-                            <div class="mt-3">
-                                <label for="avatar" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-upload me-1"></i> Đổi Ảnh Đại Diện
-                                </label>
-                                <input type="file" id="avatar" name="avatar" class="d-none" accept="image/png, image/jpeg" onchange="previewImage(this);">
-                            </div>
+                            <label for="avatar" class="avatar-edit-badge" title="Đổi ảnh đại diện">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                            <input type="file" id="avatar" name="avatar" class="d-none" accept="image/png, image/jpeg" onchange="previewImage(this);">
                         </div>
+                        <p class="small text-muted text-center px-3 mt-2">Định dạng hỗ trợ: JPG, PNG. Dung lượng tối đa 2MB.</p>
                     </div>
                     
-                    <!-- Form thông tin -->
-                    <div class="col-md-8">
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold text-uppercase">Mã Sinh Viên (MSSV) <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control border-light shadow-sm bg-white text-dark bg-light border-secondary" value="{{ student.mssv }}" readonly disabled>
-                            <div class="small text-muted mt-1">Không thể thay đổi mã sinh viên sau khi tạo.</div>
+                    <!-- Phần thông tin -->
+                    <div class="col-md-8 p-4 p-lg-5">
+                        <h5 class="section-title mb-4">Thông tin cơ bản</h5>
+                        
+                        <div class="mb-4">
+                            <label class="premium-label">Mã Sinh Viên (MSSV)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-gray-100 text-muted border-light"><i class="fas fa-id-card"></i></span>
+                                <input type="text" class="form-control readonly-field" value="{{ student.mssv }}" readonly>
+                            </div>
+                            <div class="small text-danger opacity-75 mt-1"><i class="fas fa-info-circle me-1"></i> MSSV là trường cố định không thể chỉnh sửa.</div>
                         </div>
                         
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold text-uppercase">Họ và Tên <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="ho_ten" required value="{{ student.ho_ten }}">
+                        <div class="mb-4">
+                            <label class="premium-label">Họ và Tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control premium-input" name="ho_ten" required value="{{ student.ho_ten }}" placeholder="Nhập họ tên đầy đủ">
                         </div>
                         
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold text-uppercase">Chọn lớp sinh hoạt</label>
-                            <select class="form-select border-light shadow-sm bg-white text-dark" name="lop_id">
+                        <div class="mb-4">
+                            <label class="premium-label">Lớp Sinh Hoạt</label>
+                            <select class="form-select premium-input" name="lop_id">
                                 <option value="">-- Chọn một lớp --</option>
                                 {% for lop in classes %}
                                 <option value="{{ lop.id }}" {% if student.lop_id == lop.id %}selected{% endif %}>{{ lop.ma_lop }} - {{ lop.ten_lop }}</option>
@@ -59,74 +67,209 @@
                             </select>
                         </div>
                         
-                        <div class="row g-3 mb-3">
+                        <div class="row g-4 mb-4">
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Ngày sinh</label>
-                                <input type="date" class="form-control border-light shadow-sm bg-white text-dark" name="ngay_sinh" value="{{ student.ngay_sinh }}">
+                                <label class="premium-label">Ngày sinh</label>
+                                <input type="date" class="form-control premium-input" name="ngay_sinh" value="{{ student.ngay_sinh }}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase d-block">Giới tính</label>
-                                <div class="d-flex h-100 align-items-center">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input bg-light border-secondary" type="radio" name="gioi_tinh" id="nam" value="1" {% if student.gioi_tinh == 1 %}checked{% endif %}>
-                                        <label class="form-check-label text-light" for="nam">Nam</label>
+                                <label class="premium-label">Giới tính</label>
+                                <div class="premium-radio-group">
+                                    <div class="form-check me-4">
+                                        <input class="form-check-input" type="radio" name="gioi_tinh" id="nam" value="1" {% if student.gioi_tinh == 1 %}checked{% endif %}>
+                                        <label class="form-check-label text-dark" for="nam">Nam</label>
                                     </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input bg-light border-secondary" type="radio" name="gioi_tinh" id="nu" value="0" {% if student.gioi_tinh == 0 %}checked{% endif %}>
-                                        <label class="form-check-label text-light" for="nu">Nữ</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="gioi_tinh" id="nu" value="0" {% if student.gioi_tinh == 0 %}checked{% endif %}>
+                                        <label class="form-check-label text-dark" for="nu">Nữ</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="row g-3">
+                        <div class="row g-4">
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Số điện thoại</label>
-                                <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="sdt" value="{{ student.sdt or '' }}">
+                                <label class="premium-label">Số điện thoại</label>
+                                <input type="text" class="form-control premium-input" name="sdt" value="{{ student.sdt or '' }}" placeholder="0xx xxx xxxx">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Email liên hệ</label>
-                                <input type="email" class="form-control border-light shadow-sm bg-white text-dark" name="email" value="{{ student.email or '' }}">
+                                <label class="premium-label">Email liên hệ</label>
+                                <input type="email" class="form-control premium-input" name="email" value="{{ student.email or '' }}" placeholder="example@mtu.edu.vn">
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="text-end pt-3 border-top border-secondary border-opacity-50">
-                    <a href="{{ url_for('students.detail', id=student.id) }}" class="btn btn-outline-light me-2">Hủy bỏ</a>
-                    <button type="submit" class="btn btn-glass-warning">
-                        <i class="fas fa-save me-1"></i> Cập Nhật Thay Đổi
-                    </button>
+                        <div class="d-flex justify-content-end gap-3 mt-5 pt-4 border-top">
+                            <a href="{{ url_for('students.detail', id=student.id) }}" class="btn btn-light-soft px-4 border">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-navy-gradient px-4">
+                                <i class="fas fa-check-circle me-2"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<style>
+    .text-navy { color: #1B3A5C; }
+    .bg-navy { background-color: #1B3A5C; }
+    
+    .btn-back-square {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: #fff;
+        color: #718096;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    .btn-back-square:hover {
+        background: #f8fafc;
+        color: #1B3A5C;
+        border-color: #1B3A5C;
+        transform: translateX(-2px);
+    }
+
+    .premium-card {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    }
+
+    .avatar-edit-wrapper {
+        position: relative;
+        padding: 5px;
+    }
+    .avatar-circle-large {
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 4px solid #fff;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        background: #f3f4f6;
+    }
+    .avatar-edit-badge {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 38px;
+        height: 38px;
+        background: #1B3A5C;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 3px solid #fff;
+        transition: all 0.2s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .avatar-edit-badge:hover {
+        transform: scale(1.1);
+        background: #2563eb;
+    }
+
+    .premium-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.025em;
+    }
+    .premium-input {
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        background-color: #fff;
+    }
+    .premium-input:focus {
+        border-color: #1B3A5C;
+        box-shadow: 0 0 0 4px rgba(27, 58, 92, 0.1);
+        background-color: #fff;
+    }
+    .readonly-field {
+        background-color: #f1f5f9 !important;
+        border-color: #e2e8f0;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .premium-radio-group {
+        display: flex;
+        align-items: center;
+        height: calc(1.5em + 1.5rem + 2px); /* Same as input height */
+    }
+
+    .section-title {
+        color: #1B3A5C;
+        font-weight: 700;
+        position: relative;
+        padding-bottom: 10px;
+        margin-bottom: 25px;
+    }
+    .section-title::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 40px;
+        height: 3px;
+        background: #1B3A5C;
+        border-radius: 2px;
+    }
+
+    .btn-navy-gradient {
+        background: linear-gradient(135deg, #1B3A5C 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(27, 58, 92, 0.2);
+    }
+    .btn-navy-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(27, 58, 92, 0.3);
+        color: white;
+    }
+
+    .btn-light-soft {
+        background: #f8fafc;
+        color: #64748b;
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+    }
+
+    .bg-light-subtle { background-color: #fcfdfe; }
+</style>
+
 <script>
 function previewImage(input) {
     if (input.files && input.files[0]) {
         var reader = new FileReader();
         reader.onload = function(e) {
-            document.getElementById('avatarPreview').src = e.target.result;
-            document.getElementById('avatarPreview').classList.remove('d-none');
-            const icon = document.getElementById('avatarIcon');
-            if (icon) icon.classList.add('d-none');
+            const preview = document.getElementById('avatarPreview');
+            const placeholder = document.getElementById('avatarPlaceholder');
+            preview.src = e.target.result;
+            preview.classList.remove('d-none');
+            if (placeholder) placeholder.classList.add('d-none');
         }
         reader.readAsDataURL(input.files[0]);
     }
 }
 </script>
-<style>
-    .btn-glass-warning {
-        background: rgba(245, 158, 11, 0.2);
-        color: #fcd34d;
-        border: 1px solid rgba(245, 158, 11, 0.4);
-        backdrop-filter: blur(4px);
-    }
-    .btn-glass-warning:hover {
-        background: rgba(245, 158, 11, 0.4);
-        color: #fff;
-    }
-</style>
 {% endblock %}

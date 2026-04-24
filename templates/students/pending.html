@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Phê Duyệt Thành Viên{% endblock %}
+{% block page_title %}Phê Duyệt Thành Viên{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="premium-header d-flex justify-content-between align-items-center p-4 bg-white rounded-4 shadow-sm border border-light animate__animated animate__fadeInDown">
+            <div>
+                <h4 class="fw-bold m-0 text-navy"><i class="fas fa-user-check me-2 text-primary"></i> Yêu cầu đang chờ xử lý</h4>
+                <p class="text-muted small m-0 mt-1">Danh sách sinh viên tự đăng ký hoặc cập nhật khuôn mặt cần phê duyệt để đưa vào AI nhận diện.</p>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <div class="stat-badge bg-warning-subtle text-warning-emphasis p-2 px-3 rounded-pill border border-warning-subtle fw-bold small">
+                    <i class="fas fa-hourglass-half me-1"></i> {{ students|length }} Chờ duyệt
+                </div>
+                {% if students %}
+                <form action="{{ url_for('students.approve_all_faces') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn PHÊ DUYỆT TẤT CẢ yêu cầu này không?')">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="fas fa-check-double me-1"></i> Duyệt tất cả
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="premium-card p-0 overflow-hidden shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle custom-table">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="ps-4 py-3">Sinh viên</th>
+                    <th class="py-3">MSSV</th>
+                    <th class="py-3">Lớp học</th>
+                    <th class="py-3">Ảnh đăng ký</th>
+                    <th class="py-3 text-end pe-4">Thao tác phê duyệt</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if students %}
+                    {% for sv in students %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm rounded-circle shadow-sm me-3 bg-light d-flex align-items-center justify-content-center overflow-hidden" style="width: 48px; height: 48px; border: 2px solid #fff;">
+                                    {% if sv.avatar %}
+                                    <img src="/{{ sv.avatar }}" class="w-100 h-100 object-fit-cover">
+                                    {% else %}
+                                    <i class="fas fa-user text-muted"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-navy">{{ sv.ho_ten }}</div>
+                                    <div class="text-muted extra-small">Đăng ký lúc: {{ sv.created_at|default('Vừa mới đây') }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-navy-subtle text-navy border border-navy-subtle fw-600 px-3">{{ sv.mssv }}</span></td>
+                        <td>
+                            <div class="text-dark fw-500">{{ sv.ten_lop }}</div>
+                            <div class="text-muted small">{{ sv.ma_lop }}</div>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-image-view" onclick="viewAllImages('{{ sv.mssv }}')">
+                                <i class="fas fa-images me-2"></i>Xem dữ liệu ảnh
+                            </button>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <form action="{{ url_for('students.approve_face', id=sv.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn PHÊ DUYỆT sinh viên này vào hệ thống?')">
+                                    <button type="submit" class="btn-action btn-approve" title="Chấp nhận">
+                                        <i class="fas fa-check"></i> Phê Duyệt
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('students.reject_face', id=sv.id) }}" method="POST" onsubmit="return confirm('TỪ CHỐI yêu cầu này? Dữ liệu ảnh sẽ bị xóa.')">
+                                    <button type="submit" class="btn-action btn-reject" title="Từ chối">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="py-5 text-center">
+                            <div class="empty-state">
+                                <div class="empty-icon"><i class="fas fa-check-double"></i></div>
+                                <h6 class="fw-bold text-navy mt-3">Hiện đang trống</h6>
+                                <p class="text-muted small">Tất cả yêu cầu đã được xử lý xong!</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal xem chi tiết ảnh -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title fw-bold text-navy">Bộ mẫu khuôn mặt</h5>
+                    <p class="text-muted small m-0">Sinh viên: <span id="modalMssv" class="fw-bold text-primary"></span></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="imageGrid" class="row g-3">
+                    <!-- Ảnh sẽ được nạp bằng JS -->
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                 <p class="small text-muted me-auto"><i class="fas fa-info-circle me-1"></i> Kiểm tra xem ảnh có rõ nét và đúng người không trước khi duyệt.</p>
+                 <button type="button" class="btn btn-light-soft rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-navy { color: #1B3A5C !important; }
+    .bg-navy-subtle { background-color: rgba(27, 58, 92, 0.05); }
+    .extra-small { font-size: 0.7rem; }
+    .fw-600 { font-weight: 600; }
+    .fw-500 { font-weight: 500; }
+
+    .premium-card {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .custom-table thead th {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 1px solid #f1f5f9;
+        background-color: #f8fafc;
+    }
+
+    .custom-table tbody td {
+        border-bottom: 1px solid #f1f5f9;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .btn-image-view {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        color: #1B3A5C;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+    .btn-image-view:hover {
+        background: #f1f5f9;
+        border-color: #1B3A5C;
+    }
+
+    .btn-action {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0 1.25rem;
+        transition: all 0.2s;
+    }
+
+    .btn-approve {
+        background: #10B981;
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    }
+    .btn-approve:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-reject {
+        background: #fee2e2;
+        color: #ef4444;
+        width: 38px;
+        padding: 0;
+    }
+    .btn-reject:hover {
+        background: #ef4444;
+        color: #fff;
+    }
+
+    .empty-state {
+        padding: 40px;
+    }
+    .empty-icon {
+        font-size: 3rem;
+        color: #cbd5e1;
+    }
+
+    #imageGrid img {
+        height: 140px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 12px;
+        transition: transform 0.3s;
+        cursor: zoom-in;
+    }
+    #imageGrid img:hover {
+        transform: scale(1.05);
+    }
+
+    .bg-gray-50 { background-color: #f9fafb; }
+    .btn-light-soft { background-color: #f1f5f9; color: #64748b; }
+</style>
+
+<script>
+function viewAllImages(mssv) {
+    const modalElement = document.getElementById('imageModal');
+    const modal = new bootstrap.Modal(modalElement);
+    document.getElementById('modalMssv').innerText = mssv;
+    const grid = document.getElementById('imageGrid');
+    
+    grid.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted small mt-2">Đang tải bộ mẫu dữ liệu...</p>
+        </div>`;
+    
+    modal.show();
+    
+    if (!mssv) return;
+    
+    fetch(`/api/mobile/face-gallery?mssv=${encodeURIComponent(mssv)}`, {
+        headers: {
+            'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+        }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success && res.data.length > 0) {
+            grid.innerHTML = '';
+            res.data.forEach(path => {
+                const col = document.createElement('div');
+                col.className = 'col-6 col-md-3';
+                col.innerHTML = `
+                    <div class="card border-0 shadow-sm overflow-hidden h-100">
+                        <img src="/database/${path}" class="img-fluid" alt="Face sample">
+                    </div>`;
+                grid.appendChild(col);
+            });
+        } else {
+            grid.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-image fs-1 text-muted opacity-25"></i>
+                    <p class="text-muted mt-2">Không tìm thấy ảnh thực tế trong folder!</p>
+                </div>`;
+        }
+    })
+    .catch(err => {
+        grid.innerHTML = `<div class="col-12 text-center text-danger py-5">Lỗi kết nối API: ${err}</div>`;
+    });
+}
+</script>
+{% endblock %}

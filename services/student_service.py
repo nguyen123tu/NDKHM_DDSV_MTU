@@ -156,10 +156,29 @@ def update(student_id, data):
 
 
 def delete(student_id):
-    """Xóa cứng sinh viên khỏi Database."""
+    """Xóa cứng sinh viên khỏi Database và xóa thư mục ảnh liên quan."""
+    import shutil
+    import os
+    from config import Config
+    
+    sv = get_by_id(student_id)
+    if not sv:
+        return False
+        
+    mssv = sv['mssv']
+
     sql = "DELETE FROM sinh_vien WHERE id = %s"
     result = execute_update(sql, (student_id,))
-    return result >= 0
+    
+    if result >= 0:
+        student_dir = os.path.join(Config.DATABASE_DIR, mssv)
+        if os.path.exists(student_dir):
+            try:
+                shutil.rmtree(student_dir)
+            except Exception as e:
+                print(f"Lỗi khi xóa thư mục ảnh của {mssv}: {e}")
+        return True
+    return False
 
 
 def mark_trained(mssv):

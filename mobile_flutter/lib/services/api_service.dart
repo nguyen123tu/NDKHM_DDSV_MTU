@@ -20,7 +20,7 @@ class ApiService {
   // 4. Triển khai lên VPS/Cloud (Production):
   //    static const String baseUrl = 'https://your-domain.com';
   // ============================================================
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'http://192.168.1.67:5000';
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
@@ -52,10 +52,16 @@ class ApiService {
     throw Exception('Failed to load stats');
   }
 
-  Future<Map<String, dynamic>> getHistory({int limit = 20}) async {
+  Future<Map<String, dynamic>> getHistory({int limit = 20, int? lopId, String? date, int? month, int? year}) async {
     final headers = await _getHeaders();
+    String url = '$baseUrl/api/mobile/history?limit=$limit';
+    if (lopId != null) url += '&lop_id=$lopId';
+    if (date != null) url += '&date=$date';
+    if (month != null) url += '&month=$month';
+    if (year != null) url += '&year=$year';
+    
     final response = await http.get(
-      Uri.parse('$baseUrl/api/mobile/history?limit=$limit'),
+      Uri.parse(url),
       headers: headers,
     );
     if (response.statusCode == 200) {
@@ -106,5 +112,71 @@ class ApiService {
     } catch (e) {
       return {'success': false, 'message': 'Lỗi kết nối: $e'};
     }
+  }
+
+  Future<Map<String, dynamic>> getProfile() async {
+    final headers = await _getHeaders();
+    final response = await http.get(Uri.parse('$baseUrl/api/mobile/profile'), headers: headers);
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> changePassword(String oldPassword, String newPassword) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/change-password'),
+      headers: headers,
+      body: jsonEncode({'old_password': oldPassword, 'new_password': newPassword}),
+    );
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> getSchedule() async {
+    final headers = await _getHeaders();
+    final response = await http.get(Uri.parse('$baseUrl/api/mobile/schedule'), headers: headers);
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> updateAvatar(String base64Image) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/update-avatar'),
+      headers: headers,
+      body: jsonEncode({'image': base64Image}),
+    );
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/update-profile'),
+      headers: headers,
+      body: jsonEncode(data),
+    );
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> getFaceGallery({String? mssv}) async {
+    final headers = await _getHeaders();
+    String url = '$baseUrl/api/mobile/face-gallery';
+    if (mssv != null) url += '?mssv=$mssv';
+    final response = await http.get(Uri.parse(url), headers: headers);
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> getPendingFaces() async {
+    final headers = await _getHeaders();
+    final response = await http.get(Uri.parse('$baseUrl/api/mobile/pending-faces'), headers: headers);
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> approveFace(int svId, int status) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/approve-face'),
+      headers: headers,
+      body: jsonEncode({'id': svId, 'status': status}),
+    );
+    return jsonDecode(response.body);
   }
 }
