@@ -4,6 +4,28 @@ Tất cả truy vấn DB liên quan tới bảng sinh_vien đều nằm ở đâ
 """
 
 from db.connection import execute_query, execute_one, execute_update
+import os
+import glob
+from config import Config
+
+def get_avatar_path(mssv):
+    """
+    Trả về đường dẫn avatar của SV.
+    Nếu trong DB không có hoặc không tồn tại file, tự động tìm file ảnh đầu tiên trong database/mssv/.
+    """
+    sv = execute_one("SELECT avatar FROM sinh_vien WHERE mssv = %s", (mssv,))
+    avatar_path = sv.get('avatar') if sv else None
+    
+    if not avatar_path or not os.path.exists(os.path.join(Config.BASE_DIR, avatar_path)):
+        # Tìm file trong dataset
+        db_path = os.path.join(Config.DATABASE_DIR, mssv)
+        images = glob.glob(f"{db_path}/*.jpg") + glob.glob(f"{db_path}/*.png")
+        if images:
+            avatar_path = f"database/{mssv}/{os.path.basename(images[0])}"
+        else:
+            avatar_path = None
+            
+    return avatar_path
 
 
 def get_all(lop_id=None, search=None, page=1, per_page=20):
@@ -197,5 +219,6 @@ def count_images(mssv):
     student_dir = os.path.join(Config.DATABASE_DIR, mssv)
     if not os.path.exists(student_dir):
         return 0
-    return len(glob.glob(os.path.join(student_dir, "*.jpg")) +
-               glob.glob(os.path.join(student_dir, "*.png")))
+    jpg_files = glob.glob(os.path.join(student_dir, "*.jpg"))
+    png_files = glob.glob(os.path.join(student_dir, "*.png"))
+    return len(jpg_files) + len(png_files)

@@ -31,6 +31,8 @@ class FaceMatcher:
         if pkl_path is None:
             if Config.AI_ENGINE == 'yolo_resnet':
                 pkl_path = Config.EMBEDDINGS_YOLO_PATH
+            elif Config.AI_ENGINE == 'deepface':
+                pkl_path = Config.EMBEDDINGS_DEEPFACE_PATH
             else:
                 pkl_path = Config.EMBEDDINGS_PATH
         self._pkl_path = pkl_path

@@ -1,0 +1,169 @@
+/* ═══ CLASSES PAGE — MODERN REDESIGN ═══ */
+
+/* Stats row */
+.class-stats {
+    display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap;
+}
+.class-stat-card {
+    flex: 1; min-width: 160px;
+    border-radius: 18px;
+    padding: 24px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    transition: all .3s var(--ease);
+}
+.class-stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.class-stat-card::before {
+    content: ''; position: absolute; top: -40%; right: -30%;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,.12) 0%, transparent 70%);
+    border-radius: 50%;
+}
+.class-stat-card .stat-num { font-size: 2.2rem; font-weight: 800; position: relative; z-index: 1; }
+.class-stat-card .stat-label { font-size: .85rem; opacity: .85; position: relative; z-index: 1; }
+.class-stat-card .stat-icon {
+    position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+    font-size: 3rem; opacity: .15;
+}
+
+/* Search area */
+.class-toolbar {
+    background: white;
+    border-radius: 16px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+.class-toolbar .search-wrap {
+    flex: 1; min-width: 200px; position: relative;
+}
+.class-toolbar .search-wrap i {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    color: var(--primary-light); font-size: .9rem;
+}
+.class-toolbar .search-wrap input {
+    width: 100%;
+    border: 2px solid #E8E6F0;
+    border-radius: 12px;
+    padding: 10px 16px 10px 44px;
+    font-size: .92rem;
+    background: #FAFAFF;
+    transition: all .3s;
+}
+.class-toolbar .search-wrap input:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 4px rgba(108,92,231,.08);
+    outline: none;
+    background: white;
+}
+.btn-add-class {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-weight: 700;
+    font-size: .9rem;
+    display: flex; align-items: center; gap: 8px;
+    transition: all .3s var(--ease);
+    box-shadow: 0 4px 12px rgba(108,92,231,.25);
+    white-space: nowrap;
+    text-decoration: none;
+}
+.btn-add-class:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(108,92,231,.35);
+    color: white;
+}
+
+/* Class cards grid */
+.class-grid { display: flex; flex-direction: column; gap: 10px; }
+
+.class-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all .3s var(--ease);
+    box-shadow: var(--shadow-sm);
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+.class-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px; border-radius: 16px 0 0 16px;
+    transition: width .3s;
+}
+.class-card:nth-child(odd)::before { background: var(--gradient-card-1); }
+.class-card:nth-child(even)::before { background: var(--gradient-card-2); }
+
+.class-card:hover {
+    transform: translateX(6px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(108,92,231,.08);
+}
+.class-card:hover::before { width: 6px; }
+
+/* Class icon */
+.class-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; color: white;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,.1);
+}
+
+/* Class info */
+.class-main { flex: 1; min-width: 0; }
+.class-main .class-name {
+    font-weight: 700; font-size: 1rem; color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.class-main .class-code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: .82rem; color: var(--primary); font-weight: 600;
+}
+
+/* Meta pills */
+.class-meta {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.meta-pill {
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: .8rem;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+}
+.meta-teacher { background: rgba(108,92,231,.06); color: var(--primary); }
+.meta-semester { background: rgba(0,206,201,.08); color: #00B894; }
+.meta-count { background: rgba(116,185,255,.1); color: #0984E3; }
+.meta-active { background: rgba(0,184,148,.1); color: #00B894; }
+.meta-closed { background: rgba(225,112,85,.08); color: #E17055; }
+
+/* Action buttons */
+.class-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.class-actions .ca-btn {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem;
+    transition: all .2s;
+    cursor: pointer;
+    text-decoration: none;
+}
+.ca-btn-edit { background: rgba(0,206,201,.1); color: var(--accent); }
+.ca-btn-delete { background: rgba(225,112,85,.08); color: var(--danger); }
+.ca-btn-edit:hover { background: var(--accent); color: white; transform: scale(1.1); }
+.ca-btn-delete:hover { background: var(--danger); color: white; transform: scale(1.1); }

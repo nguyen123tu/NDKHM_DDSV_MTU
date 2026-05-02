@@ -14,6 +14,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from db.connection import execute_one, execute_query, execute_update
 from config import Config
 from services import attendance_service
+from services.telegram_alert import send_telegram_message
 
 # Blueprint sẽ được register trong routes/__init__.py
 api_mobile_bp = Blueprint('api_mobile', __name__, url_prefix='/api/mobile')
@@ -165,17 +166,11 @@ def mobile_login():
 def mobile_checkin():
     """
     Check-in từ mobile.
-    Payload:
-    {
-      "mssv": "20012001",
-      "lop_id": 1,
-      "do_chinh_xac": 0.92,
-      "camera_id": 0,
-      "trang_thai": "Co mat",
-      "image_base64": "data:image/jpeg;base64,..."
-    }
+    - Nếu là sinh viên: BẮT BUỘC chỉ được điểm danh cho chính mình.
+    - Nếu là admin: được điểm danh cho bất kỳ sinh viên nào.
+    - Phải có phiên điểm danh đang mở cho lớp đó.
     """
-    _, auth_error = _require_mobile_auth()
+    payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
 
@@ -184,11 +179,51 @@ def mobile_checkin():
         data = request.form.to_dict()
     mssv = (data.get("mssv") or "").strip()
     lop_id = data.get("lop_id")
+    session_id = data.get("session_id")  # ID phiên điểm danh
     do_chinh_xac = float(data.get("do_chinh_xac") or 0.0)
     camera_id = int(data.get("camera_id") or 0)
     trang_thai = (data.get("trang_thai") or "Co mat").strip()
     image_base64 = data.get("image_base64")
     session_start = data.get("session_start")
+
+    # === BẢO MẬT: Sinh viên chỉ được điểm danh cho chính mình ===
+    role = payload.get('role', 'admin')
+    if role == 'student':
+        student_mssv = payload.get('username')  # MSSV của SV đang đăng nhập
+        if not mssv:
+            mssv = student_mssv  # Tự động điền MSSV nếu không gửi
+        elif mssv != student_mssv:
+            return jsonify({
+                "success": False,
+                "message": "Bạn chỉ được điểm danh cho chính mình!"
+            }), 403
+
+    # === Kiểm tra phiên điểm danh đang mở ===
+    if session_id:
+        session = execute_one(
+            "SELECT * FROM phien_diem_danh WHERE id = %s AND trang_thai = 1",
+            (session_id,)
+        )
+        if not session:
+            return jsonify({"success": False, "message": "Phiên điểm danh không tồn tại hoặc đã đóng"}), 403
+        lop_id = session['lop_id']  # Gắn lop_id từ phiên
+
+        # Kiểm tra hết hạn
+        if session.get('het_han'):
+            if datetime.now() > session['het_han']:
+                # Auto-close expired session
+                execute_update("UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE id = %s", (session_id,))
+                return jsonify({"success": False, "message": "Phiên điểm danh đã hết hạn"}), 403
+    elif lop_id:
+        # Kiểm tra có phiên đang mở cho lớp này không
+        session = execute_one(
+            "SELECT * FROM phien_diem_danh WHERE lop_id = %s AND trang_thai = 1 ORDER BY bat_dau DESC LIMIT 1",
+            (lop_id,)
+        )
+        if not session:
+            return jsonify({"success": False, "message": "Lớp này chưa mở phiên điểm danh. Vui lòng chờ Admin mở."}), 403
+    else:
+        return jsonify({"success": False, "message": "Thiếu session_id hoặc lop_id"}), 400
 
     in_window, window_error = _is_within_checkin_window(session_start)
     if not in_window:
@@ -196,8 +231,6 @@ def mobile_checkin():
 
     if not mssv:
         return jsonify({"success": False, "message": "Thiếu MSSV"}), 400
-    if lop_id is None:
-        return jsonify({"success": False, "message": "Thiếu lop_id"}), 400
 
     sv = execute_one("SELECT id FROM sinh_vien WHERE mssv = %s", (mssv,))
     if not sv:
@@ -227,7 +260,7 @@ def mobile_checkin():
     if not log_result:
         return jsonify({
             "success": False,
-            "message": "Check-in bị bỏ qua (cooldown hoặc chưa đủ điều kiện checkout)",
+            "message": "Check-in bị bỏ qua (cooldown hoặc đã điểm danh trước đó)",
             "evidence_path": evidence_path
         }), 409
 
@@ -348,7 +381,7 @@ def get_history():
         
     try:
         sql = """
-            SELECT dd.thoi_gian, dd.gio_ra, dd.trang_thai, dd.do_chinh_xac, dd.ghi_chu,
+            SELECT dd.id, dd.thoi_gian, dd.gio_ra, dd.trang_thai, dd.do_chinh_xac, dd.ghi_chu,
                    sv.ho_ten, sv.mssv, sv.avatar, l.ma_lop 
             FROM diem_danh dd
             JOIN sinh_vien sv ON dd.sinh_vien_id = sv.id
@@ -386,6 +419,43 @@ def get_history():
         return jsonify({"success": True, "data": records}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/attendance/<int:record_id>', methods=['DELETE'])
+def delete_attendance_record(record_id):
+    """Xóa 1 bản ghi điểm danh"""
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error:
+            return auth_error
+        if payload.get('role') == 'student':
+            return jsonify({"success": False, "message": "Chỉ Admin mới được xóa"}), 403
+
+        record = execute_one("SELECT id FROM diem_danh WHERE id = %s", (record_id,))
+        if not record:
+            return jsonify({"success": False, "message": "Bản ghi không tồn tại"}), 404
+
+        execute_update("DELETE FROM diem_danh WHERE id = %s", (record_id,))
+        return jsonify({"success": True, "message": "Đã xóa bản ghi điểm danh"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/attendance/clear', methods=['DELETE'])
+def clear_attendance_history():
+    """Xóa toàn bộ lịch sử điểm danh"""
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error:
+            return auth_error
+        if payload.get('role') == 'student':
+            return jsonify({"success": False, "message": "Chỉ Admin mới được xóa"}), 403
+
+        execute_update("DELETE FROM diem_danh")
+        return jsonify({"success": True, "message": "Đã xóa toàn bộ lịch sử điểm danh"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
 
 @api_mobile_bp.route('/register_face', methods=['POST'])
 def mobile_register_face():
@@ -711,5 +781,707 @@ def get_face_gallery():
         image_urls = [f"{mssv}/{img}" for img in images]
         
         return jsonify({"success": True, "data": image_urls}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# ==============================================================================
+# OFFLINE-FIRST: API ĐỒNG BỘ (SYNC) CHO MOBILE APP
+# ==============================================================================
+
+@api_mobile_bp.route('/sync/students', methods=['GET'])
+def pull_students():
+    """Đồng bộ (Pull) dữ liệu sinh viên từ Server xuống App."""
+    _, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    last_sync_time_str = request.args.get('last_sync_time', '1970-01-01 00:00:00')
+    try:
+        last_sync_time = datetime.strptime(last_sync_time_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return jsonify({"success": False, "message": "Sai định dạng thời gian"}), 400
+
+    try:
+        # Lấy sinh viên có sự thay đổi
+        sql = """
+            SELECT sv.id, sv.mssv, sv.ho_ten, sv.face_vector, sv.updated_at, sv.trang_thai
+            FROM sinh_vien sv
+            WHERE sv.updated_at >= %s
+        """
+        students = execute_query(sql, (last_sync_time,))
+        
+        import json
+        for sv in students:
+            if 'updated_at' in sv and sv['updated_at']:
+                sv['updated_at'] = sv['updated_at'].strftime("%Y-%m-%d %H:%M:%S")
+            if sv.get('face_vector'):
+                try:
+                    sv['face_vector'] = json.loads(sv['face_vector'])
+                except:
+                    sv['face_vector'] = None
+
+        return jsonify({
+            "success": True,
+            "data": students,
+            "server_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/sync/attendance', methods=['POST'])
+def push_attendance():
+    """Đồng bộ (Push) dữ liệu điểm danh Offline từ App lên Server."""
+    _, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json(silent=True) or {}
+    logs = data.get('logs', [])
+    
+    if not logs:
+        return jsonify({"success": False, "message": "Không có dữ liệu điểm danh"}), 400
+
+    synced_uuids = []
+    errors = []
+
+    for log in logs:
+        local_uuid = log.get('local_uuid')
+        mssv = log.get('mssv')
+        check_time = log.get('check_time')
+        confidence = float(log.get('confidence') or 0.0)
+
+        if not local_uuid or not mssv or not check_time:
+            errors.append({"local_uuid": local_uuid, "error": "Thiếu dữ liệu"})
+            continue
+
+        try:
+            # 1. Kiểm tra chống trùng lặp (Idempotency) - Sử dụng ghi_chu để lưu local_uuid
+            note_marker = f"OFFLINE_UUID:{local_uuid}"
+            
+            exist = execute_one("SELECT id FROM diem_danh WHERE ghi_chu LIKE %s", (f"%{note_marker}%",))
+            if exist:
+                synced_uuids.append(local_uuid)
+                continue
+                
+            # Lấy thông tin sv
+            sv = execute_one("SELECT id, lop_id FROM sinh_vien WHERE mssv = %s", (mssv,))
+            if not sv:
+                errors.append({"local_uuid": local_uuid, "error": "Sinh viên không tồn tại"})
+                continue
+                
+            # 2. Lưu vào DB
+            sql = """
+                INSERT INTO diem_danh (sinh_vien_id, lop_id, thoi_gian, trang_thai, do_chinh_xac, ghi_chu)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            execute_update(sql, (sv['id'], sv['lop_id'], check_time, "Co mat", confidence, note_marker))
+            synced_uuids.append(local_uuid)
+            
+        except Exception as e:
+            errors.append({"local_uuid": local_uuid, "error": str(e)})
+
+    return jsonify({
+        "success": True,
+        "synced_local_uuids": synced_uuids,
+        "errors": errors
+    }), 200
+
+
+# Helper: Tính khoảng cách giữa 2 điểm GPS (mét)
+def get_distance_meters(lat1, lon1, lat2, lon2):
+    import math
+    if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+        return 0
+    R = 6371000  # Bán kính Trái đất tính bằng mét
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    a = math.sin(delta_phi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+# ==============================================================================
+# PHIÊN ĐIỂM DANH (ATTENDANCE SESSIONS) - Admin tạo, Sinh viên tham gia
+# ==============================================================================
+
+@api_mobile_bp.route('/sessions/create', methods=['POST'])
+def create_session():
+    """Admin tạo phiên điểm danh cho một lớp. Sinh viên sẽ thấy phiên này trên mobile."""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+    if payload.get('role') == 'student':
+        return jsonify({"success": False, "message": "Chỉ Admin mới được tạo phiên điểm danh"}), 403
+
+    data = request.get_json(silent=True) or {}
+    lop_id = data.get('lop_id')
+    mo_ta = data.get('mo_ta', '')
+    duration_minutes = int(data.get('duration_minutes') or 90)  # Mặc định 90 phút
+
+    if not lop_id:
+        return jsonify({"success": False, "message": "Thiếu lop_id"}), 400
+
+    # Kiểm tra lớp tồn tại
+    lop = execute_one("SELECT id, ma_lop, ten_lop FROM lop_hoc WHERE id = %s AND trang_thai = 1", (lop_id,))
+    if not lop:
+        return jsonify({"success": False, "message": "Lớp không tồn tại hoặc đã vô hiệu hóa"}), 404
+
+    # Kiểm tra xem lớp này đã có phiên đang mở chưa
+    existing = execute_one(
+        "SELECT id FROM phien_diem_danh WHERE lop_id = %s AND trang_thai = 1",
+        (lop_id,)
+    )
+    if existing:
+        return jsonify({"success": False, "message": f"Lớp {lop['ma_lop']} đã có phiên điểm danh đang mở (ID: {existing['id']})"}), 409
+
+    # Tạo phiên mới
+    het_han = datetime.now() + timedelta(minutes=duration_minutes)
+    admin_id = payload.get('sub')
+    vi_do = data.get('vi_do')
+    kinh_do = data.get('kinh_do')
+    
+    new_id = execute_update(
+        """INSERT INTO phien_diem_danh (lop_id, admin_id, trang_thai, mo_ta, bat_dau, het_han, vi_do, kinh_do)
+           VALUES (%s, %s, 1, %s, NOW(), %s, %s, %s)""",
+        (lop_id, admin_id, mo_ta, het_han.strftime('%Y-%m-%d %H:%M:%S'), vi_do, kinh_do)
+    )
+
+    return jsonify({
+        "success": True,
+        "message": f"Đã mở phiên điểm danh cho lớp {lop['ma_lop']}",
+        "data": {
+            "session_id": new_id,
+            "lop_id": lop_id,
+            "ma_lop": lop['ma_lop'],
+            "ten_lop": lop['ten_lop'],
+            "het_han": het_han.strftime('%Y-%m-%d %H:%M:%S'),
+            "duration_minutes": duration_minutes
+        }
+    }), 200
+
+
+@api_mobile_bp.route('/sessions/active', methods=['GET'])
+def get_active_sessions():
+    """
+    Lấy danh sách các phiên điểm danh đang mở.
+    - Admin: xem tất cả phiên đang mở.
+    - Sinh viên: chỉ xem phiên của lớp mình.
+    """
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    role = payload.get('role', 'admin')
+    user_id = payload.get('sub')
+
+    try:
+        # Auto-close các phiên đã hết hạn
+        execute_update(
+            "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE trang_thai = 1 AND het_han IS NOT NULL AND het_han < NOW()"
+        )
+
+        if role == 'student':
+            # Sinh viên: Xem TẤT CẢ phiên đang mở (để có thể điểm danh bất kỳ lớp nào admin mở)
+            student = execute_one("SELECT lop_id, mssv FROM sinh_vien WHERE id = %s", (user_id,))
+            student_mssv = student['mssv'] if student else ''
+
+            sql = """
+                SELECT p.id, p.lop_id, p.mo_ta, p.bat_dau, p.het_han,
+                       l.ma_lop, l.ten_lop, l.giao_vien,
+                       (SELECT COUNT(*) FROM diem_danh d 
+                        WHERE d.lop_id = p.lop_id AND d.thoi_gian >= p.bat_dau 
+                        AND d.trang_thai = 'Co mat') as so_da_diem_danh,
+                       (SELECT COUNT(*) FROM diem_danh d 
+                        JOIN sinh_vien sv2 ON d.sinh_vien_id = sv2.id
+                        WHERE d.lop_id = p.lop_id AND d.thoi_gian >= p.bat_dau 
+                        AND sv2.mssv = %s) as da_diem_danh_chua
+                FROM phien_diem_danh p
+                JOIN lop_hoc l ON p.lop_id = l.id
+                WHERE p.trang_thai = 1
+                ORDER BY p.bat_dau DESC
+            """
+            sessions = execute_query(sql, (student_mssv,))
+        else:
+            # Admin: xem tất cả
+            sql = """
+                SELECT p.id, p.lop_id, p.mo_ta, p.bat_dau, p.het_han,
+                       l.ma_lop, l.ten_lop, l.giao_vien,
+                       (SELECT COUNT(DISTINCT d.sinh_vien_id) FROM diem_danh d 
+                        WHERE d.lop_id = p.lop_id AND d.thoi_gian >= p.bat_dau 
+                        AND d.trang_thai = 'Co mat') as so_da_diem_danh,
+                       (SELECT COUNT(*) FROM sinh_vien sv WHERE sv.lop_id = p.lop_id AND sv.trang_thai = 1) as tong_sv
+                FROM phien_diem_danh p
+                JOIN lop_hoc l ON p.lop_id = l.id
+                WHERE p.trang_thai = 1
+                ORDER BY p.bat_dau DESC
+            """
+            sessions = execute_query(sql)
+
+        # Format datetime
+        for s in sessions:
+            if s.get('bat_dau'):
+                s['bat_dau'] = s['bat_dau'].strftime('%Y-%m-%d %H:%M:%S')
+            if s.get('het_han'):
+                s['het_han'] = s['het_han'].strftime('%Y-%m-%d %H:%M:%S')
+
+        return jsonify({"success": True, "data": sessions}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/sessions/<int:session_id>/stop', methods=['POST'])
+def stop_session_api(session_id):
+    """Admin đóng phiên điểm danh."""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+    if payload.get('role') == 'student':
+        return jsonify({"success": False, "message": "Chỉ Admin mới được đóng phiên"}), 403
+
+    session = execute_one("SELECT * FROM phien_diem_danh WHERE id = %s", (session_id,))
+    if not session:
+        return jsonify({"success": False, "message": "Phiên không tồn tại"}), 404
+    if session['trang_thai'] == 0:
+        return jsonify({"success": False, "message": "Phiên đã đóng trước đó"}), 409
+
+    execute_update(
+        "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE id = %s",
+        (session_id,)
+    )
+
+    # --- TÍNH TOÁN THỐNG KÊ ĐỂ GỬI TELEGRAM ---
+    try:
+        lop_id = session['lop_id']
+        lop = execute_one("SELECT ten_lop, ma_lop FROM lop_hoc WHERE id = %s", (lop_id,))
+        
+        # Lấy số lượng đi học
+        present_sql = """
+            SELECT COUNT(DISTINCT sinh_vien_id) as count 
+            FROM diem_danh 
+            WHERE lop_id = %s AND thoi_gian >= %s AND thoi_gian <= NOW()
+        """
+        present_count = execute_one(present_sql, (lop_id, session['bat_dau']))['count']
+        
+        # Lấy tổng sĩ số
+        total_sv = execute_one("SELECT COUNT(*) as count FROM sinh_vien WHERE lop_id = %s AND trang_thai = 1", (lop_id,))['count']
+        absent_count = total_sv - present_count
+        
+        # Lấy danh sách SV vắng
+        absent_sv_sql = """
+            SELECT ho_ten FROM sinh_vien 
+            WHERE lop_id = %s AND trang_thai = 1 
+            AND id NOT IN (
+                SELECT sinh_vien_id FROM diem_danh 
+                WHERE lop_id = %s AND thoi_gian >= %s AND thoi_gian <= NOW()
+            )
+        """
+        absent_list = execute_query(absent_sv_sql, (lop_id, lop_id, session['bat_dau']))
+        absent_names = ", ".join([sv['ho_ten'] for sv in absent_list]) if absent_list else "Không có"
+
+        # Gửi thông báo vào App cho từng sinh viên vắng
+        for sv_absent in absent_list:
+            # Lấy ID của sv vắng
+            sv_id_sql = "SELECT id FROM sinh_vien WHERE ho_ten = %s AND lop_id = %s"
+            sv_data = execute_one(sv_id_sql, (sv_absent['ho_ten'], lop_id))
+            if sv_data:
+                execute_update(
+                    "INSERT INTO thong_bao (sinh_vien_id, tieu_de, noi_dung) VALUES (%s, %s, %s)",
+                    (sv_data['id'], "Cảnh báo vắng học", f"Bạn đã vắng mặt trong buổi học lớp {lop['ten_lop']} vào lúc {session['bat_dau'].strftime('%H:%M')}.")
+                )
+
+        # Gửi Telegram cho giảng viên
+        msg = (
+            f"🔔 <b>THÔNG BÁO KẾT THÚC ĐIỂM DANH</b>\n"
+            f"--------------------------------\n"
+            f"🏫 <b>Lớp:</b> {lop['ten_lop']} ({lop['ma_lop']})\n"
+            f"⏰ <b>Bắt đầu:</b> {session['bat_dau'].strftime('%H:%M:%S')}\n"
+            f"✅ <b>Có mặt:</b> {present_count}/{total_sv}\n"
+            f"❌ <b>Vắng:</b> {absent_count}\n"
+            f"📝 <b>Danh sách vắng:</b> {absent_names}\n"
+        )
+        send_telegram_message(msg)
+    except Exception as e:
+        print(f"Lỗi gửi thông báo Telegram: {e}")
+
+    return jsonify({"success": True, "message": "Đã đóng phiên điểm danh và gửi báo cáo Telegram"}), 200
+
+
+@api_mobile_bp.route('/sessions/<int:session_id>/details', methods=['GET'])
+def get_session_details(session_id):
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error:
+            return auth_error
+        if payload.get('role') == 'student':
+            return jsonify({"success": False, "message": "Chỉ Admin mới được xem chi tiết"}), 403
+
+        session = execute_one(
+            "SELECT p.*, l.ten_lop, l.ma_lop FROM phien_diem_danh p JOIN lop_hoc l ON p.lop_id = l.id WHERE p.id = %s",
+            (session_id,)
+        )
+        if not session:
+            return jsonify({"success": False, "message": "Phiên không tồn tại"}), 404
+
+        lop_id = session['lop_id']
+        
+        sql = """
+            SELECT sv.id, sv.mssv, sv.ho_ten, sv.avatar,
+                   d.thoi_gian, d.trang_thai, d.ghi_chu
+            FROM sinh_vien sv
+            LEFT JOIN diem_danh d ON sv.id = d.sinh_vien_id 
+                  AND d.lop_id = %s 
+                  AND d.thoi_gian >= %s
+            WHERE sv.lop_id = %s AND sv.trang_thai = 1
+            ORDER BY sv.mssv ASC
+        """
+        students = execute_query(sql, (lop_id, session['bat_dau'], lop_id))
+
+        for s in students:
+            if s.get('thoi_gian') and hasattr(s['thoi_gian'], 'strftime'):
+                s['thoi_gian'] = s['thoi_gian'].strftime('%H:%M:%S')
+
+        bat_dau_str = session['bat_dau'].strftime('%Y-%m-%d %H:%M:%S') if session.get('bat_dau') and hasattr(session['bat_dau'], 'strftime') else str(session.get('bat_dau'))
+
+        return jsonify({
+            "success": True, 
+            "data": {
+                "session": {
+                    "id": session['id'],
+                    "ten_lop": session['ten_lop'],
+                    "ma_lop": session['ma_lop'],
+                    "bat_dau": bat_dau_str,
+                    "trang_thai": session['trang_thai']
+                },
+                "students": students
+            }
+        }), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/sessions/history', methods=['GET'])
+def get_session_history():
+    """Lấy lịch sử phiên điểm danh đã đóng"""
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error:
+            return auth_error
+        if payload.get('role') == 'student':
+            return jsonify({"success": False, "message": "Chỉ Admin mới được xem"}), 403
+
+        sql = """
+            SELECT p.id, p.lop_id, p.mo_ta, p.bat_dau, p.ket_thuc, p.het_han,
+                   l.ma_lop, l.ten_lop, l.giao_vien,
+                   (SELECT COUNT(*) FROM diem_danh d 
+                    WHERE d.lop_id = p.lop_id AND d.thoi_gian >= p.bat_dau 
+                    AND (p.ket_thuc IS NULL OR d.thoi_gian <= p.ket_thuc)
+                    AND d.trang_thai = 'Co mat') as so_da_diem_danh,
+                   (SELECT COUNT(*) FROM sinh_vien sv 
+                    WHERE sv.lop_id = p.lop_id AND sv.trang_thai = 1) as tong_sv
+            FROM phien_diem_danh p
+            JOIN lop_hoc l ON p.lop_id = l.id
+            WHERE p.trang_thai = 0
+            ORDER BY p.bat_dau DESC
+            LIMIT 100
+        """
+        sessions = execute_query(sql)
+        
+        for s in sessions:
+            for key in ['bat_dau', 'ket_thuc', 'het_han']:
+                if s.get(key) and hasattr(s[key], 'strftime'):
+                    s[key] = s[key].strftime('%Y-%m-%d %H:%M:%S')
+
+        return jsonify({"success": True, "data": sessions}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/sessions/<int:session_id>', methods=['DELETE'])
+def delete_session(session_id):
+    """Xóa phiên điểm danh và dữ liệu điểm danh liên quan"""
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error:
+            return auth_error
+        if payload.get('role') == 'student':
+            return jsonify({"success": False, "message": "Chỉ Admin mới được xóa"}), 403
+
+        session = execute_one("SELECT id, lop_id, bat_dau, ket_thuc FROM phien_diem_danh WHERE id = %s", (session_id,))
+        if not session:
+            return jsonify({"success": False, "message": "Phiên không tồn tại"}), 404
+
+        # Xóa dữ liệu điểm danh thuộc phiên này (theo lop_id + khoảng thời gian)
+        if session.get('ket_thuc'):
+            execute_update(
+                "DELETE FROM diem_danh WHERE lop_id = %s AND thoi_gian >= %s AND thoi_gian <= %s",
+                (session['lop_id'], session['bat_dau'], session['ket_thuc'])
+            )
+        else:
+            execute_update(
+                "DELETE FROM diem_danh WHERE lop_id = %s AND thoi_gian >= %s",
+                (session['lop_id'], session['bat_dau'])
+            )
+        
+        # Xóa phiên
+        execute_update("DELETE FROM phien_diem_danh WHERE id = %s", (session_id,))
+
+        return jsonify({"success": True, "message": "Đã xóa phiên điểm danh"}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+
+@api_mobile_bp.route('/student/checkin', methods=['POST'])
+def student_self_checkin():
+    """
+    API đặc biệt cho sinh viên tự điểm danh bằng khuôn mặt.
+    Server sẽ nhận diện khuôn mặt và xác minh đúng sinh viên đang đăng nhập.
+    """
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    if payload.get('role') != 'student':
+        return jsonify({"success": False, "message": "API này chỉ dành cho sinh viên"}), 403
+
+    data = request.get_json(silent=True) or {}
+    session_id = data.get('session_id')
+    image_base64 = data.get('image_base64')
+    sv_lat = data.get('vi_do')
+    sv_lng = data.get('kinh_do')
+
+    if not session_id:
+        return jsonify({"success": False, "message": "Thiếu session_id"}), 400
+    if not image_base64:
+        return jsonify({"success": False, "message": "Thiếu ảnh khuôn mặt"}), 400
+
+    # Lấy thông tin SV đang đăng nhập
+    student_mssv = payload.get('username')
+    student_id = payload.get('sub')
+
+    # Kiểm tra phiên
+    session = execute_one(
+        "SELECT * FROM phien_diem_danh WHERE id = %s AND trang_thai = 1",
+        (session_id,)
+    )
+    if not session:
+        return jsonify({"success": False, "message": "Phiên điểm danh không tồn tại hoặc đã đóng"}), 403
+
+    if session.get('het_han') and datetime.now() > session['het_han']:
+        execute_update("UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE id = %s", (session_id,))
+        return jsonify({"success": False, "message": "Phiên điểm danh đã hết hạn"}), 403
+
+    # KIỂM TRA GPS (Geofencing)
+    # Chỉ kiểm tra nếu Admin đã lưu vị trí lớp học
+    if session.get('vi_do') is not None and session.get('kinh_do') is not None:
+        if sv_lat is None or sv_lng is None:
+            return jsonify({
+                "success": False, 
+                "message": "Hệ thống yêu cầu quyền truy cập vị trí để xác minh bạn đang ở lớp học."
+            }), 400
+            
+        distance = get_distance_meters(sv_lat, sv_lng, session['vi_do'], session['kinh_do'])
+        max_radius = 50  # Bán kính 50 mét
+        
+        if distance > max_radius:
+            return jsonify({
+                "success": False,
+                "message": f"Bạn đang ở quá xa lớp học ({int(distance)}m). Vui lòng đến lớp để điểm danh."
+            }), 403
+
+    lop_id = session['lop_id']
+
+    # Kiểm tra SV tồn tại
+    sv = execute_one("SELECT id, lop_id, ho_ten FROM sinh_vien WHERE mssv = %s", (student_mssv,))
+    if not sv:
+        return jsonify({"success": False, "message": "Không tìm thấy thông tin sinh viên"}), 404
+
+    # Gửi ảnh lên server nhận diện khuôn mặt
+    from routes.public import _do_recognize
+    recognize_result = _do_recognize(image_base64)
+
+    if not recognize_result or not recognize_result.get('success'):
+        return jsonify({
+            "success": False,
+            "message": recognize_result.get('msg', 'Không nhận diện được khuôn mặt') if recognize_result else 'Lỗi nhận diện'
+        }), 400
+
+    # Xác minh khuôn mặt khớp với sinh viên đang đăng nhập
+    recognized_mssv = recognize_result.get('student', {}).get('mssv', '')
+    if recognized_mssv != student_mssv:
+        return jsonify({
+            "success": False,
+            "message": "Khuôn mặt không khớp với tài khoản đang đăng nhập! Vui lòng tự quét khuôn mặt của chính bạn."
+        }), 403
+
+    # Lưu ảnh bằng chứng
+    evidence_path = None
+    try:
+        evidence_path = _save_evidence_image(image_base64, student_mssv)
+    except Exception:
+        pass
+
+    # Ghi nhận điểm danh
+    confidence = float(recognize_result.get('student', {}).get('do_chinh_xac', 0.0))
+    log_result = attendance_service.log(
+        mssv=student_mssv,
+        lop_id=lop_id,
+        do_chinh_xac=confidence,
+        camera_id=0,
+        trang_thai='Co mat',
+        session_start_time=session['bat_dau']
+    )
+
+    if not log_result:
+        return jsonify({
+            "success": False,
+            "message": "Bạn đã điểm danh rồi hoặc đang trong thời gian chờ"
+        }), 409
+
+    if evidence_path:
+        execute_update(
+            "UPDATE diem_danh SET ghi_chu = %s WHERE sinh_vien_id = %s AND lop_id = %s AND DATE(thoi_gian) = CURDATE() ORDER BY id DESC LIMIT 1",
+            (f"EVIDENCE:{evidence_path}", sv['id'], lop_id),
+        )
+
+    # Thêm thông báo cá nhân cho sinh viên
+    try:
+        lop_info = execute_one("SELECT ten_lop FROM lop_hoc WHERE id = %s", (lop_id,))
+        ten_lop = lop_info['ten_lop'] if lop_info else f"Lớp ID: {lop_id}"
+        execute_update(
+            "INSERT INTO thong_bao (sinh_vien_id, tieu_de, noi_dung) VALUES (%s, %s, %s)",
+            (sv['id'], "Điểm danh thành công", f"Bạn đã điểm danh thành công lớp {ten_lop} vào lúc {datetime.now().strftime('%H:%M %d/%m/%Y')}.")
+        )
+    except Exception as e:
+        print(f"Lỗi tạo thông báo: {e}")
+
+    return jsonify({
+        "success": True,
+        "message": f"Điểm danh thành công! Xin chào {sv['ho_ten']}",
+        "data": {
+            "mssv": student_mssv,
+            "ho_ten": sv['ho_ten'],
+            "action": log_result.get('action'),
+            "do_chinh_xac": confidence,
+            "evidence_path": evidence_path
+        }
+    }), 200
+
+
+# ==============================================================================
+# THỐNG KÊ & BIỂU ĐỒ (ANALYTICS)
+# ==============================================================================
+
+@api_mobile_bp.route('/stats/classes', methods=['GET'])
+def get_class_stats():
+    """Lấy tỉ lệ đi học của từng lớp"""
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        
+        sql = """
+            SELECT l.id, l.ma_lop, l.ten_lop,
+                   (SELECT COUNT(*) FROM sinh_vien sv WHERE sv.lop_id = l.id AND sv.trang_thai = 1) as tong_sv,
+                   (SELECT COUNT(DISTINCT d.sinh_vien_id) FROM diem_danh d 
+                    WHERE d.lop_id = l.id AND DATE(d.thoi_gian) = CURDATE()) as so_co_mat_hom_nay
+            FROM lop_hoc l
+            WHERE l.trang_thai = 1
+        """
+        results = execute_query(sql)
+        return jsonify({"success": True, "data": results}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@api_mobile_bp.route('/stats/absent-risk', methods=['GET'])
+def get_absent_risk():
+    """Danh sách SV vắng nhiều (ví dụ > 2 lần)"""
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        
+        # Ở đây ta giả định nếu SV không có trong bảng diem_danh của một phiên lớp họ thì là vắng.
+        # Để đơn giản, ta lấy SV có tổng số lần 'Co mat' thấp nhất so với số phiên đã mở của lớp đó.
+        sql = """
+            SELECT sv.mssv, sv.ho_ten, l.ma_lop,
+                   (SELECT COUNT(*) FROM phien_diem_danh p WHERE p.lop_id = sv.lop_id AND p.trang_thai = 0) as tong_buoi_hoc,
+                   (SELECT COUNT(*) FROM diem_danh d WHERE d.sinh_vien_id = sv.id AND d.trang_thai = 'Co mat') as so_buoi_di
+            FROM sinh_vien sv
+            JOIN lop_hoc l ON sv.lop_id = l.id
+            WHERE sv.trang_thai = 1
+            HAVING (tong_buoi_hoc - so_buoi_di) >= 1
+            ORDER BY (tong_buoi_hoc - so_buoi_di) DESC
+            LIMIT 20
+        """
+        results = execute_query(sql)
+        return jsonify({"success": True, "data": results}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@api_mobile_bp.route('/stats/daily-trend', methods=['GET'])
+def get_daily_trend():
+    """Xu hướng điểm danh 7 ngày gần nhất"""
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        
+        sql = """
+            SELECT DATE(thoi_gian) as ngay, COUNT(*) as so_luong
+            FROM diem_danh
+            WHERE thoi_gian >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            GROUP BY DATE(thoi_gian)
+            ORDER BY ngay ASC
+        """
+        results = execute_query(sql)
+        # Convert date objects to strings
+        for r in results:
+            if hasattr(r['ngay'], 'strftime'):
+                r['ngay'] = r['ngay'].strftime('%d/%m')
+                
+        return jsonify({"success": True, "data": results}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# ==============================================================================
+# THÔNG BÁO (NOTIFICATIONS)
+# ==============================================================================
+
+@api_mobile_bp.route('/notifications', methods=['GET'])
+def get_notifications():
+    """Lấy danh sách thông báo của sinh viên"""
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        
+        user_id = payload.get('sub')
+        sql = "SELECT * FROM thong_bao WHERE sinh_vien_id = %s ORDER BY created_at DESC LIMIT 50"
+        results = execute_query(sql, (user_id,))
+        
+        for r in results:
+            if hasattr(r['created_at'], 'strftime'):
+                r['created_at'] = r['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+                
+        return jsonify({"success": True, "data": results}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@api_mobile_bp.route('/notifications/<int:notif_id>/read', methods=['POST'])
+def mark_notification_read(notif_id):
+    """Đánh dấu thông báo đã đọc"""
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        
+        execute_update("UPDATE thong_bao SET da_doc = 1 WHERE id = %s", (notif_id,))
+        return jsonify({"success": True, "message": "Đã đọc"}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500

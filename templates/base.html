@@ -1,5 +1,15 @@
 <!DOCTYPE html>
 <html lang="vi">
+<script>
+    // Áp dụng trạng thái sidebar NGAY LẬP TỨC trước khi render để tránh nhảy hình
+    (function() {
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            document.documentElement.classList.add('sidebar-collapsed');
+        }
+        // Tạm tắt transition trong lúc page load
+        document.documentElement.classList.add('no-transition');
+    })();
+</script>
 
 <head>
     <meta charset="UTF-8">
@@ -17,6 +27,7 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/ai_assistant.css') }}">
     {% block extra_css %}{% endblock %}
 
     <style>
@@ -144,63 +155,74 @@
     {% if session.get('admin_id') %}
     <!-- SIDEBAR -->
     <aside class="sidebar" id="appSidebar">
+        <!-- Nút thu/phóng sidebar -->
+        <div class="sidebar-toggle" id="sidebarToggle" title="Thu gọn">
+            <i class="fas fa-chevron-left"></i>
+        </div>
         <div class="sidebar-brand">
             <a href="{{ url_for('dashboard.index') }}" class="text-decoration-none">
-                ĐIỂM DANH ONLINE
+                <span class="brand-text">ĐIỂM DANH ONLINE</span>
+                <span class="brand-icon">MTU</span>
             </a>
+            <div class="brand-sub">Face Recognition System</div>
         </div>
 
         <ul class="sidebar-nav">
+            <div class="nav-group-label"><span class="nav-label-text">Tổng quan</span></div>
             <li>
-                <a href="{{ url_for('dashboard.index') }}"
+                <a href="{{ url_for('dashboard.index') }}" title="Trang chủ"
                     class="nav-link {% if request.endpoint and request.endpoint.startswith('dashboard') %}active{% endif %}">
-                    <i class="fas fa-home"></i> Trang chủ
+                    <i class="fas fa-home"></i> <span class="link-text">Trang chủ</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if active_page == 'kiosk' %}active{% endif %}" href="{{ url_for('dashboard.kiosk') }}" target="_blank">
-                    <i class="fas fa-desktop me-2"></i> Kiosk Mode
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if active_page == 'pending' %}active{% endif %}" href="{{ url_for('students.pending_faces') }}">
-                    <i class="fas fa-user-check me-2"></i> Duyệt khuôn mặt
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('students.list_students') }}"
-                    class="nav-link {% if request.endpoint and request.endpoint.startswith('students') and request.endpoint != 'students.pending_faces' %}active{% endif %}">
-                    <i class="fas fa-user-graduate"></i> Quản lý sinh viên
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('classes.list_classes') }}"
-                    class="nav-link {% if request.endpoint and request.endpoint.startswith('classes') %}active{% endif %}">
-                    <i class="fas fa-chalkboard-user"></i> Quản lý lớp học
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('attendance.live') }}"
-                    class="nav-link {% if request.endpoint and request.endpoint.startswith('attendance') %}active{% endif %}">
-                    <i class="fas fa-video"></i> Ghi nhận ra/vào
-                </a>
-            </li>
-            <!-- Thêm mục Lịch sử ra/vào mốc placeholder -->
-            <li>
-                <a href="{{ url_for('attendance.history') }}" class="nav-link">
-                    <i class="fas fa-history"></i> Lịch sử ra/vào
+                <a class="nav-link {% if active_page == 'kiosk' %}active{% endif %}" href="{{ url_for('dashboard.kiosk') }}" target="_blank" title="Kiosk Mode">
+                    <i class="fas fa-desktop"></i> <span class="link-text">Kiosk Mode</span>
                 </a>
             </li>
 
-            <li class="mt-4">
-                <a href="{{ url_for('training.index') }}"
-                    class="nav-link {% if request.endpoint and request.endpoint.startswith('training') %}active{% endif %}">
-                    <i class="fas fa-brain"></i> Training Dữ Liệu
+            <div class="nav-group-label"><span class="nav-label-text">Quản lý</span></div>
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'pending' %}active{% endif %}" href="{{ url_for('students.pending_faces') }}" title="Duyệt khuôn mặt">
+                    <i class="fas fa-user-check"></i> <span class="link-text">Duyệt khuôn mặt</span>
                 </a>
             </li>
-            <li class="mt-2">
-                <a href="{{ url_for('auth.logout') }}" class="nav-link text-white-50 hover-danger">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            <li>
+                <a href="{{ url_for('students.list_students') }}" title="Quản lý sinh viên"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('students') and request.endpoint != 'students.pending_faces' %}active{% endif %}">
+                    <i class="fas fa-user-graduate"></i> <span class="link-text">Quản lý sinh viên</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('classes.list_classes') }}" title="Quản lý lớp học"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('classes') %}active{% endif %}">
+                    <i class="fas fa-chalkboard-user"></i> <span class="link-text">Quản lý lớp học</span>
+                </a>
+            </li>
+
+            <div class="nav-group-label"><span class="nav-label-text">Điểm danh</span></div>
+            <li>
+                <a href="{{ url_for('attendance.live') }}" title="Ghi nhận ra/vào"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('attendance') %}active{% endif %}">
+                    <i class="fas fa-video"></i> <span class="link-text">Ghi nhận ra/vào</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('attendance.history') }}" class="nav-link" title="Lịch sử ra/vào">
+                    <i class="fas fa-history"></i> <span class="link-text">Lịch sử ra/vào</span>
+                </a>
+            </li>
+
+            <div class="nav-group-label"><span class="nav-label-text">Hệ thống</span></div>
+            <li>
+                <a href="{{ url_for('training.index') }}" title="Training Dữ Liệu"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('training') %}active{% endif %}">
+                    <i class="fas fa-brain"></i> <span class="link-text">Training Dữ Liệu</span>
+                </a>
+            </li>
+            <li class="nav-logout">
+                <a href="{{ url_for('auth.logout') }}" class="nav-link text-white-50 hover-danger" title="Đăng xuất">
+                    <i class="fas fa-sign-out-alt"></i> <span class="link-text">Đăng xuất</span>
                 </a>
             </li>
         </ul>
@@ -271,31 +293,61 @@
             // Cập nhật ngày giờ topbar
             function updateDateTime() {
                 const now = new Date();
-
-                // Giờ
                 const hours = String(now.getHours()).padStart(2, '0');
                 const minutes = String(now.getMinutes()).padStart(2, '0');
                 const seconds = String(now.getSeconds()).padStart(2, '0');
                 if (document.getElementById('timeDisplay')) {
                     document.getElementById('timeDisplay').innerText = `${hours}:${minutes}:${seconds}`;
                 }
-
-                // Ngày
                 const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
                 const dayName = days[now.getDay()];
                 const date = now.getDate();
                 const month = now.getMonth() + 1;
                 const year = now.getFullYear();
-
                 if (document.getElementById('dateDisplay')) {
                     document.getElementById('dateDisplay').innerText = `${dayName}, ${date} tháng ${month}, ${year}`;
                 }
             }
-
             updateDateTime();
             setInterval(updateDateTime, 1000);
+
+            // ===== Sidebar Toggle (Thu gọn / Mở rộng) =====
+            // Bật lại transition sau khi page load xong (tránh flash)
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    document.documentElement.classList.remove('no-transition');
+                });
+            });
+
+            const toggleBtn = document.getElementById('sidebarToggle');
+            if (toggleBtn) {
+                // Đồng bộ icon với trạng thái đã áp dụng từ <head>
+                const isCollapsed = document.documentElement.classList.contains('sidebar-collapsed');
+                if (isCollapsed) {
+                    toggleBtn.querySelector('i').className = 'fas fa-chevron-right';
+                    toggleBtn.title = 'Mở rộng';
+                }
+
+                toggleBtn.addEventListener('click', function () {
+                    const html = document.documentElement;
+                    html.classList.toggle('sidebar-collapsed');
+                    const collapsed = html.classList.contains('sidebar-collapsed');
+
+                    // Đổi icon mũi tên
+                    this.querySelector('i').className = collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
+                    this.title = collapsed ? 'Mở rộng' : 'Thu gọn';
+
+                    // Lưu trạng thái
+                    localStorage.setItem('sidebarCollapsed', collapsed);
+                });
+            }
         });
     </script>
+
+    <!-- AI Assistant Widget (chỉ hiển thị khi đã đăng nhập) -->
+    {% if session.get('admin_id') %}
+    <script src="{{ url_for('static', filename='js/components/ai_assistant.js') }}"></script>
+    {% endif %}
 
     {% block extra_js %}{% endblock %}
 </body>

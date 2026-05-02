@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}AI Assistant — MTUFace{% endblock %}
+{% block page_title %}🤖 Trợ lý AI MTUFace{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/chatbot_chat.css') }}">
+
+{% endblock %}
+
+{% block content %}
+<div class="chat-container" id="chatContainer">
+    <!-- Header -->
+    <div class="chat-header">
+        <div class="avatar">🤖</div>
+        <div>
+            <h5>MTU AI Assistant</h5>
+            <small>Trợ lý thông minh — Hệ thống Điểm danh MTUFace</small>
+        </div>
+        <div class="ms-auto toolbar">
+            <button class="btn btn-sm btn-outline-light" onclick="buildKnowledge()" id="btnBuild" title="Xây dựng/Cập nhật kho tri thức">
+                <i class="fas fa-database"></i> <span class="d-none d-md-inline">Cập nhật KB</span>
+            </button>
+            <button class="btn btn-sm btn-outline-light" onclick="clearChat()" title="Xóa lịch sử chat">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Knowledge Base Status -->
+    <div class="kb-bar {{ 'ready' if kb_status.ready else '' }}" id="kbBar">
+        {% if kb_status.ready %}
+            <i class="fas fa-check-circle text-success"></i>
+            <span>Kho tri thức: <strong>{{ kb_status.total_chunks }}</strong> đoạn kiến thức | Cập nhật: {{ kb_status.last_built }}</span>
+        {% else %}
+            <i class="fas fa-exclamation-triangle text-warning"></i>
+            <span>Chưa xây dựng kho tri thức. Bấm <strong>"Cập nhật KB"</strong> để AI học toàn bộ dự án.</span>
+        {% endif %}
+        <div class="kb-progress" id="kbProgress" style="display:none"><div class="bar" id="kbProgressBar"></div></div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages">
+        <div class="msg bot">
+            <div class="bubble">
+                <p>👋 Xin chào! Tôi là <strong>MTU AI Assistant</strong> — trợ lý AI của hệ thống Điểm danh Thông minh MTUFace.</p>
+                <p>Tôi có thể giúp bạn:</p>
+                <ul style="margin:0;padding-left:20px">
+                    <li>Giải thích cách hệ thống hoạt động</li>
+                    <li>Hướng dẫn sử dụng các chức năng</li>
+                    <li>Giải thích thuật toán AI (ArcFace, SCRFD...)</li>
+                    <li>Debug lỗi và hỗ trợ kỹ thuật</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Typing indicator -->
+        <div class="msg bot typing-indicator" id="typingIndicator">
+            <div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+    </div>
+
+    <!-- Suggested Questions -->
+    <div class="suggestions" id="suggestions">
+        {% for q in suggested_questions %}
+        <div class="chip" onclick="askSuggested(this)">{{ q }}</div>
+        {% endfor %}
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-area">
+        <textarea id="chatInput" rows="1" placeholder="Hỏi bất kỳ điều gì về hệ thống MTUFace..." 
+                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+        <button class="btn-send" onclick="sendMessage()" id="btnSend" title="Gửi">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/chatbot_chat.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+{% endblock %}

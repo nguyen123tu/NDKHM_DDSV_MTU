@@ -1,8 +1,12 @@
 """
-Core AI: Engine Factory — Chọn giữa InsightFace và YOLOv8+ResNet50.
+Core AI: Engine Factory — Chọn giữa InsightFace, YOLOv8+ResNet50, và DeepFace.
 
 Factory Pattern cho phép chuyển đổi AI engine mà không cần sửa code.
-Cấu hình qua Config.AI_ENGINE: 'insightface' hoặc 'yolo_resnet'
+Cấu hình qua Config.AI_ENGINE:
+  - 'insightface'   — InsightFace buffalo_l (mặc định)
+  - 'buffalo_sc'    — InsightFace buffalo_sc (nhẹ, nhanh)
+  - 'yolo_resnet'   — YOLOv8 + ResNet50
+  - 'deepface'      — DeepFace (đa model: ArcFace, Facenet512, GhostFaceNet, ...)
 """
 
 from config import Config
@@ -10,35 +14,66 @@ from config import Config
 
 def get_engine():
     """
-    Factory: Trả về cặp (detect_fn, embed_fn) tùy theo Config.AI_ENGINE.
+    Factory: Trả về engine dict tùy theo Config.AI_ENGINE.
     
     Returns:
         dict: {
             'name': str,              — Tên engine
-            'detect': callable,        — Hàm detect(frame) → faces
-            'embed': callable,         — Hàm embed(face_crop) → vector
-            'detect_and_embed': callable — Hàm detect+embed(frame) → [(bbox, embedding), ...]
+            'embedding_dim': int,      — Số chiều embedding vector
+            'detect_and_embed': callable — Hàm detect+embed(frame) → [{bbox, embedding, confidence}, ...]
+            
+            # Chỉ có khi dùng DeepFace:
+            'analyze_face': callable,      — Phân tích thuộc tính (tuổi, giới tính, cảm xúc)
+            'verify_liveness': callable,   — Kiểm tra khuôn mặt thật/giả (anti-spoofing)
+            'verify_two_faces': callable,  — So sánh 2 ảnh khuôn mặt
         }
     """
     engine_name = getattr(Config, 'AI_ENGINE', 'insightface')
     
-    if engine_name == 'yolo_resnet':
+    if engine_name == 'deepface':
+        return _build_deepface_engine()
+    elif engine_name == 'yolo_resnet':
         return _build_yolo_resnet_engine()
+    elif engine_name == 'buffalo_sc':
+        return _build_insightface_engine(model_name='buffalo_sc')
     else:
-        return _build_insightface_engine()
+        return _build_insightface_engine(model_name='buffalo_l')
 
 
-def _build_insightface_engine():
+def _build_deepface_engine():
     """
-    Engine InsightFace (buffalo_l).
-    Tích hợp sẵn: SCRFD detect + ArcFace embed trong 1 lần gọi.
+    Engine DeepFace — Hỗ trợ đa dạng model và detector.
+    
+    Cấu hình qua Config:
+      - DEEPFACE_MODEL: Tên model nhận diện (mặc định: ArcFace)
+      - DEEPFACE_DETECTOR: Tên detector (mặc định: retinaface)
+      - DEEPFACE_ANTI_SPOOFING: Bật anti-spoofing (mặc định: False)
+    """
+    from core.engine_deepface import build_deepface_engine
+    
+    model_name = getattr(Config, 'DEEPFACE_MODEL', 'ArcFace')
+    detector = getattr(Config, 'DEEPFACE_DETECTOR', 'retinaface')
+    anti_spoofing = getattr(Config, 'DEEPFACE_ANTI_SPOOFING', False)
+    
+    return build_deepface_engine(
+        model_name=model_name,
+        detector_backend=detector,
+        anti_spoofing=anti_spoofing,
+    )
+
+
+def _build_insightface_engine(model_name='buffalo_l'):
+    """
+    Engine InsightFace.
+    buffalo_l: Toàn diện, chính xác cao (90MB).
+    buffalo_sc: Siêu nhẹ, MobileFaceNet (1MB), phù hợp đồng bộ mobile.
     """
     from insightface.app import FaceAnalysis
     
-    print("[ENGINE] Đang khởi tạo InsightFace engine...")
-    app = FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
+    print(f"[ENGINE] Đang khởi tạo InsightFace ({model_name})...")
+    app = FaceAnalysis(name=model_name, providers=['CPUExecutionProvider'])
     app.prepare(ctx_id=0, det_size=Config.DET_SIZE)
-    print("[ENGINE] InsightFace engine đã sẵn sàng.")
+    print(f"[ENGINE] {model_name} đã sẵn sàng.")
     
     def detect_and_embed(frame):
         """

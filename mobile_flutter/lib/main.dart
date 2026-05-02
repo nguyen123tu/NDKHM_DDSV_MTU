@@ -5,8 +5,16 @@ import 'providers/attendance_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'services/sync_manager.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Bật bộ lắng nghe mạng để đồng bộ Offline-First
+  SyncManager.instance.initializeNetworkListener();
+  // Kích hoạt đồng bộ ngay khi vừa mở app
+  SyncManager.instance.syncAll();
+
   runApp(
     MultiProvider(
       providers: [

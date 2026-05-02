@@ -1,138 +1,119 @@
 {% extends "base.html" %}
 
-{% block title %}Điểm Danh Tự Động{% endblock %}
+{% block title %}Điểm Danh Tự Động — MTUFace{% endblock %}
+{% block page_title %}Camera Live{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/live.css') }}">
+
+{% endblock %}
 
 {% block content %}
-<div id="live-attendance-container" class="pb-5">
-    
-    <!-- Top Header Card -->
-    <div class="flat-card mb-4 border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
-        <!-- Title Bar -->
-        <div class="d-flex justify-content-between align-items-center px-4 py-3" style="background: linear-gradient(135deg, #5856D6, #a364f3); color: white;">
-            <h4 class="fw-bold m-0"><i class="fas fa-user-check me-2"></i> Điểm danh tự động</h4>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-warning fw-bold text-dark btn-sm px-3 shadow-sm" onclick="location.reload();">
+<div id="live-attendance-container">
+
+    <!-- ═══ CONTROL PANEL ═══ -->
+    <div class="live-controls">
+        <div class="live-controls-header">
+            <h4><i class="fas fa-broadcast-tower"></i> Điểm danh tự động</h4>
+            <div class="header-actions">
+                <button type="button" class="btn btn-reset" onclick="location.reload();">
                     <i class="fas fa-undo me-1"></i> Reset
                 </button>
-                <a href="{{ url_for('export.index') }}" class="btn btn-success fw-bold text-white btn-sm px-3 shadow-sm">
+                <a href="{{ url_for('export.index') }}" class="btn btn-export">
                     <i class="fas fa-file-export me-1"></i> Export
                 </a>
             </div>
         </div>
-        
-        <!-- Controls Bar -->
-        <div class="bg-white px-4 py-3 border-bottom">
-            <form id="formStartDetection" class="row g-3 align-items-end">
-                <!-- Left: Camera & Class Selection -->
-                <div class="col-lg-3 col-md-4">
-                    <label class="form-label text-muted small fw-bold mb-1"><i class="fas fa-video me-1"></i> Camera</label>
-                    <select class="form-select form-select-sm border-light bg-light" id="selectCamId">
+        <div class="live-controls-body">
+            <form id="formStartDetection" class="d-flex align-items-end gap-3 flex-wrap w-100">
+                <div class="ctrl-group">
+                    <label><i class="fas fa-video"></i> Camera</label>
+                    <select id="selectCamId">
                         {% for cam in cameras %}
                         <option value="{{ cam.id }}">{{ cam.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-lg-3 col-md-4">
-                    <label class="form-label text-muted small fw-bold mb-1"><i class="fas fa-graduation-cap me-1"></i> Lớp học</label>
-                    <select class="form-select form-select-sm border-light bg-light" id="selectLopId">
-                        <option value="">-- Chọn lớp --</option>
+                <div class="ctrl-group">
+                    <label><i class="fas fa-graduation-cap"></i> Lớp học</label>
+                    <select id="selectLopId">
+                        <option value="">— Chọn lớp —</option>
                         {% for lop in classes %}
                         <option value="{{ lop.id }}" {% if current_class == lop.id %}selected{% endif %}>{{ lop.ma_lop }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
-                <!-- Middle: Mode & Cooldown -->
-                <div class="col-lg-2 col-md-4">
-                    <label class="form-label text-muted small fw-bold mb-1"><i class="fas fa-toggle-on me-1"></i> Chế độ</label>
-                    <select class="form-select form-select-sm border-light bg-light fw-bold" id="selectMode">
+                <div class="ctrl-group" style="max-width:140px">
+                    <label><i class="fas fa-toggle-on"></i> Chế độ</label>
+                    <select id="selectMode">
                         <option value="AUTO" selected>Tự động</option>
                         <option value="IN">Chỉ Vào</option>
                         <option value="OUT">Chỉ Ra</option>
                     </select>
                 </div>
-                <div class="col-lg-1 col-md-4">
-                    <label class="form-label text-muted small fw-bold mb-1"><i class="fas fa-clock me-1"></i> CD (s)</label>
-                    <input type="number" class="form-control form-control-sm text-center fw-bold bg-light border-light" id="inputCooldown" value="120" min="10" max="600">
+                <div class="ctrl-group" style="max-width:100px">
+                    <label><i class="fas fa-clock"></i> CD (s)</label>
+                    <input type="number" id="inputCooldown" value="120" min="10" max="600">
                 </div>
-                
-                <!-- Right: Action Buttons -->
-                <div class="col-lg-3 col-md-12 d-flex gap-2 justify-content-lg-end">
+                <div class="d-flex gap-2">
                     {% if current_class %}
-                    <button type="button" id="btnStop" class="btn btn-danger btn-sm px-4 shadow-sm fw-bold">
-                        <i class="fas fa-stop me-1"></i> Dừng
-                    </button>
-                    <button type="submit" id="btnStart" class="btn btn-primary btn-sm px-4 shadow-sm fw-bold d-none">
-                        <i class="fas fa-play me-1"></i> Bắt đầu
-                    </button>
+                    <button type="button" id="btnStop" class="btn-stop"><i class="fas fa-stop"></i> Dừng</button>
+                    <button type="submit" id="btnStart" class="btn-start d-none"><i class="fas fa-play"></i> Bắt đầu</button>
                     {% else %}
-                    <button type="submit" id="btnStart" class="btn btn-primary btn-sm px-4 shadow-sm fw-bold">
-                        <i class="fas fa-play me-1"></i> Bắt đầu
-                    </button>
-                    <button type="button" id="btnStop" class="btn btn-danger btn-sm px-4 shadow-sm fw-bold d-none">
-                        <i class="fas fa-stop me-1"></i> Dừng
-                    </button>
+                    <button type="submit" id="btnStart" class="btn-start"><i class="fas fa-play"></i> Bắt đầu</button>
+                    <button type="button" id="btnStop" class="btn-stop d-none"><i class="fas fa-stop"></i> Dừng</button>
                     {% endif %}
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Main Live Body -->
+    <!-- ═══ CAMERA + INFO ═══ -->
     <div class="row g-4 mb-4">
-        
-        <!-- Left: Camera Viewer -->
+        <!-- Camera Viewer -->
         <div class="col-lg-7">
-            <div class="flat-card bg-white p-3 border-0 shadow-sm rounded-3 h-100 position-relative">
-                <div class="position-absolute top-0 end-0 p-4" style="z-index: 10;">
-                    <span id="statusIndicatorBadge" class="badge rounded-pill bg-secondary shadow-sm px-3 py-2 fw-medium border border-white" style="font-size: 0.85rem;">
-                        <span id="statusIndicator" class="d-inline-block rounded-circle bg-white me-1" style="width: 8px; height: 8px;"></span> 
+            <div class="camera-card">
+                <div class="camera-viewer">
+                    <span id="statusIndicatorBadge" class="cam-status cam-status-offline">
+                        <span class="pulse-dot" id="statusIndicator"></span>
                         <span id="statusText">Camera đang tắt</span>
                     </span>
-                </div>
-                
-                <div class="bg-light rounded overflow-hidden shadow-inner d-flex justify-content-center align-items-center w-100 h-100" style="min-height: 480px;">
-                    <img id="videoFeed" class="img-fluid w-100 h-100" style="object-fit: cover; border-radius: 8px;" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%23f1f5f9'/%3E%3Ctext x='320' y='240' font-family='Arial' font-size='18' fill='%2364748b' text-anchor='middle'%3ECamera Status Offline%3C/text%3E%3C/svg%3E">
+                    <img id="videoFeed" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%231a1a2e'/%3E%3Ctext x='320' y='230' font-family='Inter,sans-serif' font-size='16' fill='%23636e72' text-anchor='middle'%3ECamera Offline%3C/text%3E%3Ctext x='320' y='260' font-family='Inter,sans-serif' font-size='12' fill='%23444' text-anchor='middle'%3EBấm Bắt đầu để khởi động%3C/text%3E%3C/svg%3E">
                 </div>
             </div>
         </div>
-        
-        <!-- Right: Current Info -->
+
+        <!-- Student Info Panel -->
         <div class="col-lg-5">
-            <div class="flat-card bg-white border-0 shadow-sm rounded-3 h-100 p-0 overflow-hidden">
-                <div class="p-3 bg-light border-bottom border-light flex-shrink-0">
-                    <h6 class="fw-bold m-0 text-primary"><i class="fas fa-user-circle me-2"></i> Thông tin sinh viên</h6>
+            <div class="info-panel">
+                <div class="info-panel-header">
+                    <span class="dot"></span>
+                    <h6>Thông tin sinh viên</h6>
                 </div>
-                
-                <!-- Info Display Content -->
-                <div class="d-flex align-items-center justify-content-center flex-column flex-grow-1 p-4" id="currentStudentInfo" style="min-height: 420px;">
-                    
-                    <!-- Mặc định chờ quét -->
-                    <div id="waitState" class="text-center text-muted">
-                        <i class="fas fa-user-slash fs-1 text-secondary opacity-25 mb-3"></i>
-                        <h6 class="fw-bold text-dark opacity-50 mb-1">Chưa có sinh viên được nhận diện</h6>
-                        <p class="small opacity-50">Hệ thống đang chờ nhận diện khuôn mặt</p>
+                <div class="info-panel-body" id="currentStudentInfo">
+                    <!-- Wait state -->
+                    <div id="waitState" class="wait-state">
+                        <div class="wait-icon"><i class="fas fa-user-slash"></i></div>
+                        <h6>Chưa nhận diện được ai</h6>
+                        <p>Hệ thống đang chờ quét khuôn mặt</p>
                     </div>
-                    
-                    <!-- Hiển thị khi quét thành công (ẩn mặc định) -->
-                    <div id="successState" class="w-100 d-none slide-in">
-                        <div class="card border-info border-opacity-50 shadow-sm border-start border-4 border-info rounded-3">
-                            <div class="card-body p-4 text-center">
-                                <h5 class="fw-bold text-primary mb-3 text-truncate">
-                                    <i class="fas fa-id-card text-info me-2"></i> <span id="infoMssv">17A10010216</span> - <i class="fas fa-user-circle text-primary mx-1"></i> <span id="infoName">Nguyễn Văn Lâm</span>
-                                </h5>
-                                <div class="d-flex justify-content-center gap-4 text-muted small fw-medium mt-4 pt-3 border-top">
-                                    <span><i class="fas fa-graduation-cap text-dark me-1"></i> <span id="infoLop">CNTT-K65</span></span>
-                                    <span class="text-success"><i class="fas fa-check-circle me-1"></i> Vừa điểm danh</span>
-                                    <span><i class="far fa-clock text-dark me-1"></i> <span id="infoTime">16:02:16 04/10/2025</span></span>
-                                </div>
+
+                    <!-- Success state (hidden) -->
+                    <div id="successState" class="w-100 d-none">
+                        <div class="success-card">
+                            <div class="sc-name"><span id="infoName">—</span></div>
+                            <div class="sc-mssv"><i class="fas fa-id-card me-1"></i><span id="infoMssv">—</span></div>
+                            <div class="sc-meta">
+                                <span style="color:var(--primary)"><i class="fas fa-graduation-cap"></i> <span id="infoLop">—</span></span>
+                                <span style="color:var(--success)"><i class="fas fa-check-circle"></i> Đã điểm danh</span>
+                                <span style="color:var(--text-secondary)"><i class="far fa-clock"></i> <span id="infoTime">—</span></span>
                             </div>
                         </div>
-                        
+
                         <!-- Success Banner Overlay -->
-                        <div class="position-absolute top-0 end-0 mt-3 me-3" id="successBanner" style="display:none; z-index: 50;">
-                            <div class="bg-success text-white px-4 py-2 rounded-1 fw-bold shadow">
-                                Điểm danh thành công: <span id="bannerName">Nguyễn Văn Lâm</span>
+                        <div class="position-absolute top-0 end-0 mt-3 me-3" id="successBanner" style="display:none;z-index:50;">
+                            <div style="background:var(--success);color:white;padding:10px 20px;border-radius:12px;font-weight:700;box-shadow:var(--shadow-md)">
+                                ✅ <span id="bannerName">—</span>
                             </div>
                         </div>
                     </div>
@@ -140,113 +121,47 @@
             </div>
         </div>
     </div>
-    
-    <!-- Bottom: Danh sách điểm danh Table -->
-    <div class="flat-card bg-white border-0 shadow-sm rounded-3 overflow-hidden">
-        <div class="p-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, rgba(88, 86, 214, 0.7), rgba(163, 100, 243, 0.7)); color: white;">
-            <h6 class="fw-bold m-0"><i class="fas fa-list me-2"></i> Danh sách điểm danh</h6>
-            <span class="badge bg-white text-primary rounded-pill px-3 shadow-sm" id="logCounter">0</span>
+
+    <!-- ═══ ATTENDANCE LOG ═══ -->
+    <div class="log-card">
+        <div class="log-header">
+            <h6><i class="fas fa-list-check me-2"></i>Danh sách điểm danh</h6>
+            <span class="log-badge" id="logCounter">0</span>
         </div>
-        
-        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-            <table class="table table-hover table-light-flat mb-0 text-center align-middle">
-                <thead class="sticky-top bg-white border-bottom border-light">
+        <div class="table-responsive" style="max-height:400px;overflow-y:auto">
+            <table class="table table-light-flat mb-0 text-center align-middle">
+                <thead class="sticky-top" style="background:white">
                     <tr>
                         <th class="py-3 text-start ps-4">STT</th>
                         <th class="py-3 text-start">Mã SV</th>
                         <th class="py-3 text-start">Họ tên</th>
                         <th class="py-3">Lớp</th>
                         <th class="py-3">Thời gian</th>
-                        <th class="py-3 text-center">Ảnh điểm danh</th>
+                        <th class="py-3 text-center">Ảnh</th>
                     </tr>
                 </thead>
                 <tbody id="attendanceLog">
                     <tr id="emptyLogMsg">
-                        <td colspan="6" class="text-center text-muted py-5">
-                            <i class="fas fa-info-circle mb-2 fs-4 opacity-50"></i>
-                            <br>Chưa có dữ liệu nào.
+                        <td colspan="6" class="text-center py-5">
+                            <div style="font-size:2.5rem;opacity:.3;margin-bottom:8px">📋</div>
+                            <span class="text-muted">Chưa có dữ liệu điểm danh</span>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
-    
+
 </div>
 
-<!-- Toast Notification Container -->
-<div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
-
-<style>
-    .attendance-toast {
-        min-width: 340px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-        padding: 16px 20px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        animation: toastSlideIn 0.4s ease;
-        border-left: 5px solid #22c55e;
-        transition: all 0.3s ease;
-    }
-    .attendance-toast.toast-checkout {
-        border-left-color: #f59e0b;
-    }
-    .attendance-toast.toast-alert {
-        border-left-color: #ef4444;
-    }
-    .attendance-toast.toast-out {
-        animation: toastSlideOut 0.3s ease forwards;
-    }
-    .toast-icon {
-        width: 44px; height: 44px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        flex-shrink: 0;
-    }
-    .toast-icon.success { background: #dcfce7; color: #16a34a; }
-    .toast-icon.warning { background: #fef3c7; color: #d97706; }
-    .toast-icon.danger  { background: #fee2e2; color: #dc2626; }
-    .toast-body h6 { margin: 0 0 2px 0; font-weight: 700; font-size: 0.9rem; color: #1e293b; }
-    .toast-body p  { margin: 0; font-size: 0.8rem; color: #64748b; }
-    .toast-close {
-        margin-left: auto;
-        background: none;
-        border: none;
-        color: #94a3b8;
-        font-size: 1.1rem;
-        cursor: pointer;
-        padding: 0 4px;
-    }
-    @keyframes toastSlideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to   { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes toastSlideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to   { transform: translateX(120%); opacity: 0; }
-    }
-</style>
+<!-- Toast Container -->
+<div id="toastContainer" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;"></div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Script xử lý Realtime -->
+<script src="{{ url_for('static', filename='js/pages/live.js') }}"></script>
 <script src="{{ url_for('static', filename='js/attendance_realtime.js') }}"></script>
 {% if current_class %}
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Khôi phục UI state nếu server đang có background task chạy.
-        const indicatorBadge = document.getElementById('statusIndicatorBadge');
-        const text = document.getElementById('statusText');
-        
-        indicatorBadge.classList.replace('bg-secondary', 'bg-success');
-        text.innerText = "Camera đang hoạt động";
-    });
-</script>
+
 {% endif %}
 {% endblock %}

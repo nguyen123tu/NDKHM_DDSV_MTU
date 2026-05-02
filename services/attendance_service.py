@@ -12,24 +12,26 @@ from config import Config
 _last_log_times = {}  # {mssv: timestamp}
 
 
-def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', ghi_chu=None, mode='AUTO'):
+def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', ghi_chu=None, mode='AUTO', session_start_time=None):
     """
     Ghi nhận điểm danh: Giờ Vào / Giờ Ra.
     
     Args:
         mssv, lop_id, do_chinh_xac, camera_id, trang_thai, ghi_chu
         mode: 'AUTO' (logic 30p), 'IN' (ép check-in), 'OUT' (ép check-out)
+        session_start_time: (datetime or str) Nếu có, chỉ check duplicate trong khoảng thời gian diễn ra phiên.
         
     Returns:
         dict: {'action': 'checkin'/'checkout'/'skip', 'success': bool}
     """
     current_time = time.time()
     
-    # Cooldown ngắn 60s chống spam
+    # Cooldown ngắn 60s chống spam (bỏ qua cooldown nếu check_in cụ thể cho một phiên mới mở)
     SPAM_COOLDOWN = 60
     cache_key = f"{mssv}_{lop_id}"
     last_time = _last_log_times.get(cache_key, 0)
-    if current_time - last_time < SPAM_COOLDOWN:
+    
+    if current_time - last_time < SPAM_COOLDOWN and not session_start_time:
         return False
 
     # Tìm sinh_vien_id
@@ -39,14 +41,24 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
         return False
 
     # Kiểm tra: hôm nay đã có bản ghi điểm danh chưa?
-    existing = execute_one("""
-        SELECT id, thoi_gian, gio_ra 
-        FROM diem_danh 
-        WHERE sinh_vien_id = %s AND lop_id = %s 
-          AND DATE(thoi_gian) = CURDATE()
-        ORDER BY thoi_gian DESC
-        LIMIT 1
-    """, (sinh_vien_id, lop_id))
+    if session_start_time:
+        existing = execute_one("""
+            SELECT id, thoi_gian, gio_ra 
+            FROM diem_danh 
+            WHERE sinh_vien_id = %s AND lop_id = %s 
+              AND thoi_gian >= %s
+            ORDER BY thoi_gian DESC
+            LIMIT 1
+        """, (sinh_vien_id, lop_id, session_start_time))
+    else:
+        existing = execute_one("""
+            SELECT id, thoi_gian, gio_ra 
+            FROM diem_danh 
+            WHERE sinh_vien_id = %s AND lop_id = %s 
+              AND DATE(thoi_gian) = CURDATE()
+            ORDER BY thoi_gian DESC
+            LIMIT 1
+        """, (sinh_vien_id, lop_id))
 
     # --- LOGIC THEO MODE ---
     

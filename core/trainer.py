@@ -56,11 +56,18 @@ class FaceTrainer:
         """
         database_dir = database_dir or Config.DATABASE_DIR
         if output_pkl is None:
-            output_pkl = Config.EMBEDDINGS_YOLO_PATH if Config.AI_ENGINE == 'yolo_resnet' else Config.EMBEDDINGS_PATH
+            if Config.AI_ENGINE == 'yolo_resnet':
+                output_pkl = Config.EMBEDDINGS_YOLO_PATH
+            elif Config.AI_ENGINE == 'deepface':
+                output_pkl = Config.EMBEDDINGS_DEEPFACE_PATH
+            else:
+                output_pkl = Config.EMBEDDINGS_PATH
 
         self._ensure_model()
         self._status = "training"
         self._progress = 0.0
+        self._current_student = ""
+        self._detail = ""
 
         embeddings_dict = {}  # {mssv: [emb1, emb2, ...]}
         success_images = 0
@@ -72,40 +79,50 @@ class FaceTrainer:
             subdirs = [d for d in os.listdir(database_dir)
                        if os.path.isdir(os.path.join(database_dir, d))]
 
-        # Đếm tổng items để tính progress
-        total_items = len(subdirs)
-        
+        # Đếm tổng SỐ ẢNH (thay vì số thư mục) để progress chính xác hơn
+        total_images = 0
+        subdir_images = {}  # cache danh sách ảnh mỗi thư mục
+        for ma_sv_dir in subdirs:
+            student_path = os.path.join(database_dir, ma_sv_dir)
+            imgs = glob.glob(os.path.join(student_path, "*.jpg")) + \
+                   glob.glob(os.path.join(student_path, "*.png"))
+            subdir_images[ma_sv_dir] = imgs
+            total_images += len(imgs)
+
         # Đếm thêm ảnh phẳng
         flat_images = glob.glob(os.path.join(database_dir, "*.jpg")) + \
                       glob.glob(os.path.join(database_dir, "*.png"))
-        total_items += len(flat_images)
+        total_images += len(flat_images)
 
-        if total_items == 0:
+        if total_images == 0:
             self._status = "error"
             print("[TRAINER] Không tìm thấy dữ liệu nào trong database/")
             return {}
 
-        processed = 0
+        processed_images = 0
 
         for ma_sv_dir in subdirs:
-            student_path = os.path.join(database_dir, ma_sv_dir)
-            image_files = glob.glob(os.path.join(student_path, "*.jpg")) + \
-                          glob.glob(os.path.join(student_path, "*.png"))
+            image_files = subdir_images[ma_sv_dir]
 
             if len(image_files) == 0:
-                processed += 1
-                self._progress = processed / total_items
                 continue
 
+            self._current_student = ma_sv_dir
             count_ok = 0
-            for image_path in image_files:
+            for i, image_path in enumerate(image_files):
+                self._detail = f"{ma_sv_dir}: ảnh {i+1}/{len(image_files)}"
+                
                 # Fix unicode path for Windows
                 img_data = np.fromfile(image_path, np.uint8)
                 if img_data is None or len(img_data) == 0:
+                    processed_images += 1
+                    self._progress = processed_images / total_images
                     continue
                 img = cv2.imdecode(img_data, cv2.IMREAD_COLOR)
 
                 if img is None:
+                    processed_images += 1
+                    self._progress = processed_images / total_images
                     continue
                 face_results = self._engine['detect_and_embed'](img)
                 if len(face_results) > 0:
@@ -119,8 +136,9 @@ class FaceTrainer:
                     success_images += 1
                     count_ok += 1
 
-            processed += 1
-            self._progress = processed / total_items
+                processed_images += 1
+                self._progress = processed_images / total_images
+
             print(f"  [TRAINER] {ma_sv_dir}: {count_ok}/{len(image_files)} ảnh OK")
 
         # === PHẦN 2: Fallback ảnh phẳng (cấu trúc cũ) ===
@@ -149,8 +167,8 @@ class FaceTrainer:
                     embeddings_dict[ma_sv].append(emb)
                     success_images += 1
 
-            processed += 1
-            self._progress = processed / total_items
+            processed_images += 1
+            self._progress = processed_images / total_images
 
         # === PHẦN 3: Tính Average Embedding ===
         known_faces = {}
@@ -168,6 +186,16 @@ class FaceTrainer:
             os.makedirs(os.path.dirname(output_pkl), exist_ok=True)
             with open(output_pkl, 'wb') as f:
                 pickle.dump(known_faces, f)
+
+            # === OFFLINE-FIRST: Lưu Vector vào Database ===
+            import json
+            from db.connection import execute_update
+            for mssv, emb in known_faces.items():
+                try:
+                    vector_json = json.dumps(emb.tolist())
+                    execute_update("UPDATE sinh_vien SET face_vector = %s WHERE mssv = %s", (vector_json, mssv))
+                except Exception as e:
+                    print(f"  [TRAINER LỖI DB] Không thể cập nhật vector cho {mssv}: {e}")
 
             calc_time = round(time.time() - start_time, 2)
             self._status = "done"
@@ -193,7 +221,12 @@ class FaceTrainer:
         """
         database_dir = Config.DATABASE_DIR
         if output_pkl is None:
-            output_pkl = Config.EMBEDDINGS_YOLO_PATH if Config.AI_ENGINE == 'yolo_resnet' else Config.EMBEDDINGS_PATH
+            if Config.AI_ENGINE == 'yolo_resnet':
+                output_pkl = Config.EMBEDDINGS_YOLO_PATH
+            elif Config.AI_ENGINE == 'deepface':
+                output_pkl = Config.EMBEDDINGS_DEEPFACE_PATH
+            else:
+                output_pkl = Config.EMBEDDINGS_PATH
 
         self._ensure_model()
 
@@ -250,6 +283,15 @@ class FaceTrainer:
         with open(output_pkl, 'wb') as f:
             pickle.dump(known_faces, f)
 
+        # === OFFLINE-FIRST: Lưu Vector vào Database ===
+        import json
+        from db.connection import execute_update
+        try:
+            vector_json = json.dumps(final_emb.tolist())
+            execute_update("UPDATE sinh_vien SET face_vector = %s WHERE mssv = %s", (vector_json, mssv))
+        except Exception as e:
+            print(f"[TRAINER LỖI DB] Không thể cập nhật vector cho {mssv}: {e}")
+
         print(f"[TRAINER] Đã train {mssv}: {len(emb_list)} ảnh → 1 vector")
         return True
 
@@ -258,11 +300,13 @@ class FaceTrainer:
         Lấy tiến độ training hiện tại.
         
         Returns:
-            dict: {"progress": 0.0-1.0, "status": "idle/training/done/error"}
+            dict: {"progress": 0.0-1.0, "status": ..., "current_student": ..., "detail": ...}
         """
         return {
             "progress": self._progress,
-            "status": self._status
+            "status": self._status,
+            "current_student": getattr(self, '_current_student', ''),
+            "detail": getattr(self, '_detail', ''),
         }
 
 

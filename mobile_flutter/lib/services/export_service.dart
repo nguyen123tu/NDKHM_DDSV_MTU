@@ -61,4 +61,50 @@ class ExportService {
     // Mở hộp thoại chia sẻ file trên điện thoại
     await Share.shareXFiles([XFile(filePath)], text: 'Báo cáo điểm danh MTUFace');
   }
+
+  static Future<void> exportSessionToExcel(List<dynamic> students, String tenLop) async {
+    if (kIsWeb) return;
+
+    var excel = Excel.createExcel();
+    Sheet sheetObject = excel['Báo cáo điểm danh'];
+    excel.delete('Sheet1');
+
+    CellStyle headerStyle = CellStyle(
+      backgroundColorHex: ExcelColor.fromHexString('#1B3A5C'),
+      fontColorHex: ExcelColor.fromHexString('#FFFFFF'),
+      bold: true,
+      horizontalAlign: HorizontalAlign.Center,
+    );
+
+    List<String> headers = ["STT", "MSSV", "Họ và Tên", "Trạng thái", "Thời gian"];
+    for (var i = 0; i < headers.length; i++) {
+        var cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        cell.value = TextCellValue(headers[i]);
+        cell.cellStyle = headerStyle;
+    }
+
+    for (int i = 0; i < students.length; i++) {
+      final student = students[i];
+      int row = i + 1;
+      
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row)).value = IntCellValue(i + 1);
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row)).value = TextCellValue(student['mssv'] ?? '');
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row)).value = TextCellValue(student['ho_ten'] ?? '');
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row)).value = TextCellValue(student['trang_thai'] == 'Co mat' ? 'Có mặt' : 'Vắng');
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row)).value = TextCellValue(student['thoi_gian'] ?? '');
+    }
+
+    var fileBytes = excel.save();
+    if (fileBytes == null) return;
+
+    final String fileName = 'Diem_danh_${tenLop.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+    final directory = await getApplicationDocumentsDirectory();
+    final String filePath = '${directory.path}/$fileName';
+    
+    final file = File(filePath);
+    await file.create(recursive: true);
+    await file.writeAsBytes(fileBytes);
+
+    await Share.shareXFiles([XFile(filePath)], text: 'Báo cáo điểm danh $tenLop');
+  }
 }

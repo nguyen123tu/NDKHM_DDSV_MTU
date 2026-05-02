@@ -1,4 +1,5 @@
 class AttendanceRecord {
+  final int? id;
   final String thoiGian;
   final String? gioRa;
   final String trangThai;
@@ -9,6 +10,7 @@ class AttendanceRecord {
   final String? evidencePath;
 
   AttendanceRecord({
+    this.id,
     required this.thoiGian,
     this.gioRa,
     required this.trangThai,
@@ -21,6 +23,7 @@ class AttendanceRecord {
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     return AttendanceRecord(
+      id: json['id'],
       thoiGian: json['thoi_gian'] ?? '',
       gioRa: json['gio_ra'],
       trangThai: json['trang_thai'] ?? 'Unknown',

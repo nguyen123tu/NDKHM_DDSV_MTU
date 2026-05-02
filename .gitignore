@@ -48,3 +48,12 @@ temp/
 # Evidence/media exports
 exports/
 evidence/
+
+# Training dataset (YOLO format images/labels)
+dataset/
+
+# ChromaDB vector store
+models/chroma_db/
+
+# PyTorch model weights
+*.pth

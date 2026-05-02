@@ -1,0 +1,166 @@
+/* ═══ EXPORT PAGE — MODERN REDESIGN ═══ */
+
+/* Hero mini */
+.export-hero {
+    background: var(--gradient-primary);
+    border-radius: 20px;
+    padding: 32px 36px;
+    color: white;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+}
+.export-hero::before {
+    content:''; position:absolute; top:-50%; right:-20%;
+    width:300px; height:300px;
+    background:radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%);
+    border-radius:50%;
+}
+.export-hero h4 { font-weight:800; margin-bottom:4px; position:relative;z-index:1; }
+.export-hero p { opacity:.8; margin:0; font-size:.9rem; position:relative;z-index:1; }
+.export-hero .hero-icon {
+    position:absolute; right:36px; top:50%; transform:translateY(-50%);
+    font-size:4rem; opacity:.15;
+}
+
+/* Tab style - pill cards */
+.export-tabs {
+    display:flex; gap:12px; margin-bottom:32px; flex-wrap:wrap;
+}
+.export-tab {
+    flex:1; min-width:200px;
+    background:white;
+    border:2px solid transparent;
+    border-radius:16px;
+    padding:20px 24px;
+    cursor:pointer;
+    transition:all .3s var(--ease);
+    display:flex; align-items:center; gap:16px;
+    box-shadow:var(--shadow-sm);
+    position:relative;
+    overflow:hidden;
+}
+.export-tab::before {
+    content:''; position:absolute; top:0;left:0;right:0; height:3px;
+    border-radius:16px 16px 0 0;
+    transition:opacity .3s;
+    opacity:0;
+}
+.export-tab:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); }
+.export-tab.active {
+    border-color:var(--primary-light);
+    box-shadow:var(--shadow-md);
+    background:linear-gradient(135deg,rgba(108,92,231,.03),rgba(162,155,254,.06));
+}
+.export-tab.active::before { opacity:1; }
+.export-tab:nth-child(1)::before { background:var(--gradient-card-1); }
+.export-tab:nth-child(2)::before { background:var(--gradient-card-2); }
+.export-tab:nth-child(3)::before { background:var(--gradient-card-3); }
+
+.export-tab .tab-icon {
+    width:48px; height:48px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; color:white; flex-shrink:0;
+}
+.export-tab .tab-label { font-weight:700; font-size:.95rem; color:var(--text-primary); }
+.export-tab .tab-desc { font-size:.78rem; color:var(--text-secondary); margin:0; }
+.export-tab .tab-check {
+    margin-left:auto; width:24px; height:24px;
+    border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:.7rem; opacity:0; transition:all .3s;
+}
+.export-tab.active .tab-check {
+    opacity:1; background:var(--primary); color:white;
+}
+
+/* Form panel */
+.export-panel {
+    display:none;
+    animation:fadeInUp .4s var(--ease);
+}
+.export-panel.active { display:block; }
+
+.export-form-card {
+    background:white;
+    border-radius:20px;
+    box-shadow:var(--shadow-sm);
+    overflow:hidden;
+}
+.form-header {
+    padding:28px 32px 0;
+    display:flex; align-items:center; gap:14px;
+}
+.form-header .fh-icon {
+    width:52px; height:52px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.4rem; color:white;
+}
+.form-header h5 { font-weight:700; margin:0; }
+.form-header p { font-size:.85rem; color:var(--text-secondary); margin:0; }
+
+.form-body { padding:28px 32px 36px; }
+
+/* Labels */
+.form-body .form-label {
+    font-size:.82rem; font-weight:700; color:var(--text-primary);
+    text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;
+}
+
+/* Format selector */
+.format-grid { display:flex; gap:12px; }
+.format-card {
+    flex:1;
+    background:white;
+    border:2px solid #E8E6F0;
+    border-radius:14px;
+    padding:20px;
+    cursor:pointer;
+    transition:all .3s var(--ease);
+    text-align:center;
+    position:relative;
+}
+.format-card:hover { border-color:var(--primary-light); transform:translateY(-2px); }
+.format-card.selected {
+    border-color:var(--primary);
+    background:rgba(108,92,231,.03);
+    box-shadow:0 0 0 4px rgba(108,92,231,.08);
+}
+.format-card input { position:absolute; opacity:0; }
+.format-card .fc-icon { font-size:2.2rem; margin-bottom:10px; display:block; }
+.format-card .fc-name { font-weight:700; font-size:.9rem; color:var(--text-primary); }
+.format-card .fc-ext { font-size:.75rem; color:var(--text-secondary); }
+.format-card .fc-check {
+    position:absolute; top:10px; right:10px;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--primary); color:white;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.65rem; opacity:0; transform:scale(.5);
+    transition:all .3s;
+}
+.format-card.selected .fc-check { opacity:1; transform:scale(1); }
+
+/* Download button */
+.btn-download {
+    background:var(--gradient-primary) !important;
+    color:white !important;
+    font-weight:700;
+    font-size:.95rem;
+    padding:14px 40px;
+    border-radius:14px;
+    border:none;
+    box-shadow:0 6px 20px rgba(108,92,231,.3);
+    transition:all .3s var(--ease);
+    display:inline-flex; align-items:center; gap:10px;
+}
+.btn-download:hover {
+    transform:translateY(-3px);
+    box-shadow:0 10px 30px rgba(108,92,231,.4) !important;
+}
+.btn-download i { font-size:1.1rem; }
+
+/* Divider */
+.form-divider {
+    height:1px;
+    background:linear-gradient(90deg,transparent,#E8E6F0,transparent);
+    margin:24px 0;
+}

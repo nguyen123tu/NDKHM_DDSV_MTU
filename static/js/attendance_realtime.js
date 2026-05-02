@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Khi có ai đó được nhận diện (event riêng)
     socket.on('attendance_log', (data) => {
-        addLogEntry(data.mssv, data.ho_ten, data.thoi_gian, data.similarity, data.action);
+        addLogEntry(data.mssv, data.ho_ten, data.thoi_gian, data.similarity, data.action, data.avatar);
     });
 
     // Khi có cảnh báo kẻ lạ
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Tạo thẻ tr table log và thêm lên đầu danh sách + hiện toast
      */
-    function addLogEntry(mssv, name, timeStr, similarity, action) {
+    function addLogEntry(mssv, name, timeStr, similarity, action, avatarPath) {
         const emptyMsg = document.getElementById('emptyLogMsg');
         if (emptyMsg) emptyMsg.remove();
         
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const tr = document.createElement('tr');
         tr.className = "slide-in";
-        const imgUrl = `/database/${mssv}/0.jpg`;
+        const imgUrl = avatarPath ? `/${avatarPath}` : `/database/${mssv}/0.jpg`;
         const fallbackWord = name.charAt(0).toUpperCase();
 
         tr.innerHTML = `

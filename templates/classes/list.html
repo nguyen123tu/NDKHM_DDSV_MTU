@@ -1,91 +1,104 @@
 {% extends "base.html" %}
 
-{% block title %}Quản lý Lớp Học{% endblock %}
+{% block title %}Quản lý Lớp Học — MTUFace{% endblock %}
 {% block page_title %}Quản lý lớp học{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/class_list.css') }}">
+
+{% endblock %}
+
 {% block content %}
-<!-- Banner Tổng số lớp -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-0 rounded-3 shadow-sm text-center" style="background: linear-gradient(135deg, #7c5dba, #9a7ad6); color: white;">
-            <div class="card-body py-4">
-                <i class="fas fa-chalkboard-user fs-2 mb-2"></i>
-                <h1 class="display-5 fw-bold mb-0">{{ classes|length }}</h1>
-                <p class="mb-0 fw-normal">Tổng số lớp</p>
-            </div>
-        </div>
+<!-- ═══ STATS ═══ -->
+<div class="class-stats">
+    <div class="class-stat-card" style="background:var(--gradient-card-1)">
+        <span class="stat-icon"><i class="fas fa-chalkboard-user"></i></span>
+        <div class="stat-num">{{ classes|length }}</div>
+        <div class="stat-label">Tổng số lớp</div>
+    </div>
+    <div class="class-stat-card" style="background:var(--gradient-card-2)">
+        <span class="stat-icon"><i class="fas fa-users"></i></span>
+        <div class="stat-num">{{ classes|sum(attribute='si_so') }}</div>
+        <div class="stat-label">Tổng sinh viên</div>
+    </div>
+    <div class="class-stat-card" style="background:var(--gradient-card-3)">
+        <span class="stat-icon"><i class="fas fa-circle-check"></i></span>
+        <div class="stat-num">{{ classes|selectattr('trang_thai', 'equalto', 1)|list|length }}</div>
+        <div class="stat-label">Đang hoạt động</div>
     </div>
 </div>
 
-<!-- Thanh công cụ (Toolbar) -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="position-relative" style="max-width: 350px; width: 100%;">
-        <i class="fas fa-search position-absolute text-muted" style="left: 15px; top: 50%; transform: translateY(-50%);"></i>
-        <input type="text" class="form-control border-light shadow-sm bg-white" placeholder="Tìm kiếm lớp học..." style="padding-left: 40px; border-radius: 8px;">
+<!-- ═══ TOOLBAR ═══ -->
+<div class="class-toolbar">
+    <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" id="classSearch" placeholder="Tìm kiếm lớp học..." oninput="filterClasses()">
     </div>
-    
-    <a href="{{ url_for('classes.add') }}" class="btn btn-primary px-4 rounded-3 shadow-sm">
-        <i class="fas fa-plus me-2"></i> Thêm lớp học
+    <a href="{{ url_for('classes.add') }}" class="btn-add-class">
+        <i class="fas fa-plus"></i> Thêm lớp học
     </a>
 </div>
 
-<!-- Table Header info -->
-<div class="d-flex justify-content-between align-items-center mb-2 px-1">
-    <h6 class="text-primary fw-bold mb-0">Danh sách lớp học</h6>
-    <span class="text-muted small">Khóa: Hiện tại</span>
-</div>
+<!-- ═══ CLASS LIST ═══ -->
+<div class="class-grid" id="classGrid">
+    {% for cls in classes %}
+    <div class="class-card" data-search="{{ cls.ma_lop|lower }} {{ cls.ten_lop|lower }} {{ (cls.giao_vien or '')|lower }}">
+        <div class="class-icon" style="background:var(--gradient-card-{{ (loop.index % 4) + 1 }})">
+            <i class="fas fa-chalkboard"></i>
+        </div>
 
-<!-- Table Lớp Học -->
-<div class="flat-card p-0 overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-light-flat mb-0">
-            <thead>
-                <tr>
-                    <th>Mã Lớp</th>
-                    <th>Tên Lớp</th>
-                    <th>Giảng Viên</th>
-                    <th>Học Kỳ</th>
-                    <th class="text-center">Số sinh viên</th>
-                    <th class="text-center">Trạng Thái</th>
-                    <th class="text-end">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cls in classes %}
-                <tr>
-                    <td class="fw-bold text-primary">{{ cls.ma_lop }}</td>
-                    <td class="text-dark">{{ cls.ten_lop }}</td>
-                    <td class="text-muted">{{ cls.giao_vien or 'Chưa phân công' }}</td>
-                    <td>
-                        <span class="badge bg-light text-dark border">
-                            {{ cls.hoc_ky }} - {{ cls.nam_hoc }}
-                        </span>
-                    </td>
-                    <td class="text-center text-secondary">
-                        {{ cls.si_so }} sinh viên
-                    </td>
-                    <td class="text-center">
-                        {% if cls.trang_thai == 1 %}
-                        <span class="badge badge-comat">Hoạt động</span>
-                        {% else %}
-                        <span class="badge badge-canhbao">Đã đóng</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-end">
-                        <a href="{{ url_for('classes.edit', id=cls.id) }}" class="btn btn-sm btn-primary text-white" title="Sửa"><i class="fas fa-edit"></i></a>
-                        <button class="btn btn-sm btn-danger text-white ms-1" title="Xóa"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="7" class="text-center py-5 text-muted">
-                        <i class="fas fa-info-circle fs-3 mb-2 d-block text-secondary opacity-50"></i>
-                        Chưa có lớp học nào.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="class-main">
+            <div class="class-name">{{ cls.ten_lop }}</div>
+            <div class="class-code">{{ cls.ma_lop }}</div>
+        </div>
+
+        <div class="class-meta">
+            <span class="meta-pill meta-teacher">
+                <i class="fas fa-user-tie"></i>
+                {{ cls.giao_vien or 'Chưa phân công' }}
+            </span>
+            <span class="meta-pill meta-semester">
+                <i class="fas fa-calendar"></i>
+                {{ cls.hoc_ky }} · {{ cls.nam_hoc }}
+            </span>
+            <span class="meta-pill meta-count">
+                <i class="fas fa-users"></i>
+                {{ cls.si_so }} SV
+            </span>
+            {% if cls.trang_thai == 1 %}
+            <span class="meta-pill meta-active">
+                <i class="fas fa-circle" style="font-size:.5rem"></i> Hoạt động
+            </span>
+            {% else %}
+            <span class="meta-pill meta-closed">
+                <i class="fas fa-circle" style="font-size:.5rem"></i> Đã đóng
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="class-actions">
+            <a href="{{ url_for('classes.edit', id=cls.id) }}" class="ca-btn ca-btn-edit" title="Sửa">
+                <i class="fas fa-pen"></i>
+            </a>
+            <form action="{{ url_for('classes.delete', id=cls.id) }}" method="POST" class="d-inline"
+                  onsubmit="return confirm('Xóa lớp {{ cls.ten_lop }}?');">
+                <button type="submit" class="ca-btn ca-btn-delete" title="Xóa">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </form>
+        </div>
     </div>
+    {% else %}
+    <div style="text-align:center;padding:60px 20px;background:white;border-radius:20px;box-shadow:var(--shadow-sm)">
+        <div style="font-size:4rem;opacity:.3;margin-bottom:16px">📚</div>
+        <h5 class="fw-bold mb-2" style="color:var(--text-primary)">Chưa có lớp học nào</h5>
+        <p style="color:var(--text-secondary)">Bấm "Thêm lớp học" để bắt đầu</p>
+    </div>
+    {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/class_list.js') }}"></script>
+
 {% endblock %}

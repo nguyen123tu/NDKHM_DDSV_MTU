@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/student_edit.css') }}">
+{% endblock %}
+
 {% block title %}Sửa Thông Tin Sinh Viên{% endblock %}
 
 {% block content %}
@@ -111,165 +115,11 @@
     </div>
 </div>
 
-<style>
-    .text-navy { color: #1B3A5C; }
-    .bg-navy { background-color: #1B3A5C; }
-    
-    .btn-back-square {
-        width: 42px;
-        height: 42px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        background: #fff;
-        color: #718096;
-        border: 1px solid #e2e8f0;
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-    .btn-back-square:hover {
-        background: #f8fafc;
-        color: #1B3A5C;
-        border-color: #1B3A5C;
-        transform: translateX(-2px);
-    }
 
-    .premium-card {
-        background: #fff;
-        border-radius: 20px;
-        border: 1px solid rgba(0,0,0,0.05);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-    }
 
-    .avatar-edit-wrapper {
-        position: relative;
-        padding: 5px;
-    }
-    .avatar-circle-large {
-        width: 160px;
-        height: 160px;
-        border-radius: 50%;
-        overflow: hidden;
-        border: 4px solid #fff;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        background: #f3f4f6;
-    }
-    .avatar-edit-badge {
-        position: absolute;
-        bottom: 10px;
-        right: 10px;
-        width: 38px;
-        height: 38px;
-        background: #1B3A5C;
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        border: 3px solid #fff;
-        transition: all 0.2s;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    .avatar-edit-badge:hover {
-        transform: scale(1.1);
-        background: #2563eb;
-    }
 
-    .premium-label {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #64748b;
-        margin-bottom: 0.5rem;
-        letter-spacing: 0.025em;
-    }
-    .premium-input {
-        border-radius: 12px !important;
-        border: 1px solid #e2e8f0;
-        padding: 0.75rem 1rem;
-        font-size: 0.95rem;
-        transition: all 0.2s;
-        background-color: #fff;
-    }
-    .premium-input:focus {
-        border-color: #1B3A5C;
-        box-shadow: 0 0 0 4px rgba(27, 58, 92, 0.1);
-        background-color: #fff;
-    }
-    .readonly-field {
-        background-color: #f1f5f9 !important;
-        border-color: #e2e8f0;
-        color: #64748b;
-        font-weight: 600;
-    }
+{% endblock %}
 
-    .premium-radio-group {
-        display: flex;
-        align-items: center;
-        height: calc(1.5em + 1.5rem + 2px); /* Same as input height */
-    }
-
-    .section-title {
-        color: #1B3A5C;
-        font-weight: 700;
-        position: relative;
-        padding-bottom: 10px;
-        margin-bottom: 25px;
-    }
-    .section-title::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        bottom: 0;
-        width: 40px;
-        height: 3px;
-        background: #1B3A5C;
-        border-radius: 2px;
-    }
-
-    .btn-navy-gradient {
-        background: linear-gradient(135deg, #1B3A5C 0%, #2563eb 100%);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        transition: all 0.3s;
-        box-shadow: 0 4px 12px rgba(27, 58, 92, 0.2);
-    }
-    .btn-navy-gradient:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(27, 58, 92, 0.3);
-        color: white;
-    }
-
-    .btn-light-soft {
-        background: #f8fafc;
-        color: #64748b;
-        border-radius: 12px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-    }
-
-    .bg-light-subtle { background-color: #fcfdfe; }
-</style>
-
-<script>
-function previewImage(input) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            const preview = document.getElementById('avatarPreview');
-            const placeholder = document.getElementById('avatarPlaceholder');
-            preview.src = e.target.result;
-            preview.classList.remove('d-none');
-            if (placeholder) placeholder.classList.add('d-none');
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-</script>
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/student_edit.js') }}"></script>
 {% endblock %}

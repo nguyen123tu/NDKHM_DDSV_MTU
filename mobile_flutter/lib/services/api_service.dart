@@ -179,4 +179,168 @@ class ApiService {
     );
     return jsonDecode(response.body);
   }
+
+  // ================================================================
+  // PHIÊN ĐIỂM DANH (ATTENDANCE SESSIONS)
+  // ================================================================
+
+  /// Lấy danh sách phiên điểm danh đang mở
+  Future<Map<String, dynamic>> getActiveSessions() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/mobile/sessions/active'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  /// Admin tạo phiên điểm danh mới
+  Future<Map<String, dynamic>> createSession(int lopId, {String moTa = '', int durationMinutes = 90, double? lat, double? lng}) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/sessions/create'),
+      headers: headers,
+      body: jsonEncode({
+        'lop_id': lopId,
+        'mo_ta': moTa,
+        'duration_minutes': durationMinutes,
+        'vi_do': lat,
+        'kinh_do': lng,
+      }),
+    );
+    return jsonDecode(response.body);
+  }
+
+  /// Admin đóng phiên điểm danh
+  Future<Map<String, dynamic>> stopSession(int sessionId) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/sessions/$sessionId/stop'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  /// Sinh viên tự điểm danh bằng khuôn mặt
+  Future<Map<String, dynamic>> studentSelfCheckin(int sessionId, String imageBase64, {double? lat, double? lng}) async {
+    final headers = await _getHeaders();
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/student/checkin'),
+        headers: headers,
+        body: jsonEncode({
+          'session_id': sessionId,
+          'image_base64': imageBase64,
+          'vi_do': lat,
+          'kinh_do': lng,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
+  }
+
+  /// Admin lấy chi tiết phiên điểm danh (danh sách SV)
+  Future<Map<String, dynamic>> getSessionDetails(int sessionId) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/mobile/sessions/$sessionId/details'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  /// Admin lấy lịch sử phiên đã đóng
+  Future<Map<String, dynamic>> getSessionHistory() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/mobile/sessions/history'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  /// Admin xóa phiên điểm danh
+  Future<Map<String, dynamic>> deleteSession(int sessionId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/mobile/sessions/$sessionId'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  /// Admin xóa 1 bản ghi điểm danh
+  Future<Map<String, dynamic>> deleteAttendanceRecord(int recordId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/mobile/attendance/$recordId'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  /// Admin xóa toàn bộ lịch sử điểm danh
+  Future<Map<String, dynamic>> clearAttendanceHistory() async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/mobile/attendance/clear'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  // ================================================================
+  // THỐNG KÊ (STATS)
+  // ================================================================
+
+  Future<Map<String, dynamic>> getStatsClasses() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/mobile/stats/classes'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> getStatsAbsentRisk() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/mobile/stats/absent-risk'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> getStatsDailyTrend() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/mobile/stats/daily-trend'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  // ================================================================
+  // THÔNG BÁO (NOTIFICATIONS)
+  // ================================================================
+
+  Future<Map<String, dynamic>> getNotifications() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/mobile/notifications'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> markNotificationRead(int id) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/notifications/$id/read'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
 }

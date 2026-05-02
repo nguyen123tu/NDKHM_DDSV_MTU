@@ -33,7 +33,9 @@ CREATE TABLE IF NOT EXISTS sinh_vien (
     ngay_sinh   DATE,
     gioi_tinh   TINYINT COMMENT '0=nữ, 1=nam',
     trang_thai  TINYINT DEFAULT 1 COMMENT '1=active, 0=inactive',
+    face_vector TEXT COMMENT 'JSON mảng 512 số phục vụ đồng bộ offline',
     created_at  DATETIME DEFAULT NOW(),
+    updated_at  DATETIME DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE SET NULL,
     INDEX idx_mssv (mssv),
     INDEX idx_lop_id (lop_id)
@@ -87,4 +89,27 @@ CREATE TABLE IF NOT EXISTS admin (
     ho_ten          VARCHAR(100),
     role            VARCHAR(20) DEFAULT 'admin' COMMENT 'admin / teacher',
     created_at      DATETIME DEFAULT NOW()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7. Bảng THÔNG BÁO (Thông báo cho sinh viên)
+CREATE TABLE IF NOT EXISTS thong_bao (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    sinh_vien_id    INT,
+    tieu_de         VARCHAR(255),
+    noi_dung        TEXT,
+    da_doc          TINYINT DEFAULT 0 COMMENT '0=chưa đọc, 1=đã đọc',
+    created_at      DATETIME DEFAULT NOW(),
+    FOREIGN KEY (sinh_vien_id) REFERENCES sinh_vien(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 8. Bảng CẢNH BÁO GIAN LẬN (Gian lận điểm danh)
+CREATE TABLE IF NOT EXISTS gian_lan_log (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    thoi_gian       DATETIME DEFAULT NOW(),
+    sinh_vien_id    INT NULL,
+    loai_gian_lan   VARCHAR(50) NOT NULL COMMENT 'Fake GPS, Spoofing, Khác',
+    chi_tiet        TEXT,
+    hinh_anh        VARCHAR(255) COMMENT 'Đường dẫn ảnh bằng chứng (nếu có)',
+    da_xu_ly        TINYINT DEFAULT 0 COMMENT '0=chưa xử lý, 1=đã xử lý',
+    FOREIGN KEY (sinh_vien_id) REFERENCES sinh_vien(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

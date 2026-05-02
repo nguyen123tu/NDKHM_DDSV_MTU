@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/fraud.css') }}">
+{% endblock %}
+
+{% block title %}Cảnh báo gian lận{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-exclamation-triangle text-danger me-2"></i>Cảnh báo gian lận điểm danh
+        </h1>
+    </div>
+
+    <div class="card shadow mb-4 border-left-danger">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-danger">Danh sách các vi phạm phát hiện bởi hệ thống</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Sinh viên</th>
+                            <th>Lớp học</th>
+                            <th>Loại gian lận</th>
+                            <th>Chi tiết</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in alerts %}
+                        <tr id="row-{{ alert.id }}" class="{% if not alert.da_xu_ly %}bg-light-danger{% endif %}">
+                            <td>{{ alert.thoi_gian.strftime('%d/%m/%Y %H:%M:%S') if alert.thoi_gian else '' }}</td>
+                            <td>
+                                {% if alert.ho_ten %}
+                                <strong>{{ alert.ho_ten }}</strong><br>
+                                <small class="text-muted">{{ alert.mssv }}</small>
+                                {% else %}
+                                <span class="text-muted">Không xác định</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ alert.ma_lop or 'N/A' }}</td>
+                            <td>
+                                {% if alert.loai_gian_lan == 'Fake GPS' %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-map-marker-alt me-1"></i>{{ alert.loai_gian_lan }}</span>
+                                {% elif alert.loai_gian_lan == 'Spoofing' %}
+                                <span class="badge bg-danger"><i class="fas fa-mask me-1"></i>{{ alert.loai_gian_lan }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ alert.loai_gian_lan }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ alert.chi_tiet }}</td>
+                            <td id="status-{{ alert.id }}">
+                                {% if alert.da_xu_ly %}
+                                <span class="badge bg-success">Đã xử lý</span>
+                                {% else %}
+                                <span class="badge bg-danger">Chưa xử lý</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not alert.da_xu_ly %}
+                                <button class="btn btn-sm btn-success" onclick="markResolved({{ alert.id }})" title="Đánh dấu đã xử lý">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-danger" onclick="deleteAlert({{ alert.id }})" title="Xóa log">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <img src="{{ url_for('static', filename='img/empty.svg') }}" alt="No alerts" style="max-height: 150px; opacity: 0.5;" onerror="this.style.display='none'">
+                                <p class="text-muted mt-3 mb-0">Tuyệt vời! Chưa phát hiện hành vi gian lận nào.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/fraud.js') }}"></script>
+{% endblock %}

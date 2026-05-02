@@ -100,17 +100,9 @@
     </div>
 </div>
 
-<script>
-function previewImage(input) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('avatarPreview').src = e.target.result;
-            document.getElementById('avatarPreview').classList.remove('d-none');
-            document.getElementById('avatarIcon').classList.add('d-none');
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/students_add.js') }}"></script>
 {% endblock %}

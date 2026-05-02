@@ -2,10 +2,27 @@ import cv2
 import requests
 import io
 
+import os
+
 # THIẾT LẬP THÔNG SỐ TELEGRAM
-# Bạn thay thế bằng Token và Chat ID của bạn ở đây
-TELEGRAM_BOT_TOKEN = "8762386247:AAEBvm2-qGIXf2T8gsiK5n8hXxlqqwak39c"
-TELEGRAM_CHAT_ID = "7724279500"
+# Ưu tiên lấy từ biến môi trường
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8762386247:AAEBvm2-qGIXf2T8gsiK5n8hXxlqqwak39c")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "7724279500")
+
+def send_telegram_message(message):
+    """Gửi tin nhắn văn bản tới Telegram"""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID or TELEGRAM_BOT_TOKEN == "YOUR_BOT_TOKEN":
+        print(f"[CẢNH BÁO TELEGRAM MÔ PHỎNG] Tin nhắn: {message}")
+        return False
+        
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        data = {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "HTML"}
+        response = requests.post(url, data=data)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"[TELEGRAM LỖI] {e}")
+        return False
 
 def send_telegram_photo(frame, message="Phát hiện đối tượng!"):
     """

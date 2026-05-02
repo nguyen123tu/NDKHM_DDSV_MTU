@@ -32,9 +32,37 @@ class Config:
     # AI Model Paths
     EMBEDDINGS_PATH = os.path.join(MODELS_DIR, 'embeddings.pkl')
     EMBEDDINGS_YOLO_PATH = os.path.join(MODELS_DIR, 'embeddings_yolo_resnet.pkl')
+    EMBEDDINGS_DEEPFACE_PATH = os.path.join(MODELS_DIR, 'embeddings_deepface.pkl')
     
-    # AI Engine: 'insightface' hoặc 'yolo_resnet'
+    # AI Engine: 'insightface', 'yolo_resnet', hoặc 'deepface'
     AI_ENGINE = os.getenv('AI_ENGINE', 'insightface')
+
+    # ─── DeepFace Engine Config ──────────────────────────────────────────
+    # Chỉ áp dụng khi AI_ENGINE = 'deepface'
+    # Model nhận diện: VGG-Face, Facenet, Facenet512, ArcFace, SFace, 
+    #                  GhostFaceNet, Dlib, DeepID, OpenFace, Buffalo_L
+    DEEPFACE_MODEL = os.getenv('DEEPFACE_MODEL', 'ArcFace')
+    
+    # Detector backend: opencv, retinaface, mtcnn, ssd, dlib, mediapipe,
+    #                   yolov8n, yolov11n, centerface, yunet
+    DEEPFACE_DETECTOR = os.getenv('DEEPFACE_DETECTOR', 'retinaface')
+    
+    # Anti-spoofing: Chống giả mạo khuôn mặt (ảnh in, video, mặt nạ)
+    DEEPFACE_ANTI_SPOOFING = os.getenv('DEEPFACE_ANTI_SPOOFING', 'false').lower() == 'true'
+    
+    # Face Analysis: Phân tích thuộc tính khuôn mặt khi điểm danh
+    # Options: age, gender, emotion, race (phân tách bằng dấu phẩy)
+    DEEPFACE_ANALYSIS_ACTIONS = os.getenv('DEEPFACE_ANALYSIS_ACTIONS', '')
+    # ────────────────────────────────────────────────────────────────────
+
+    # ─── AI Chatbot Config ───────────────────────────────────────────────
+    # LLM Backend: 'gemini' (mặc định, miễn phí), 'nvidia', 'ollama'
+    AI_CHATBOT_LLM = os.getenv('AI_CHATBOT_LLM', 'gemini')
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+    NVIDIA_API_KEY = os.getenv('NVIDIA_API_KEY', '')
+    OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+    OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3')
+    # ────────────────────────────────────────────────────────────────────
 
     # Ngưỡng nhận diện AI
     SIMILARITY_THRESHOLD = float(os.getenv('SIMILARITY_THRESHOLD', 0.45))

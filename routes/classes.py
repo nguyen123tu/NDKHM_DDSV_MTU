@@ -13,6 +13,11 @@ def list_classes():
     classes = class_service.get_all(active_only=False)
     return render_template('classes/list.html', classes=classes)
 
+@classes_bp.route('/schedule')
+@login_required
+def schedule():
+    return render_template('classes/schedule.html')
+
 @classes_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():

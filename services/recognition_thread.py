@@ -60,6 +60,9 @@ class RecognitionSession:
         # Tracking: cooldown thời gian emit cho từng MSSV (tránh spam)
         self._emit_cooldowns = {}  # {mssv: last_emit_timestamp}
         
+        # Tracking: SV đã điểm danh trong phiên này → không ghi lại
+        self._attended_students = set()  # {'mssv1', 'mssv2', ...}
+        
         # Load font có hỗ trợ tiếng Việt cho PIL
         self._font = None
         try:
@@ -151,6 +154,7 @@ class RecognitionSession:
 
         while self._running:
             loop_start = time.time()
+            bboxes, names, similarities = [], [], []
 
             # Hot-reload não bộ mỗi 10 giây
             if time.time() - last_brain_check > 10:
@@ -195,22 +199,111 @@ class RecognitionSession:
                         mssv, sim = matcher.match(embedding)
                         ho_ten = student_service.get_name_by_mssv(mssv) if mssv != "UNKNOWN" else "Người lạ"
                         
-                        self._last_ai_results.append({
+                        # ─── Heuristic Liveness Check (Chống giả mạo) ───
+                        is_spoof = False
+                        spoof_reason = ""
+                        face_roi = frame[max(0,int(y1)):int(y2), max(0,int(x1)):int(x2)]
+                        if face_roi.size > 0:
+                            gray_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
+                            blur_score = cv2.Laplacian(gray_roi, cv2.CV_64F).var()
+                            
+                            hsv_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2HSV)
+                            v_channel = hsv_roi[:,:,2]
+                            glare_ratio = np.sum(v_channel > 240) / (v_channel.size + 1e-6)
+                            
+                            
+                            if (x2 - x1) < 90 or (y2 - y1) < 90:
+                                is_spoof = True
+                                spoof_reason = f"Khuôn mặt quá nhỏ, cần tiến lại gần"
+                            elif blur_score < 10.0:
+                                is_spoof = True
+                                spoof_reason = f"Ảnh quá mờ ({blur_score:.1f})"
+                            elif glare_ratio > 0.40:
+                                is_spoof = True
+                                spoof_reason = f"Phát sáng màn hình ({glare_ratio:.2%})"
+
+                        # ─── DeepFace Anti-Spoofing: Lọc khuôn mặt giả ───
+                        if (face.get('is_real') is not None and not face.get('is_real', True)) or is_spoof:
+                            final_reason = spoof_reason if is_spoof else f"score={face.get('antispoof_score', 0):.2f}"
+                            
+                            now = time.time()
+                            
+                            # Log gian lận nếu nhận diện được sinh viên (Cooldown 10s cho mỗi MSSV)
+                            log_key = f"db_spoof_{mssv}"
+                            if mssv != "UNKNOWN" and (now - self._emit_cooldowns.get(log_key, 0) > 10):
+                                self._emit_cooldowns[log_key] = now
+                                print(f"[SESSION] ⚠️ GHI LOG GIAN LẬN: {mssv} - {final_reason}")
+                                from db.connection import execute_one, execute_update
+                                sv_temp = execute_one("SELECT id FROM sinh_vien WHERE mssv = %s", (mssv,))
+                                if sv_temp:
+                                    execute_update(
+                                        "INSERT INTO gian_lan_log (sinh_vien_id, loai_gian_lan, chi_tiet) VALUES (%s, %s, %s)",
+                                        (sv_temp['id'], 'Spoofing', f"Phát hiện qua Live Camera: {final_reason}. Tỉ lệ: {sim:.2f}")
+                                    )
+
+                            self._last_ai_results.append({
+                                'mssv': mssv if mssv != "UNKNOWN" else 'SPOOFED',
+                                'sim': sim,
+                                'ho_ten': ho_ten,
+                                'bbox': [int(x1), int(y1), int(x2), int(y2)],
+                                'is_spoofed': True,
+                            })
+                            
+                            # Cảnh báo spoofing qua SocketIO (Cooldown 5s cho UI alert)
+                            last_spoof_alert = self._emit_cooldowns.get('__spoof__', 0)
+                            if now - last_spoof_alert > 5:
+                                self._emit_cooldowns['__spoof__'] = now
+                                self.socketio.emit('alert', {
+                                    'message': f'⚠️ Phát hiện hình ảnh giả mạo! ({ho_ten})',
+                                    'type': 'spoofing',
+                                    'thoi_gian': time.strftime("%H:%M:%S")
+                                })
+                            continue
+                        
+                        result_item = {
                             'mssv': mssv,
                             'sim': sim,
                             'ho_ten': ho_ten,
                             'bbox': [int(x1), int(y1), int(x2), int(y2)]
-                        })
+                        }
+
+                        # ─── DeepFace Face Analysis: Phân tích thuộc tính ───
+                        analysis_actions = getattr(Config, 'DEEPFACE_ANALYSIS_ACTIONS', '')
+                        if analysis_actions and 'analyze_face' in engine:
+                            try:
+                                actions_tuple = tuple(a.strip() for a in analysis_actions.split(',') if a.strip())
+                                if actions_tuple and self._frame_count % 9 == 0:
+                                    # Chỉ phân tích mỗi 9 frame (tiết kiệm CPU)
+                                    face_crop = frame[max(0, int(y1)):int(y2), max(0, int(x1)):int(x2)]
+                                    if face_crop.size > 0:
+                                        analysis_results = engine['analyze_face'](face_crop, actions=actions_tuple)
+                                        if analysis_results:
+                                            analysis = analysis_results[0]
+                                            result_item['age'] = analysis.get('age')
+                                            result_item['gender'] = analysis.get('gender')
+                                            result_item['emotion'] = analysis.get('dominant_emotion')
+                            except Exception as e:
+                                pass  # Không crash nếu phân tích lỗi
+
+                        self._last_ai_results.append(result_item)
 
                         # Xử lý kết quả & Điểm danh
                         if mssv != "UNKNOWN":
-                            log_result = attendance_service.log(
-                                mssv=mssv,
-                                lop_id=self.lop_id,
-                                do_chinh_xac=sim,
-                                camera_id=self.camera_id,
-                                mode=self.mode
-                            )
+                            # ĐÃ ĐIỂM DANH TRONG PHIÊN NÀY → bỏ qua, không ghi DB lại
+                            if mssv in self._attended_students:
+                                pass  # Chỉ hiển thị bbox, không ghi attendance
+                            else:
+                                log_result = attendance_service.log(
+                                    mssv=mssv,
+                                    lop_id=self.lop_id,
+                                    do_chinh_xac=sim,
+                                    camera_id=self.camera_id,
+                                    mode=self.mode
+                                )
+                                
+                                # Nếu ghi thành công → đánh dấu đã điểm danh
+                                if isinstance(log_result, dict) and log_result.get('success'):
+                                    self._attended_students.add(mssv)
                             
                             # Emit thông tin lên frontend (cooldown 60s tránh spam)
                             emit_key = mssv
@@ -220,13 +313,17 @@ class RecognitionSession:
                             if now - last_emit > 60:
                                 self._emit_cooldowns[emit_key] = now
                                 action = log_result.get('action', 'checkin') if isinstance(log_result, dict) else 'checkin'
+                                
+                                avatar_path = student_service.get_avatar_path(mssv)
+                                
                                 self.socketio.emit('attendance_log', {
                                     'mssv': mssv,
                                     'ho_ten': ho_ten,
                                     'similarity': round(sim, 2),
                                     'thoi_gian': time.strftime("%H:%M:%S"),
                                     'trang_thai': 'Co mat',
-                                    'action': action
+                                    'action': action,
+                                    'avatar': avatar_path
                                 })
                         else:
                             # Cảnh báo kẻ lạ
@@ -255,9 +352,23 @@ class RecognitionSession:
                     names.append(mssv)
                     similarities.append(res['sim'])
                     
-                    if mssv != "UNKNOWN":
+                    if res.get('is_spoofed'):
+                        # Khuôn mặt giả mạo — Vàng cảnh báo
+                        color = (0, 165, 255)  # Cam
+                        label = "⚠ GIẢ MẠO"
+                    elif mssv != "UNKNOWN":
                         color = (0, 255, 0)
                         label = f"{res['ho_ten']} ({res['sim']:.0%})"
+                        # Thêm thông tin phân tích nếu có
+                        extra_info = []
+                        if res.get('age'):
+                            extra_info.append(f"{int(res['age'])}t")
+                        if res.get('gender'):
+                            extra_info.append(res['gender'])
+                        if res.get('emotion'):
+                            extra_info.append(res['emotion'])
+                        if extra_info:
+                            label += f" [{', '.join(extra_info)}]"
                     else:
                         color = (0, 0, 255)
                         label = "Ke La"

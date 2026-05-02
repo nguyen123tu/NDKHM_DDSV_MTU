@@ -28,7 +28,8 @@ def create_app(config_name='default'):
     from routes import (
         auth_bp, dashboard_bp, students_bp, classes_bp,
         attendance_bp, training_bp, camera_mgmt_bp, 
-        export_bp, public_bp, api_mobile_bp
+        export_bp, public_bp, api_mobile_bp, deepface_bp,
+        chatbot_bp, fraud_bp
     )
     
     app.register_blueprint(auth_bp)
@@ -41,6 +42,9 @@ def create_app(config_name='default'):
     app.register_blueprint(export_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(api_mobile_bp)
+    app.register_blueprint(deepface_bp)
+    app.register_blueprint(chatbot_bp)
+    app.register_blueprint(fraud_bp)
     
     # Init SocketIO
     socketio.init_app(app, async_mode='eventlet')

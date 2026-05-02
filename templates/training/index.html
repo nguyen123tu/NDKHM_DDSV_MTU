@@ -1,311 +1,147 @@
 {% extends "base.html" %}
+{% block title %}Training AI — MTUFace{% endblock %}
+{% block page_title %}Training AI{% endblock %}
 
-{% block title %}Quản lý Nhận Diện AI{% endblock %}
-{% block page_title %}Engine Nhận Diện AI{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/training_index.css') }}">
+
+{% endblock %}
 
 {% block content %}
 <!-- Engine Switcher -->
-<div class="flat-card mb-4 p-4 border-start border-4 border-info">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-        <div>
-            <h5 class="fw-bold mb-1 text-dark"><i class="fas fa-microchip text-info me-2"></i> Mô Hình Đang Sử Dụng</h5>
-            <p class="text-muted small mb-0">Chuyển đổi giữa hai kiến trúc AI. Mỗi engine cần train riêng biệt.</p>
-        </div>
-        
-        <div class="d-flex align-items-center gap-2 bg-light p-2 rounded-3 border">
-            <!-- InsightFace Button -->
-            <button class="btn engine-btn px-4 py-2 rounded-3 d-flex align-items-center gap-2 {{ 'active' if current_engine == 'insightface' }}" 
-                    id="btnInsightFace" onclick="switchEngine('insightface')">
-                <div class="engine-icon text-primary">
-                    <i class="fas fa-atom fs-5"></i>
-                </div>
-                <div class="text-start">
-                    <div class="fw-bold small">InsightFace</div>
-                    <div class="engine-sub text-muted">ArcFace + SCRFD</div>
-                </div>
-                {% if insightface_ready %}
-                <span class="badge bg-success ms-2" style="font-size: 9px;">PKL ✓</span>
-                {% else %}
-                <span class="badge bg-secondary ms-2" style="font-size: 9px;">Chưa Train</span>
-                {% endif %}
-            </button>
-            
-            <!-- YOLOv8 + ResNet50 Button -->
-            <button class="btn engine-btn px-4 py-2 rounded-3 d-flex align-items-center gap-2 {{ 'active' if current_engine == 'yolo_resnet' }}" 
-                    id="btnYoloResnet" onclick="switchEngine('yolo_resnet')">
-                <div class="engine-icon text-primary">
-                    <i class="fas fa-robot fs-5"></i>
-                </div>
-                <div class="text-start">
-                    <div class="fw-bold small">YOLO + ResNet50</div>
-                    <div class="engine-sub text-muted">Ultralytics + PyTorch</div>
-                </div>
-                {% if yolo_ready %}
-                <span class="badge bg-success ms-2" style="font-size: 9px;">PKL ✓</span>
-                {% else %}
-                <span class="badge bg-secondary ms-2" style="font-size: 9px;">Chưa Train</span>
-                {% endif %}
-            </button>
-        </div>
+<div class="engine-grid">
+    <div class="engine-card {{ 'active' if current_engine == 'insightface' }}" onclick="switchEngine('insightface')" id="btnInsightFace">
+        <div class="ec-icon" style="background:var(--gradient-card-1)"><i class="fas fa-atom"></i></div>
+        <div><div class="ec-name">InsightFace</div><div class="ec-sub">ArcFace + SCRFD</div></div>
+        <span class="ec-badge {% if insightface_ready %}badge-ready{% else %}badge-notready{% endif %}">{% if insightface_ready %}PKL ✓{% else %}Chưa Train{% endif %}</span>
+        <div class="ec-check"><i class="fas fa-check"></i></div>
     </div>
-    
-    <!-- Current Engine Status -->
-    <div class="mt-3 pt-3 border-top">
-        <div class="d-flex align-items-center gap-2">
-            <span class="position-relative d-inline-block">
-                <span class="d-inline-block rounded-circle bg-success" style="width: 10px; height: 10px; animation: pulse 2s infinite;"></span>
-            </span>
-            <span class="small text-muted">Engine đang hoạt động:</span>
-            <span class="fw-bold text-dark" id="currentEngineLabel">
-                {% if current_engine == 'insightface' %}
-                InsightFace (ArcFace + SCRFD) — Vector 512 chiều
-                {% else %}
-                YOLOv8 + ResNet50 — Vector 2048 chiều
-                {% endif %}
-            </span>
+    <div class="engine-card {{ 'active' if current_engine == 'yolo_resnet' }}" onclick="switchEngine('yolo_resnet')" id="btnYoloResnet">
+        <div class="ec-icon" style="background:var(--gradient-card-2)"><i class="fas fa-robot"></i></div>
+        <div><div class="ec-name">YOLO + ResNet50</div><div class="ec-sub">Ultralytics + PyTorch</div></div>
+        <span class="ec-badge {% if yolo_ready %}badge-ready{% else %}badge-notready{% endif %}">{% if yolo_ready %}PKL ✓{% else %}Chưa Train{% endif %}</span>
+        <div class="ec-check"><i class="fas fa-check"></i></div>
+    </div>
+    <div class="engine-card {{ 'active' if current_engine == 'deepface' }}" onclick="switchEngine('deepface')" id="btnDeepFace">
+        <div class="ec-icon" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA)"><i class="fas fa-brain"></i></div>
+        <div><div class="ec-name">DeepFace</div><div class="ec-sub">{{ deepface_model }} + {{ deepface_detector }}</div></div>
+        <span class="ec-badge {% if deepface_ready %}badge-ready{% else %}badge-notready{% endif %}">{% if deepface_ready %}PKL ✓{% else %}Chưa Train{% endif %}</span>
+        <div class="ec-check"><i class="fas fa-check"></i></div>
+    </div>
+</div>
+
+<!-- DeepFace Config -->
+<div class="df-config" id="deepfaceConfigPanel" style="display:{{ 'block' if current_engine == 'deepface' else 'none' }}">
+    <div class="df-config-header">
+        <h6><i class="fas fa-sliders-h"></i> Cấu hình DeepFace</h6>
+        <span style="background:#8b5cf6;color:white;padding:4px 12px;border-radius:8px;font-size:.75rem;font-weight:600">serengil/deepface</span>
+    </div>
+    <div class="df-config-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label><i class="fas fa-fingerprint" style="color:var(--primary)"></i> Model</label>
+                <select class="form-select" id="dfModel" style="border-radius:12px">
+                    <option value="ArcFace" {{ 'selected' if deepface_model == 'ArcFace' }}>ArcFace ⭐</option>
+                    <option value="Facenet512" {{ 'selected' if deepface_model == 'Facenet512' }}>Facenet512</option>
+                    <option value="Facenet" {{ 'selected' if deepface_model == 'Facenet' }}>Facenet</option>
+                    <option value="VGG-Face" {{ 'selected' if deepface_model == 'VGG-Face' }}>VGG-Face</option>
+                    <option value="GhostFaceNet" {{ 'selected' if deepface_model == 'GhostFaceNet' }}>GhostFaceNet</option>
+                    <option value="SFace" {{ 'selected' if deepface_model == 'SFace' }}>SFace</option>
+                    <option value="OpenFace" {{ 'selected' if deepface_model == 'OpenFace' }}>OpenFace</option>
+                    <option value="DeepFace" {{ 'selected' if deepface_model == 'DeepFace' }}>DeepFace</option>
+                    <option value="DeepID" {{ 'selected' if deepface_model == 'DeepID' }}>DeepID</option>
+                    <option value="Dlib" {{ 'selected' if deepface_model == 'Dlib' }}>Dlib</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label><i class="fas fa-search" style="color:var(--warning)"></i> Detector</label>
+                <select class="form-select" id="dfDetector" style="border-radius:12px">
+                    <option value="retinaface" {{ 'selected' if deepface_detector == 'retinaface' }}>RetinaFace ⭐</option>
+                    <option value="mtcnn" {{ 'selected' if deepface_detector == 'mtcnn' }}>MTCNN</option>
+                    <option value="opencv" {{ 'selected' if deepface_detector == 'opencv' }}>OpenCV</option>
+                    <option value="ssd" {{ 'selected' if deepface_detector == 'ssd' }}>SSD</option>
+                    <option value="centerface" {{ 'selected' if deepface_detector == 'centerface' }}>CenterFace</option>
+                    <option value="mediapipe" {{ 'selected' if deepface_detector == 'mediapipe' }}>MediaPipe</option>
+                    <option value="yolov8n" {{ 'selected' if deepface_detector == 'yolov8n' }}>YOLOv8 Nano</option>
+                    <option value="yunet" {{ 'selected' if deepface_detector == 'yunet' }}>YuNet</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label><i class="fas fa-shield-alt" style="color:var(--danger)"></i> Anti-Spoofing</label>
+                <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" id="dfAntiSpoof" {{ 'checked' if deepface_anti_spoofing }}>
+                    <label class="form-check-label small" for="dfAntiSpoof" id="dfAntiSpoofLabel">{{ 'BẬT' if deepface_anti_spoofing else 'TẮT' }}</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label><i class="fas fa-chart-pie" style="color:var(--success)"></i> Phân tích</label>
+                <div class="d-flex flex-wrap gap-2 mt-1">
+                    <div class="form-check form-check-inline"><input class="form-check-input df-analysis" type="checkbox" value="age" id="dfAge" {{ 'checked' if 'age' in deepface_analysis }}><label class="form-check-label small" for="dfAge">Tuổi</label></div>
+                    <div class="form-check form-check-inline"><input class="form-check-input df-analysis" type="checkbox" value="gender" id="dfGender" {{ 'checked' if 'gender' in deepface_analysis }}><label class="form-check-label small" for="dfGender">Giới</label></div>
+                    <div class="form-check form-check-inline"><input class="form-check-input df-analysis" type="checkbox" value="emotion" id="dfEmotion" {{ 'checked' if 'emotion' in deepface_analysis }}><label class="form-check-label small" for="dfEmotion">Cảm xúc</label></div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3 pt-3 border-top d-flex align-items-center justify-content-between">
+            <span class="small" style="color:var(--text-muted)"><i class="fas fa-info-circle me-1"></i>Đổi model cần train lại</span>
+            <button class="btn px-4 py-2 fw-bold text-white" id="btnApplyDfConfig" style="background:#8b5cf6;border:none;border-radius:10px" onclick="applyDeepFaceConfig()"><i class="fas fa-save me-1"></i>Lưu</button>
         </div>
     </div>
 </div>
 
-<div class="row g-4 mb-4">
-    <!-- Actions -->
-    <div class="col-lg-4">
-        <div class="flat-card p-4 h-100 flex-column d-flex border-0 shadow-sm">
-            <h5 class="fw-bold mb-3 text-dark"><i class="fas fa-satellite-dish text-info me-2"></i> Cập Nhật Não Bộ Đồng Loạt</h5>
-            <p class="text-muted small mb-4">
-                Quá trình này sẽ quét toàn bộ ảnh của sinh viên trong thư mục <code>database/</code> để trích xuất Embedding Vector. 
-                Quá trình có thể tốn vài phút tùy thuộc vào CPU máy chủ.
-            </p>
-            
-            <div class="mt-auto">
-                <button id="btnTrainAll" class="btn btn-primary w-100 p-3 fw-bold shadow-sm">
-                    <i class="fas fa-sync-alt me-2"></i> BẮT ĐẦU TRAINING TOÀN BỘ
-                </button>
-            </div>
-        </div>
+<!-- Train Section -->
+<div class="train-section">
+    <div class="train-action">
+        <h5><i class="fas fa-satellite-dish" style="color:var(--accent)"></i> Training toàn bộ</h5>
+        <p>Quét toàn bộ ảnh sinh viên trong <code>database/</code> để trích xuất Embedding Vector. Tốn vài phút tùy CPU.</p>
+        <button id="btnTrainAll" class="btn-train-all"><i class="fas fa-rocket"></i> BẮT ĐẦU TRAINING</button>
     </div>
-    
-    <!-- Progress Panel -->
-    <div class="col-lg-8">
-        <div class="flat-card p-4 h-100 border-info border-opacity-25 bg-white shadow-sm" id="progressPanel" style="display: none;">
-            <h5 class="fw-bold mb-3 text-info"><i class="fas fa-cogs me-2"></i> Đang Xử Lý: Trích Xuất Vector</h5>
-            
-            <div class="d-flex justify-content-between mb-2 mt-4">
-                <span class="text-primary fw-bold" id="progressText">0%</span>
-                <span class="text-muted small" id="statusText">Đang tải mô hình...</span>
+    <div class="status-panel">
+        <div class="progress-panel" id="progressPanel">
+            <h5><i class="fas fa-cogs me-2"></i>Đang trích xuất Vector...</h5>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="fw-bold fs-5" style="color:var(--primary)" id="progressText">0%</span>
+                <span class="small" style="color:var(--text-secondary)" id="statusText">Đang tải mô hình...</span>
             </div>
-            
-            <div class="progress bg-light" style="height: 12px; border-radius: 6px;">
-                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%"></div>
+            <div class="progress" style="height:12px;border-radius:10px"><div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%;background:var(--gradient-primary) !important;border-radius:10px"></div></div>
+            <div class="progress-detail">
+                <div class="pd-row"><i class="fas fa-user-circle"></i><span class="fw-bold">Sinh viên:</span><span id="currentStudentLabel" style="color:var(--primary);font-weight:600">—</span></div>
+                <div class="pd-row"><i class="fas fa-image"></i><span class="fw-bold">Tiến trình:</span><span id="detailLabel" style="color:var(--text-secondary)">Đang khởi tạo...</span></div>
+                <div class="pd-row"><i class="fas fa-clock"></i><span class="fw-bold">Thời gian:</span><span id="elapsedTime" style="color:var(--text-secondary)">0s</span></div>
             </div>
-            
-            <p class="text-muted small mt-4 mb-0">
-                <i class="fas fa-exclamation-circle text-warning me-1"></i> Vui lòng không tải lại trang trong quá trình này.
-            </p>
+            <p class="small mt-3 mb-0" style="color:var(--text-muted)"><i class="fas fa-exclamation-circle me-1" style="color:var(--warning)"></i>Không tải lại trang trong quá trình này.</p>
         </div>
-        
-        <div class="flat-card p-4 h-100 d-flex align-items-center justify-content-center bg-light shadow-sm" id="idlePanel" style="border: 2px dashed #cbd5e1;">
-            <div class="text-center text-muted">
-                <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 80px; height: 80px;">
-                    <i class="fas fa-check-double fs-1 text-success"></i>
-                </div>
-                <h5 class="text-dark">Não bộ AI đang ở trạng thái sẵn sàng</h5>
-                <p class="small mb-0">Lần cuối cập nhật: Không xác định (Đọc từ File)</p>
-            </div>
+        <div class="status-idle" id="idlePanel">
+            <div class="idle-icon"><i class="fas fa-check-double"></i></div>
+            <h6 class="fw-bold mb-1" style="color:var(--text-primary)">AI sẵn sàng</h6>
+            <p class="small mb-0" style="color:var(--text-muted)">Não bộ đang hoạt động bình thường</p>
         </div>
     </div>
 </div>
 
-<div class="flat-card p-0 overflow-hidden mt-4 shadow-sm">
-    <div class="p-3 border-bottom bg-light">
-        <h6 class="fw-bold m-0 text-primary"><i class="fas fa-users-cog me-2"></i> Trạng thái Ảnh Sinh Viên</h6>
+<!-- Student List -->
+<div class="section-title"><span class="st-dot"></span><h6>Trạng thái ảnh sinh viên</h6></div>
+<div class="sv-grid">
+    {% for sv in students %}
+    <div class="sv-row">
+        <span class="sv-mssv">{{ sv.mssv }}</span>
+        <span class="sv-name">{{ sv.ho_ten }}</span>
+        <span class="sv-count" style="background:{% if sv.image_count == 0 %}rgba(225,112,85,.1);color:var(--danger){% else %}rgba(0,184,148,.1);color:var(--success){% endif %}">{{ sv.image_count }} ảnh</span>
+        <span class="sv-status" style="color:{% if sv.da_train == 1 %}var(--success){% else %}var(--danger){% endif %}">
+            <i class="fas fa-{% if sv.da_train == 1 %}check{% else %}times{% endif %}-circle"></i>
+            {% if sv.da_train == 1 %}Đã có não bộ{% else %}Chưa train{% endif %}
+        </span>
+        {% if sv.image_count > 0 %}
+        <button class="btn-train-single" data-mssv="{{ sv.mssv }}"><i class="fas fa-brain me-1"></i>Train</button>
+        {% else %}
+        <button class="btn-train-single" disabled style="opacity:.4;cursor:not-allowed"><i class="fas fa-camera me-1"></i>Cần ảnh</button>
+        {% endif %}
     </div>
-    
-    <div class="table-responsive p-0" style="max-height: 500px;">
-        <table class="table table-light-flat mb-0">
-            <thead class="sticky-top bg-white shadow-sm">
-                <tr>
-                    <th>MSSV</th>
-                    <th>Họ và Tên</th>
-                    <th class="text-center">Số lượng Ảnh</th>
-                    <th>Trạng Thái Vector AI</th>
-                    <th class="text-end">Hành động AI</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sv in students %}
-                <tr>
-                    <td class="fw-bold text-dark">{{ sv.mssv }}</td>
-                    <td class="text-dark">{{ sv.ho_ten }}</td>
-                    <td class="text-center">
-                        {% if sv.image_count == 0 %}
-                        <span class="badge bg-danger">0 Ảnh</span>
-                        {% else %}
-                        <span class="badge bg-success">{{ sv.image_count }} Ảnh</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if sv.da_train == 1 %}
-                        <span class="text-success"><i class="fas fa-check-circle me-1"></i> Đã Có Não Bộ</span>
-                        {% else %}
-                        <span class="text-danger"><i class="fas fa-times-circle me-1"></i> Chưa Có Đặc Trưng</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-end">
-                        {% if sv.image_count > 0 %}
-                        <button class="btn btn-sm btn-outline-primary btn-train-single" data-mssv="{{ sv.mssv }}">
-                            <i class="fas fa-brain me-1"></i> Train Cá Nhân
-                        </button>
-                        {% else %}
-                        <button class="btn btn-sm btn-light text-muted border" disabled>
-                            <i class="fas fa-camera me-1"></i> Cần Cập Nhật Ảnh
-                        </button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% endfor %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const btnTrainAll = document.getElementById('btnTrainAll');
-    const idlePanel = document.getElementById('idlePanel');
-    const progressPanel = document.getElementById('progressPanel');
-    const progressBar = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
-    const statusText = document.getElementById('statusText');
-    
-    // Train toàn bộ
-    btnTrainAll.addEventListener('click', async () => {
-        if(!confirm('Bạn có chắc chắn muốn chạy lại quá trình quét Model AI cho toàn bộ Sinh Viên? \n\nLưu ý: Camera nhận diện realtime cần phải được dập tắt/dừng lại trước khi chạy lệnh này.')) return;
-        
-        btnTrainAll.disabled = true;
-        idlePanel.style.display = 'none';
-        progressPanel.style.display = 'block';
-        
-        try {
-            // Kích hoạt API Start
-            await fetch('/training/start', {method: 'POST'});
-            
-            // Lắng nghe SSE Progress
-            const evtSource = new EventSource('/training/progress');
-            
-            evtSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                const pct = Math.round(data.progress * 100);
-                
-                progressBar.style.width = pct + '%';
-                progressText.innerText = pct + '%';
-                statusText.innerText = data.status === 'training' ? 'Đang trích xuất Vector từ Ảnh...' : data.status;
-                
-                if(data.status === 'done' || data.status === 'error') {
-                    evtSource.close();
-                    statusText.innerText = data.status === 'done' ? 'Ghi file embeddings.pkl thành công!' : 'Có lỗi xảy ra.';
-                    progressBar.classList.remove('progress-bar-animated');
-                    if(data.status === 'done') {
-                        progressBar.classList.replace('bg-info', 'bg-success');
-                        setTimeout(() => window.location.reload(), 2000);
-                    } else {
-                        progressBar.classList.replace('bg-info', 'bg-danger');
-                        btnTrainAll.disabled = false;
-                    }
-                }
-            };
-        } catch(err) {
-            alert('Lỗi kết nối Server');
-            btnTrainAll.disabled = false;
-        }
-    });
-    
-    // Train cá nhân
-    document.querySelectorAll('.btn-train-single').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const mssv = e.currentTarget.getAttribute('data-mssv');
-            e.currentTarget.disabled = true;
-            e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
-            
-            try {
-                const res = await fetch(`/training/student/${mssv}`, {method: 'POST'});
-                const data = await res.json();
-                
-                if(data.success) {
-                    alert('Train cá nhân thành công!');
-                    window.location.reload();
-                } else {
-                    alert('Lỗi: ' + data.msg);
-                    e.currentTarget.disabled = false;
-                    e.currentTarget.innerHTML = '<i class="fas fa-brain me-1"></i> Train Cá Nhân';
-                }
-            } catch(err) {
-                alert('Lỗi Server');
-                e.currentTarget.disabled = false;
-            }
-        });
-    });
-});
+<script src="{{ url_for('static', filename='js/pages/training_index.js') }}"></script>
 
-// Engine Switch Function
-async function switchEngine(engine) {
-    const currentLabel = document.getElementById('currentEngineLabel');
-    const btnIF = document.getElementById('btnInsightFace');
-    const btnYR = document.getElementById('btnYoloResnet');
-    
-    if(!confirm(`Bạn có muốn chuyển sang engine: ${engine === 'insightface' ? 'InsightFace' : 'YOLOv8 + ResNet50'}?\n\nLưu ý: Bạn cần TRAIN LẠI nếu engine mới chưa có file não bộ (pkl).`)) return;
-    
-    try {
-        const res = await fetch('/training/switch-engine', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({engine: engine})
-        });
-        const data = await res.json();
-        
-        if(data.success) {
-            btnIF.classList.toggle('active', engine === 'insightface');
-            btnYR.classList.toggle('active', engine === 'yolo_resnet');
-            
-            if(engine === 'insightface') {
-                currentLabel.textContent = 'InsightFace (ArcFace + SCRFD) — Vector 512 chiều';
-            } else {
-                currentLabel.textContent = 'YOLOv8 + ResNet50 — Vector 2048 chiều';
-            }
-            
-            // Reload page after short delay to reflect changes
-            setTimeout(() => window.location.reload(), 500);
-        } else {
-            alert('Lỗi: ' + data.msg);
-        }
-    } catch(err) {
-        alert('Lỗi kết nối Server');
-    }
-}
-</script>
-
-<style>
-    .engine-btn {
-        background: transparent;
-        border: 2px solid transparent;
-        color: #475569;
-        transition: all 0.2s ease;
-    }
-    .engine-btn:hover {
-        background: #f1f5f9;
-        color: #334155;
-    }
-    .engine-btn.active {
-        background: #ffffff;
-        border: 2px solid var(--primary-color);
-        color: var(--primary-color);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .engine-btn .engine-icon {
-        width: 32px; height: 32px;
-        display: flex; align-items: center; justify-content: center;
-    }
-</style>
 {% endblock %}

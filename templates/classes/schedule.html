@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Lịch Học{% endblock %}
+{% block page_title %}Thời khóa biểu - Lịch thi{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/classes_schedule.css') }}">
+
+{% endblock %}
+
+{% block content %}
+<div class="schedule-wrapper">
+    <div class="schedule-header-bar">
+        SINH VIÊN / GIẢNG VIÊN CHỌN TUẦN ĐỂ XEM LỊCH
+    </div>
+    
+    <div class="filter-section">
+        <div class="student-info">
+            {% if session.get('admin_id') %}
+            Quản trị viên / Giảng viên [ID: {{ session.get('admin_id') }}]
+            {% else %}
+            Nguyễn Đông Từ [Mã số: 22d14801030074]
+            {% endif %}
+            
+            <button class="btn btn-sm btn-success float-end" data-bs-toggle="modal" data-bs-target="#editScheduleModal">
+                <i class="fas fa-plus"></i> Thêm/Tùy chỉnh lịch
+            </button>
+        </div>
+
+        <form class="row align-items-center mb-3">
+            <div class="col-auto d-flex align-items-center">
+                <label class="me-2 fw-bold">Năm học:</label>
+                <select class="form-select form-select-sm" style="min-width: 120px;">
+                    <option>2024-2025</option>
+                    <option selected>2025-2026</option>
+                </select>
+            </div>
+            <div class="col-auto d-flex align-items-center ms-3">
+                <label class="me-2 fw-bold">Học kỳ:</label>
+                <select class="form-select form-select-sm" style="min-width: 110px;">
+                    <option>Học kỳ 1</option>
+                    <option selected>Học kỳ 2</option>
+                    <option>Học kỳ 3</option>
+                </select>
+            </div>
+        </form>
+
+        <div class="toolbar-actions">
+            <a href="#"><i class="fas fa-calendar-alt"></i> Xem lịch thi</a>
+            <a href="#"><i class="fas fa-print"></i> In thời khóa biểu</a>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+            <div class="d-flex align-items-center">
+                <label class="me-2 fw-bold text-danger">Tuần :</label>
+                <select class="form-select form-select-sm border-danger text-danger" style="min-width: 70px;">
+                    <option selected>19</option>
+                    <option>20</option>
+                </select>
+                <span class="ms-3 fw-bold text-danger">Từ ngày 29/12/2025 đến ngày 04/01/2026</span>
+            </div>
+            <div>
+                <button type="button" class="btn btn-sm btn-primary fw-bold">Lọc dữ liệu</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-schedule">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">PHÒNG</th>
+                    <th style="width: 13%;">THỨ 2</th>
+                    <th style="width: 13%;">THỨ 3</th>
+                    <th style="width: 13%;">THỨ 4</th>
+                    <th style="width: 13%;">THỨ 5</th>
+                    <th style="width: 13%;">THỨ 6</th>
+                    <th style="width: 13%;">THỨ 7</th>
+                    <th style="width: 13%;">CHỦ NHẬT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="fas fa-calendar-times fs-2 mb-3 d-block text-black-50"></i>
+                        <em>Chưa có dữ liệu thời khóa biểu cho tuần này.</em>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Thêm/Sửa Lịch Học -->
+<div class="modal fade" id="editScheduleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Tùy chỉnh Lịch học</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Tên môn học / Lớp học phần</label>
+                            <input type="text" class="form-control" placeholder="VD: Thực tập tốt nghiệp KTPM..." value="25211TT003.2101-Thực tập tốt nghiệp KTPM [4.00]">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Phòng học</label>
+                            <input type="text" class="form-control" placeholder="VD: E3.4" value="E3.4">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Thứ</label>
+                            <select class="form-select">
+                                <option value="2" selected>Thứ 2</option>
+                                <option value="3">Thứ 3</option>
+                                <option value="4">Thứ 4</option>
+                                <option value="5">Thứ 5</option>
+                                <option value="6">Thứ 6</option>
+                                <option value="7">Thứ 7</option>
+                                <option value="8">Chủ nhật</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Thời gian (Giờ)</label>
+                            <div class="input-group">
+                                <input type="time" class="form-control" value="07:30">
+                                <span class="input-group-text">đến</span>
+                                <input type="time" class="form-control" value="09:10">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Tiết học</label>
+                            <input type="text" class="form-control" placeholder="VD: Tiết 1-2" value="Tiết 1-2">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Giảng viên</label>
+                            <input type="text" class="form-control" placeholder="Tên các giảng viên phụ trách" value="Thầy Lương Phước Toàn; Cô Đặng Thị Xuân Tiên; Thầy Nguyễn Hoàng Phương">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Cơ sở / Ghi chú</label>
+                            <input type="text" class="form-control" placeholder="Tên cơ sở" value="20B Phó Cơ Điều, Phường 3, Thành phố Vĩnh Long">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="alert('Lưu lịch học thành công! (Demo)')" data-bs-dismiss="modal">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -31,26 +31,44 @@ def index():
     # Kiểm tra trạng thái pkl files
     insightface_ready = os.path.exists(Config.EMBEDDINGS_PATH)
     yolo_ready = os.path.exists(Config.EMBEDDINGS_YOLO_PATH)
+    deepface_ready = os.path.exists(Config.EMBEDDINGS_DEEPFACE_PATH)
         
     return render_template('training/index.html', 
                           students=students,
                           current_engine=Config.AI_ENGINE,
                           insightface_ready=insightface_ready,
-                          yolo_ready=yolo_ready)
+                          yolo_ready=yolo_ready,
+                          deepface_ready=deepface_ready,
+                          deepface_model=getattr(Config, 'DEEPFACE_MODEL', 'ArcFace'),
+                          deepface_detector=getattr(Config, 'DEEPFACE_DETECTOR', 'retinaface'),
+                          deepface_anti_spoofing=getattr(Config, 'DEEPFACE_ANTI_SPOOFING', False),
+                          deepface_analysis=getattr(Config, 'DEEPFACE_ANALYSIS_ACTIONS', ''))
 
 
 @training_bp.route('/switch-engine', methods=['POST'])
 @login_required
 def switch_engine():
-    """Chuyển đổi AI Engine giữa InsightFace và YOLOv8+ResNet50."""
+    """Chuyển đổi AI Engine giữa InsightFace, YOLOv8+ResNet50, và DeepFace."""
     data = request.json
     new_engine = data.get('engine', 'insightface')
     
-    if new_engine not in ('insightface', 'yolo_resnet'):
+    if new_engine not in ('insightface', 'yolo_resnet', 'deepface'):
         return jsonify({"success": False, "msg": "Engine không hợp lệ"}), 400
     
     # Cập nhật Config runtime
     Config.AI_ENGINE = new_engine
+    
+    # Nếu chuyển sang DeepFace, cập nhật cấu hình DeepFace từ request
+    if new_engine == 'deepface':
+        deepface_model = data.get('deepface_model', getattr(Config, 'DEEPFACE_MODEL', 'ArcFace'))
+        deepface_detector = data.get('deepface_detector', getattr(Config, 'DEEPFACE_DETECTOR', 'retinaface'))
+        deepface_anti_spoofing = data.get('deepface_anti_spoofing', False)
+        deepface_analysis = data.get('deepface_analysis', '')
+        
+        Config.DEEPFACE_MODEL = deepface_model
+        Config.DEEPFACE_DETECTOR = deepface_detector
+        Config.DEEPFACE_ANTI_SPOOFING = deepface_anti_spoofing
+        Config.DEEPFACE_ANALYSIS_ACTIONS = deepface_analysis
     
     # Reset matcher singleton để nó load file pkl mới
     from core import matcher as matcher_module
@@ -60,7 +78,12 @@ def switch_engine():
     global _trainer
     _trainer = FaceTrainer()
     
-    engine_name = "InsightFace (ArcFace + SCRFD)" if new_engine == 'insightface' else "YOLOv8 + ResNet50"
+    engine_names = {
+        'insightface': 'InsightFace (ArcFace + SCRFD)',
+        'yolo_resnet': 'YOLOv8 + ResNet50',
+        'deepface': f'DeepFace ({getattr(Config, "DEEPFACE_MODEL", "ArcFace")} + {getattr(Config, "DEEPFACE_DETECTOR", "retinaface")})'
+    }
+    engine_name = engine_names.get(new_engine, new_engine)
     print(f"[ENGINE SWITCH] Đã chuyển sang: {engine_name}")
     
     return jsonify({

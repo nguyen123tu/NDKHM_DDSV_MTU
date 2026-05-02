@@ -1,0 +1,100 @@
+.text-navy { color: #1B3A5C !important; }
+    .bg-navy-subtle { background-color: rgba(27, 58, 92, 0.05); }
+    .extra-small { font-size: 0.7rem; }
+    .fw-600 { font-weight: 600; }
+    .fw-500 { font-weight: 500; }
+
+    .premium-card {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .custom-table thead th {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 1px solid #f1f5f9;
+        background-color: #f8fafc;
+    }
+
+    .custom-table tbody td {
+        border-bottom: 1px solid #f1f5f9;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .btn-image-view {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        color: #1B3A5C;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+    .btn-image-view:hover {
+        background: #f1f5f9;
+        border-color: #1B3A5C;
+    }
+
+    .btn-action {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0 1.25rem;
+        transition: all 0.2s;
+    }
+
+    .btn-approve {
+        background: #10B981;
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    }
+    .btn-approve:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-reject {
+        background: #fee2e2;
+        color: #ef4444;
+        width: 38px;
+        padding: 0;
+    }
+    .btn-reject:hover {
+        background: #ef4444;
+        color: #fff;
+    }
+
+    .empty-state {
+        padding: 40px;
+    }
+    .empty-icon {
+        font-size: 3rem;
+        color: #cbd5e1;
+    }
+
+    #imageGrid img {
+        height: 140px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 12px;
+        transition: transform 0.3s;
+        cursor: zoom-in;
+    }
+    #imageGrid img:hover {
+        transform: scale(1.05);
+    }
+
+    .bg-gray-50 { background-color: #f9fafb; }
+    .btn-light-soft { background-color: #f1f5f9; color: #64748b; }

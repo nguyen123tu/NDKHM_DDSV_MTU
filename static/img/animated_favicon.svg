@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    @keyframes scan {
+      0%, 100% { transform: translateY(20px); opacity: 0; }
+      10%, 90% { opacity: 1; }
+      50% { transform: translateY(80px); }
+    }
+    @keyframes pulse {
+      0%, 100% { stroke-opacity: 1; transform: scale(1); transform-origin: center; }
+      50% { stroke-opacity: 0.6; transform: scale(0.95); transform-origin: center; }
+    }
+    @keyframes rotate {
+      0% { transform: rotate(0deg); transform-origin: center; }
+      100% { transform: rotate(360deg); transform-origin: center; }
+    }
+    .scanner {
+      animation: scan 2s ease-in-out infinite;
+      stroke: #10b981;
+      stroke-width: 4;
+      stroke-linecap: round;
+      fill: none;
+      filter: drop-shadow(0 0 4px #10b981);
+    }
+    .frame {
+      fill: none;
+      stroke: #3b82f6;
+      stroke-width: 6;
+      rx: 15;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .inner-circle {
+      fill: none;
+      stroke: #3b82f6;
+      stroke-width: 3;
+      stroke-dasharray: 12 6;
+      animation: rotate 6s linear infinite;
+    }
+  </style>
+  
+  <!-- Outer bounding box (like a camera focus) -->
+  <rect class="frame" x="15" y="15" width="70" height="70" />
+  
+  <!-- Inner dashed rotating circle -->
+  <circle class="inner-circle" cx="50" cy="50" r="20" />
+  
+  <!-- Center dot -->
+  <circle cx="50" cy="50" r="4" fill="#3b82f6" />
+  
+  <!-- Moving scanner line -->
+  <line class="scanner" x1="20" y1="0" x2="80" y2="0" />
+</svg>

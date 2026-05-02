@@ -1,214 +1,150 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/attendance_history.css') }}">
+{% endblock %}
+
 {% block title %}Lịch Sử Điểm Danh{% endblock %}
 
 {% block content %}
 <div class="pb-4">
-
-    <!-- Top Header Layout -->
-    <div class="flat-card border-0 shadow-sm mb-4 rounded-3 bg-white p-3 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold m-0 text-primary" style="font-size: 1.1rem;">Lịch sử Điểm danh sinh viên</h5>
-        <div class="text-end text-primary" style="font-size: 0.9rem;" id="realtime-clock">
-            <!-- Clock will be updated by JS -->
-            <div id="clock-date" class="fw-medium">Đang cập nhật...</div>
-            <div id="clock-time" class="fw-bold"></div>
+    <!-- Header -->
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <div class="header-icon-box">
+                    <i class="fas fa-clock-rotate-left"></i>
+                </div>
+                Lịch sử Điểm danh
+            </h4>
+            <p class="text-secondary mb-0" style="font-size: .85rem;">Tra cứu dữ liệu điểm danh thời gian thực và lịch sử</p>
+        </div>
+        <div class="header-clock d-flex flex-column align-items-end">
+            <div id="clock-date" class="clock-date">Đang cập nhật...</div>
+            <div id="clock-time" class="clock-time">--:--:--</div>
         </div>
     </div>
 
-    <!-- Main Card -->
-    <div class="flat-card border-0 shadow-sm rounded-3 bg-white overflow-hidden p-4">
-        
-        <!-- Inner Header & Actions -->
-        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-            <h6 class="fw-bold m-0 text-primary" style="font-size: 1rem;">Lịch sử điểm danh hôm nay</h6>
-            
-            <div class="d-flex gap-2">
-                <a href="{{ url_for('export.index') }}" class="btn btn-success fw-bold text-white btn-sm px-3 shadow-sm border-0 d-flex align-items-center">
-                    <i class="fas fa-file-excel me-2"></i> Xuất Excel
-                </a>
-                <button type="button" onclick="window.print()" class="btn btn-light fw-bold text-dark btn-sm px-3 border shadow-sm d-flex align-items-center">
-                    <i class="fas fa-print me-2"></i> In
-                </button>
-                <a href="{{ url_for('attendance.history') }}" class="btn btn-primary fw-bold text-white btn-sm px-3 shadow-sm border-0 d-flex align-items-center">
-                    <i class="fas fa-sync-alt me-2"></i> Làm mới
-                </a>
-            </div>
+    <!-- Search Bar -->
+    <div class="search-bar mb-4">
+        <div class="sb-icon"><i class="fas fa-filter"></i></div>
+        <form method="GET" action="{{ url_for('attendance.history') }}" class="d-flex w-100 gap-3 align-items-center flex-wrap flex-md-nowrap">
+            <select class="filter-select" name="lop_id" style="min-width: 150px;">
+                <option value="">Tất cả lớp học</option>
+                {% for lop in classes %}
+                <option value="{{ lop.id }}" {% if current_lop_id == lop.id %}selected{% endif %}>{{ lop.ma_lop }}</option>
+                {% endfor %}
+            </select>
+            <input type="date" class="filter-input" name="date" value="{{ current_date or '' }}" style="min-width: 160px;">
+            <input type="text" class="filter-input w-100" name="mssv" placeholder="Tìm theo Mã SV..." value="{{ current_mssv or '' }}">
+            <button type="submit" class="btn-search"><i class="fas fa-search me-1"></i> Tìm</button>
+        </form>
+    </div>
+
+    <!-- Stats & Actions -->
+    <div class="stats-mini">
+        <h6><i class="fas fa-list-ul"></i> Kết quả tìm kiếm</h6>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('export.index') }}" class="btn-action btn-excel" title="Xuất Excel">
+                <i class="fas fa-file-excel"></i> Xuất Excel
+            </a>
+            <button onclick="window.print()" class="btn-action btn-print" title="In danh sách">
+                <i class="fas fa-print"></i>
+            </button>
+            <a href="{{ url_for('attendance.history') }}" class="btn-action btn-refresh" title="Làm mới">
+                <i class="fas fa-sync-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- History List -->
+    <div class="history-list">
+        <!-- Header Row -->
+        <div class="history-header d-none d-md-flex">
+            <div class="col-stt">STT</div>
+            <div class="col-time">Thời gian vào</div>
+            <div class="col-time">Thời gian ra</div>
+            <div class="col-info">Sinh viên</div>
+            <div class="col-evidence">Bằng chứng</div>
+            <div class="col-status">Trạng thái</div>
         </div>
 
-        <!-- Bộ Lọc Ẩn (Sử dụng Collapse để giữ giao diện sạch như hình) -->
-        <div class="mb-4">
-            <button class="btn btn-sm btn-outline-primary shadow-sm mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="{% if current_mssv or current_lop_id or current_date %}true{% else %}false{% endif %}" aria-controls="filterCollapse">
-                <i class="fas fa-filter"></i> Bộ lọc tìm kiếm
-            </button>
-            <div class="collapse {% if current_mssv or current_lop_id or current_date %}show{% endif %}" id="filterCollapse">
-                <div class="card card-body bg-light border-0 shadow-sm">
-                    <form method="GET" action="{{ url_for('attendance.history') }}" class="row g-3 align-items-end">
-                        <div class="col-md-3">
-                            <label class="form-label text-secondary small fw-bold mb-1">Lớp</label>
-                            <select class="form-select bg-white border-light shadow-sm px-3" name="lop_id">
-                                <option value="">-- Tất cả --</option>
-                                {% for lop in classes %}
-                                <option value="{{ lop.id }}" {% if current_lop_id == lop.id %}selected{% endif %}>{{ lop.ma_lop }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label text-secondary small fw-bold mb-1">Ngày ghi nhận</label>
-                            <input type="date" class="form-control bg-white border-light shadow-sm px-3" name="date" value="{{ current_date or '' }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-secondary small fw-bold mb-1">Mã sinh viên</label>
-                            <input type="text" class="form-control bg-white border-light shadow-sm px-3" name="mssv" placeholder="Nhập mã sinh viên..." value="{{ current_mssv or '' }}">
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100 shadow-sm fw-medium border-0">Tìm</button>
-                        </div>
-                    </form>
+        {% for item in history %}
+        <div class="history-row">
+            <div class="col-stt">
+                <span class="stt-badge">{{ loop.index + ((pagination.current - 1) * 50) }}</span>
+            </div>
+            
+            <div class="col-time">
+                <span class="d-md-none fw-bold text-secondary me-2">Vào:</span>
+                <div class="time-badge time-in">
+                    <i class="fas fa-sign-in-alt me-1"></i>
+                    {{ item.thoi_gian.strftime('%H:%M:%S') if item.thoi_gian else '--:--' }}
+                    <small class="d-block text-muted" style="font-size:.65rem">{{ item.thoi_gian.strftime('%d/%m/%Y') if item.thoi_gian else '' }}</small>
                 </div>
             </div>
-        </div>
 
-        <!-- Data Table -->
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 custom-history-table">
-                <thead>
-                    <tr>
-                        <th class="py-3 px-3 fw-bold align-middle" style="width: 70px;">STT</th>
-                        <th class="py-3 fw-bold align-middle">Thời gian vào</th>
-                        <th class="py-3 fw-bold align-middle">Thời gian ra</th>
-                        <th class="py-3 fw-bold align-middle">Mã SV</th>
-                        <th class="py-3 fw-bold align-middle">Họ tên</th>
-                        <th class="py-3 fw-bold align-middle text-center">Bằng chứng</th>
-                        <th class="py-3 fw-bold align-middle text-center" style="width: 150px;">Trạng thái</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in history %}
-                    <tr>
-                        <td class="px-3 fw-medium" style="color: #64748b;">{{ loop.index + ((pagination.current - 1) * 50) }}</td>
-                        <td class="fw-medium text-primary">{{ item.thoi_gian.strftime('%H:%M:%S %d/%m/%Y') if item.thoi_gian else '--:--' }}</td>
-                        <td class="fw-medium text-success">{{ item.gio_ra.strftime('%H:%M:%S') if item.gio_ra else '--:--' }}</td>
-                        <td class="fw-medium text-dark">{{ item.mssv }}</td>
-                        <td class="fw-medium text-dark">{{ item.ho_ten }}</td>
-                        <td class="text-center">
-                            {% set note = item.ghi_chu or "" %}
-                            {% if note.startswith("EVIDENCE:") %}
-                                <a href="/{{ note.replace('EVIDENCE:', '', 1) }}" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-3" style="font-size: 0.7rem;">
-                                    <i class="fas fa-eye me-1"></i> Xem ảnh
-                                </a>
-                            {% else %}
-                                <span class="text-muted small">N/A</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            {% if item.trang_thai == 'Co mat' %}
-                            <span class="badge-outline-success px-3 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">ĐÃ ĐIỂM DANH</span>
-                            {% elif item.trang_thai == 'Tre' %}
-                            <span class="badge-outline-warning px-3 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">ĐI TRỄ</span>
-                            {% else %}
-                            <span class="badge-outline-danger px-3 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">{{ item.trang_thai|upper }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5 text-muted border-0">
-                            Danh sách trống.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        {% if pagination.pages > 1 %}
-        <nav class="mt-4" aria-label="Page navigation">
-            <div class="text-center text-muted small fw-medium">
-                Trang {{ pagination.current }} trên tổng số {{ pagination.pages }} trang
+            <div class="col-time">
+                <span class="d-md-none fw-bold text-secondary me-2">Ra:</span>
+                <div class="time-badge time-out">
+                    <i class="fas fa-sign-out-alt me-1"></i>
+                    {{ item.gio_ra.strftime('%H:%M:%S') if item.gio_ra else '--:--' }}
+                </div>
             </div>
-        </nav>
-        {% endif %}
-        
+
+            <div class="col-info">
+                <div class="student-info">
+                    <div class="si-name">{{ item.ho_ten }}</div>
+                    <div class="si-mssv">{{ item.mssv }}</div>
+                </div>
+            </div>
+
+            <div class="col-evidence">
+                {% set note = item.ghi_chu or "" %}
+                {% if note.startswith("EVIDENCE:") %}
+                    <a href="/{{ note.replace('EVIDENCE:', '', 1) }}" target="_blank" class="evidence-btn">
+                        <i class="fas fa-image"></i> Xem ảnh
+                    </a>
+                {% else %}
+                    <span class="no-evidence">—</span>
+                {% endif %}
+            </div>
+
+            <div class="col-status">
+                {% if item.trang_thai == 'Co mat' %}
+                <span class="status-pill status-ok"><i class="fas fa-check-circle"></i> Đã điểm danh</span>
+                {% elif item.trang_thai == 'Tre' %}
+                <span class="status-pill status-warn"><i class="fas fa-clock"></i> Đi trễ</span>
+                {% else %}
+                <span class="status-pill status-err"><i class="fas fa-times-circle"></i> {{ item.trang_thai|upper }}</span>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="es-icon"><i class="fas fa-folder-open"></i></div>
+            <div class="es-title">Không tìm thấy dữ liệu</div>
+            <div class="es-sub">Vui lòng điều chỉnh bộ lọc tìm kiếm.</div>
+        </div>
+        {% endfor %}
     </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="pagination-wrapper mt-4 text-center">
+        <span class="text-muted small fw-medium">
+            Trang {{ pagination.current }} / {{ pagination.pages }}
+        </span>
+    </div>
+    {% endif %}
 
 </div>
 
-<style>
-/* Custom history table styling to match screenshot */
-.custom-history-table thead th {
-    background-color: #f8fafc;
-    color: #475569;
-    border-bottom: 1px solid #e2e8f0;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
 
-.custom-history-table tbody td {
-    border-bottom: 1px solid #f1f5f9;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    font-size: 0.9rem;
-}
 
-.custom-history-table tbody tr:hover td {
-    background-color: #f8fafc;
-}
 
-/* Badge styles */
-.badge-outline-success {
-    color: #22c55e;
-    border: 1.5px solid #22c55e;
-    background-color: transparent;
-    display: inline-block;
-}
+{% endblock %}
 
-.badge-outline-warning {
-    color: #f59e0b;
-    border: 1.5px solid #f59e0b;
-    background-color: transparent;
-    display: inline-block;
-}
-
-.badge-outline-danger {
-    color: #ef4444;
-    border: 1.5px solid #ef4444;
-    background-color: transparent;
-    display: inline-block;
-}
-
-/* Print media overrides */
-@media print {
-    body { margin: 0; background: white; }
-    .flat-card { box-shadow: none !important; border: none !important; }
-    .btn, form, nav { display: none !important; }
-}
-</style>
-
-<script>
-// Realtime Clock Script
-function updateClock() {
-    const now = new Date();
-    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-    
-    const dayName = days[now.getDay()];
-    const date = now.getDate();
-    const month = now.getMonth() + 1;
-    const year = now.getFullYear();
-    
-    // hh:mm:ss format padding
-    const hz = (now.getHours() < 10) ? "0" + now.getHours() : now.getHours();
-    const mz = (now.getMinutes() < 10) ? "0" + now.getMinutes() : now.getMinutes();
-    const sz = (now.getSeconds() < 10) ? "0" + now.getSeconds() : now.getSeconds();
-    
-    document.getElementById('clock-date').innerText = `${dayName}, ${date} tháng ${month}, ${year}`;
-    document.getElementById('clock-time').innerText = `${hz}:${mz}:${sz}`;
-}
-
-// Initial call
-updateClock();
-// Update every second
-setInterval(updateClock, 1000);
-</script>
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/attendance_history.js') }}"></script>
 {% endblock %}

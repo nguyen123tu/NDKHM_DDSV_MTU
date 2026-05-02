@@ -1,84 +1,80 @@
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/attendance_public.css') }}">
+{% endblock %}
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cổng Tra Cứu Sinh Viên - AI Attendance</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/glassmorphism.css') }}">
-    
-    <style>
-        .branding-bg {
-            background: linear-gradient(135deg, rgba(106, 60, 188, 0.8), rgba(163, 100, 243, 0.6)), url('https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=2070&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
-            border-radius: 20px;
-            padding: 4rem 2rem;
-            text-align: center;
-            margin-bottom: -50px;
-            position: relative;
-            z-index: 1;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-        }
-    </style>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
 
-<div class="container py-5 flex-grow-1">
+<div class="container py-5 flex-grow-1 position-relative" style="z-index: 1;">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-8 col-xl-7">
             
-            <div class="branding-bg mb-5 fade-in">
-                <i class="fas fa-face-viewfinder text-warning mb-3" style="font-size: 4rem; filter: drop-shadow(0 0 15px rgba(248, 180, 0, 0.6));"></i>
-                <h1 class="fw-bold text-dark display-5 text-uppercase" style="letter-spacing: 2px;">Cổng Sinh Viên</h1>
-                <p class="text-dark-50 fs-5">Tra cứu lịch sử điểm danh nhận diện khuôn mặt tự động</p>
+            <div class="branding-header fade-in">
+                <i class="fas fa-face-viewfinder mb-3" style="font-size: 4.5rem;"></i>
+                <h1 class="text-uppercase">Cổng Sinh Viên</h1>
+                <p class="text-white-50 fs-6 mt-2">Tra cứu lịch sử điểm danh nhận diện khuôn mặt tự động</p>
             </div>
             
-            <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 position-relative z-2 mb-4">
-                <h5 class="fw-bold mb-4 text-center">Tra Cứu Bằng MSSV Của Bạn</h5>
+            <!-- Lookup Card -->
+            <div class="glass-card p-4 p-md-5 mb-5 slide-up">
+                <h5 class="fw-bold mb-4 text-center text-white"><i class="fas fa-search me-2"></i>Tra Cứu Bằng MSSV Của Bạn</h5>
                 
-                <form id="lookupForm" class="mb-3">
-                    <div class="input-group input-group-lg shadow-lg">
-                        <span class="input-group-text bg-light border-secondary text-info border-end-0"><i class="fas fa-id-card"></i></span>
-                        <input type="text" class="form-control bg-light border-secondary text-dark border-start-0 ps-0" id="mssvInput" placeholder="Ví dụ: 22D14801030074" required>
-                        <button class="btn btn-primary" type="submit" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border: none;">
-                            Tra Cứu <i class="fas fa-search ms-1"></i>
+                <form id="lookupForm" class="mb-4">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text glass-addon border-end-0"><i class="fas fa-id-card"></i></span>
+                        <input type="text" class="form-control glass-input border-start-0 ps-0" id="mssvInput" placeholder="Ví dụ: 22D14801030074" required>
+                        <button class="btn btn-gradient px-4" type="submit">
+                            Tra Cứu <i class="fas fa-arrow-right ms-2"></i>
                         </button>
                     </div>
                 </form>
                 
-                <div class="text-center pt-2 border-top border-secondary border-opacity-25 mt-3">
-                    <p class="text-dark-50 small mb-2">Hoặc tự điểm danh trực tiếp qua Camera thiết bị của bạn</p>
-                    <a href="{{ url_for('public.selfcheck') }}" class="btn btn-outline-info rounded-pill px-4 shadow-sm">
-                        <i class="fas fa-camera me-1"></i> Tự Điểm Danh Khuôn Mặt
+                <div class="text-center pt-4 border-top" style="border-color: rgba(255,255,255,0.1) !important;">
+                    <p class="text-white-50 small mb-3">Hoặc tự điểm danh trực tiếp qua Camera thiết bị của bạn</p>
+                    <a href="{{ url_for('public.selfcheck') }}" class="btn btn-glass rounded-pill px-4 py-2">
+                        <i class="fas fa-camera me-2"></i> Tự Điểm Danh Khuôn Mặt
                     </a>
                 </div>
             </div>
             
             <div id="resultsPanel" class="d-none">
                 <!-- TT Sinh viên -->
-                <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 mb-4 p-4 border-info border-opacity-25 text-center slide-in">
-                    <div id="svAvatar" class="avatar bg-info rounded-circle text-dark d-flex align-items-center justify-content-center fw-bold mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2.5rem;">
-                        N
+                <div class="glass-card p-4 p-md-5 mb-4 text-center slide-up delay-1">
+                    <div class="avatar-glow mx-auto mb-4" style="width: 90px; height: 90px;">
+                        <div id="svAvatar" class="bg-dark rounded-circle text-white d-flex align-items-center justify-content-center fw-bold w-100 h-100 position-relative z-1" style="font-size: 2.5rem; border: 2px solid rgba(255,255,255,0.2);">
+                            N
+                        </div>
                     </div>
-                    <h3 class="fw-bold text-dark mb-1" id="svName">Nguyễn Văn A</h3>
-                    <p class="text-muted"><i class="fas fa-fingerprint me-1 lh-base"></i> <span id="svId" class="fw-bold">22Dxxx</span> &nbsp; | &nbsp; <i class="fas fa-chalkboard-user me-1"></i> Lớp <span id="svClass">CNTTxx</span></p>
+                    <h2 class="fw-bold text-white mb-2" id="svName">Nguyễn Văn A</h2>
+                    <p class="text-white-50 mb-0 fs-6">
+                        <i class="fas fa-fingerprint me-1"></i> <span id="svId" class="text-white fw-medium">22Dxxx</span> 
+                        <span class="mx-3 opacity-25">|</span> 
+                        <i class="fas fa-chalkboard-user me-1"></i> Lớp <span id="svClass" class="text-white fw-medium">CNTTxx</span>
+                    </p>
                 </div>
                 
-                <!-- Lịch sử (Timeline design) -->
-                <h5 class="fw-bold mb-4 ms-2 text-dark"><i class="fas fa-history text-secondary me-2"></i> Lịch Sử Quét Khuôn Mặt Gần Đây (10 kết quả)</h5>
-                <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 p-0 overflow-hidden slide-in">
+                <!-- Lịch sử -->
+                <div class="d-flex align-items-center mb-4 slide-up delay-2">
+                    <i class="fas fa-history text-white-50 fs-5 me-3"></i>
+                    <h5 class="fw-bold mb-0 text-white">Lịch Sử Quét Khuôn Mặt Gần Đây</h5>
+                </div>
+                
+                <div class="glass-card p-4 slide-up delay-2">
                     <div class="table-responsive">
-                        <table class="table table-light-flat mb-0">
+                        <table class="table glass-table mb-0">
                             <thead>
                                 <tr>
                                     <th>Thời Gian</th>
-                                    <th>Trạng Thái</th>
                                     <th>Học Phần/Lớp</th>
+                                    <th class="text-end">Trạng Thái</th>
                                 </tr>
                             </thead>
                             <tbody id="historyTbody">
@@ -93,86 +89,19 @@
     </div>
 </div>
 
-<footer class="mt-auto py-3 text-center text-muted small bg-black bg-opacity-25">
-    <p class="mb-0">Dự án Tốt Nghiệp: Hệ Thống Điểm Danh Khuôn Mặt Bằng AI - Phát triển với Flask & InsightFace</p>
-    <a href="{{ url_for('auth.login') }}" class="text-secondary text-decoration-none mt-1 d-inline-block"><i class="fas fa-shield-alt me-1"></i> Cổng Quản Trị Hệ Thống</a>
+<footer class="mt-auto py-4 text-center position-relative" style="z-index: 1; border-top: 1px solid rgba(255,255,255,0.05);">
+    <p class="text-white-50 small mb-1">Hệ Thống Điểm Danh Khuôn Mặt Bằng AI - Phát triển với Flask & InsightFace</p>
+    <a href="{{ url_for('auth.login') }}" class="text-white-50 text-decoration-none small hover-white transition"><i class="fas fa-shield-alt me-1"></i> Cổng Quản Trị Hệ Thống</a>
 </footer>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script>
-    document.getElementById('lookupForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const mssv = document.getElementById('mssvInput').value.trim();
-        const btn = e.target.querySelector('button');
-        const resultsPanel = document.getElementById('resultsPanel');
-        const historyTbody = document.getElementById('historyTbody');
-        
-        if(!mssv) return;
-        
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        btn.disabled = true;
-        
-        try {
-            const res = await fetch('/public/api/lookup', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({mssv: mssv})
-            });
-            const data = await res.json();
-            
-            if(data.success) {
-                // Đổ data thông tin
-                document.getElementById('svName').innerText = data.student.ho_ten;
-                document.getElementById('svId').innerText = data.student.mssv;
-                document.getElementById('svClass').innerText = data.student.ten_lop;
-                document.getElementById('svAvatar').innerText = data.student.ho_ten.charAt(0);
-                
-                // Đổ data bảng
-                historyTbody.innerHTML = '';
-                if(data.history.length > 0) {
-                    data.history.forEach(item => {
-                        let badgeClass = item.trang_thai === 'Co mat' ? 'badge-comat' : 'badge-canhbao';
-                        let badgeText = item.trang_thai === 'Co mat' ? 'Có mặt' : item.trang_thai;
-                        
-                        historyTbody.innerHTML += `
-                            <tr>
-                                <td class="fw-medium">${item.thoi_gian}</td>
-                                <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-                                <td class="text-muted"><i class="fas fa-check-circle text-success me-1" style="font-size: 0.8rem"></i> ${item.ten_lop}</td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    historyTbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Bạn chưa có dữ liệu điểm danh nào.</td></tr>';
-                }
-                
-                resultsPanel.classList.remove('d-none');
-            } else {
-                alert(data.msg);
-                resultsPanel.classList.add('d-none');
-            }
-        } catch(err) {
-            alert('Lỗi kết nối máy chủ');
-        } finally {
-            btn.innerHTML = 'Tra Cứu <i class="fas fa-search ms-1"></i>';
-            btn.disabled = false;
-        }
-    });
-</script>
-
 <style>
-.fade-in { animation: fadeIn 0.8s ease-in; }
-.slide-in { animation: slideIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+    .hover-white:hover { color: white !important; }
+    .transition { transition: all 0.3s ease; }
 </style>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/attendance_public.js') }}"></script>
+{% endblock %}
 </body>
 </html>

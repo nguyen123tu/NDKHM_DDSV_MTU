@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/class_edit.css') }}">
+{% endblock %}
+
 {% block title %}Chỉnh Sửa Lớp Học{% endblock %}
 
 {% block content %}
@@ -85,23 +89,10 @@
     </div>
 </div>
 
-<script>
-    function confirmDelete() {
-        if(confirm("CẢNH BÁO: Hành động này sẽ xóa VĨNH VIỄN lớp học này khỏi CSDL. Sinh viên và lịch sử điểm danh thuộc lớp cũng sẽ bị ảnh hưởng. Bạn có chắc chắn?")) {
-            document.getElementById("deleteForm").submit();
-        }
-    }
-</script>
-<style>
-    .btn-glass-warning {
-        background: rgba(245, 158, 11, 0.2);
-        color: #fcd34d;
-        border: 1px solid rgba(245, 158, 11, 0.4);
-        backdrop-filter: blur(4px);
-    }
-    .btn-glass-warning:hover {
-        background: rgba(245, 158, 11, 0.4);
-        color: #fff;
-    }
-</style>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pages/class_edit.js') }}"></script>
 {% endblock %}
