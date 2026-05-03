@@ -215,6 +215,6 @@ docker-compose up --build -d
 
 ## 📄 Giấy Phép (License)
 
-Dự án được phát triển phục vụ đồ án tốt nghiệp tại **Trường Đại học Xây dựng Miền Tây (MTU)**.
+Dự án được phát triển phục vụ đồ án tốt nghiệp tại **NeoTune**.
 
-© 2024-2026 MTUFace Team
+© 2024-2026 MTUFace Tune
