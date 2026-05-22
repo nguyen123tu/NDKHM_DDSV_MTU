@@ -29,7 +29,7 @@
 - **Quản lý lớp học & lịch học**: Tạo, sửa, xóa lớp học và quản lý lịch học theo tuần.
 - **Cảnh báo gian lận**: Trang giám sát các lần phát hiện gian lận với log chi tiết.
 - **Kết xuất báo cáo**: Xuất dữ liệu điểm danh ra file Excel/PDF.
-- **Thông báo Telegram**: Cảnh báo tự động qua Telegram Bot khi phát hiện người lạ hoặc hành vi bất thường.
+- **Thông báo Telegram**: Cảnh báo tự động qua Telegram Bot đối với các hành vi bất thường hoặc gian lận điểm danh.
 
 ### 📱 Mobile App (Flutter)
 - **Offline-first**: Dữ liệu lưu trữ cục bộ (SQLite), đồng bộ với server khi có mạng.

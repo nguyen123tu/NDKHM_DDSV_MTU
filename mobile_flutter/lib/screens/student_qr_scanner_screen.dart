@@ -71,7 +71,7 @@ class _StudentQRScannerScreenState extends State<StudentQRScannerScreen> {
       appBar: AppBar(
         title: const Text('Quét mã QR Điểm Danh',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        backgroundColor: const Color(0xFF1B3A5C),
+        backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         actions: [
           IconButton(

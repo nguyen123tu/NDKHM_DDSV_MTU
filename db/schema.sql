@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS diem_danh (
     sinh_vien_id    INT,
     lop_id          INT,
     thoi_gian       DATETIME DEFAULT NOW() COMMENT 'Giờ vào (check-in)',
-    gio_ra          DATETIME NULL COMMENT 'Giờ ra (check-out)',
     trang_thai      VARCHAR(20) DEFAULT 'Co mat' COMMENT 'Co mat / Tre / Canh bao',
     do_chinh_xac    FLOAT COMMENT 'Similarity score 0.0 - 1.0',
     camera_id       INT DEFAULT 0,

@@ -17,6 +17,17 @@ import base64
 @students_bp.route('/')
 @login_required
 def list_students():
+    """
+    /
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
     lop_id = request.args.get('lop_id', type=int)
@@ -34,6 +45,17 @@ def list_students():
 @students_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
+    """
+    /add
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     classes = class_service.get_all()
     
     if request.method == 'POST':
@@ -81,6 +103,17 @@ def add():
 @students_bp.route('/api/add', methods=['POST'])
 @login_required
 def api_add():
+    """
+    /api/add
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     data = request.json
     mssv = data.get('mssv')
     ho_ten = data.get('ho_ten')
@@ -123,6 +156,17 @@ def api_add():
 @students_bp.route('/<int:id>')
 @login_required
 def detail(id):
+    """
+    /<int:id>
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     student = student_service.get_by_id(id)
     if not student:
         flash("Không tìm thấy sinh viên", "warning")
@@ -140,6 +184,17 @@ def detail(id):
 @students_bp.route('/api/images/<mssv>')
 @login_required
 def api_images(mssv):
+    """
+    /api/images/<mssv>
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     student_dir = os.path.join(Config.DATABASE_DIR, mssv)
     if not os.path.exists(student_dir):
         return jsonify([])
@@ -155,6 +210,17 @@ def api_images(mssv):
 @students_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(id):
+    """
+    /<int:id>/edit
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     student = student_service.get_by_id(id)
     if not student:
         flash("Không tìm thấy sinh viên", "warning")
@@ -197,6 +263,17 @@ def edit(id):
 @students_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
+    """
+    /<int:id>/delete
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     if student_service.delete(id):
         flash("Đã xóa sinh viên", "success")
     else:
@@ -205,7 +282,15 @@ def delete(id):
 @students_bp.route('/pending')
 @login_required
 def pending_faces():
-    """Danh sách SV đang chờ duyệt khuôn mặt"""
+    """
+    Danh sách SV đang chờ duyệt khuôn mặt
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     sql = """
         SELECT sv.id, sv.mssv, sv.ho_ten, sv.avatar, lh.ten_lop 
         FROM sinh_vien sv
@@ -218,7 +303,15 @@ def pending_faces():
 @students_bp.route('/approve-face/<int:id>', methods=['POST'])
 @login_required
 def approve_face(id):
-    """Phê duyệt khuôn mặt cho SV"""
+    """
+    Phê duyệt khuôn mặt cho SV
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     # Cập nhật trạng thái trang_thai_face = 2 (Đã duyệt)
     if execute_update("UPDATE sinh_vien SET trang_thai_face = 2 WHERE id = %s", (id,)):
         flash("Đã phê duyệt khuôn mặt thành công!", "success")
@@ -229,7 +322,15 @@ def approve_face(id):
 @students_bp.route('/approve-all', methods=['POST'])
 @login_required
 def approve_all_faces():
-    """Phê duyệt TẤT CẢ khuôn mặt đang chờ"""
+    """
+    Phê duyệt TẤT CẢ khuôn mặt đang chờ
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     count = execute_update("UPDATE sinh_vien SET trang_thai_face = 2 WHERE trang_thai_face = 1")
     if count > 0:
         flash(f"Đã phê duyệt thành công {count} sinh viên!", "success")
@@ -240,7 +341,15 @@ def approve_all_faces():
 @students_bp.route('/reject-face/<int:id>', methods=['POST'])
 @login_required
 def reject_face(id):
-    """Từ chối khuôn mặt (yêu cầu chụp lại)"""
+    """
+    Từ chối khuôn mặt (yêu cầu chụp lại)
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     # Cập nhật trạng thái trang_thai_face = 3 (Từ chối)
     if execute_update("UPDATE sinh_vien SET trang_thai_face = 3 WHERE id = %s", (id,)):
         flash("Đã từ chối khuôn mặt sinh viên.", "info")

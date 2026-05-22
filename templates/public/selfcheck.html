@@ -19,10 +19,16 @@
     <div class="kiosk-header d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="mb-1"><i class="fas fa-camera-retro me-2"></i> Hệ Thống Nhận Diện</h1>
-            <p class="mb-0 kiosk-time">Vui lòng nhìn thẳng vào camera để điểm danh</p>
+            <p class="mb-0 kiosk-time">Vui lòng chọn lớp và nhìn thẳng vào camera để điểm danh</p>
         </div>
-        <div class="text-end">
-            <div class="realtime-clock" id="realtimeClock">--:--:--</div>
+        <div class="d-flex align-items-center gap-3">
+            <select id="selectLopId" class="form-select bg-dark text-light border-secondary" style="min-width: 250px; font-size: 1.1rem; padding: 0.5rem 1rem;">
+                <option value="">-- Chọn lớp đang mở --</option>
+                {% for c in classes %}
+                <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
+                {% endfor %}
+            </select>
+            <div class="realtime-clock ms-3" id="realtimeClock">--:--:--</div>
         </div>
     </div>
 

@@ -10,17 +10,50 @@ from services import class_service
 @classes_bp.route('/')
 @login_required
 def list_classes():
+    """
+    /
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     classes = class_service.get_all(active_only=False)
     return render_template('classes/list.html', classes=classes)
 
 @classes_bp.route('/schedule')
 @login_required
 def schedule():
+    """
+    /schedule
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     return render_template('classes/schedule.html')
 
 @classes_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
+    """
+    /add
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     if request.method == 'POST':
         data = {
             'ma_lop': request.form.get('ma_lop'),
@@ -44,6 +77,17 @@ def add():
 @classes_bp.route('/<int:id>')
 @login_required
 def detail(id):
+    """
+    /<int:id>
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     cls = class_service.get_by_id(id)
     if not cls:
         flash("Không tìm thấy lớp học", "warning")
@@ -60,6 +104,17 @@ def detail(id):
 @classes_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(id):
+    """
+    /<int:id>/edit
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     cls = class_service.get_by_id(id)
     if not cls:
         flash("Không tìm thấy lớp", "warning")
@@ -87,6 +142,17 @@ def edit(id):
 @classes_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
+    """
+    /<int:id>/delete
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     if class_service.delete(id):
         flash("Đã chuyển lớp vào trạng thái vô hiệu hóa", "info")
     else:
@@ -96,6 +162,14 @@ def delete(id):
 @classes_bp.route('/<int:id>/students/json')
 @login_required
 def students_json(id):
-    """API lấy SV theo JSON để dùng cho select boxes"""
+    """
+    API lấy SV theo JSON để dùng cho select boxes
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     students = class_service.get_students_in_class(id)
     return jsonify({"students": students})

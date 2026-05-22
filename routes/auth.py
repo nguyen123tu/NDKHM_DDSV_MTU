@@ -9,6 +9,17 @@ from db.connection import execute_one
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    """
+    /login
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     # Nếu đã login thì redirect thẳng vào dashboard
     if 'admin_id' in session:
         return redirect(url_for('dashboard.index'))
@@ -41,6 +52,17 @@ def login():
 
 @auth_bp.route('/logout')
 def logout():
+    """
+    /logout
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     session.clear()
     flash('Đã đăng xuất', 'info')
     return redirect(url_for('auth.login'))

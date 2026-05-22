@@ -185,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Thông tin cá nhân"),
-        backgroundColor: const Color(0xFF1B3A5C),
+        backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         actions: [
           if (_profileData != null)
@@ -205,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: const Color(0xFF1B3A5C),
+                    backgroundColor: const Color(0xFF1E293B),
                     backgroundImage: (_profileData != null && _profileData!['avatar'] != null)
                         ? NetworkImage("${ApiService.baseUrl}/static/${_profileData!['avatar']}")
                         : null,
@@ -346,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF1B3A5C), size: 20),
+          Icon(icon, color: const Color(0xFF1E293B), size: 20),
           const SizedBox(width: 15),
           Expanded(
             child: Column(

@@ -12,17 +12,16 @@ from config import Config
 _last_log_times = {}  # {mssv: timestamp}
 
 
-def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', ghi_chu=None, mode='AUTO', session_start_time=None):
+def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', ghi_chu=None, session_start_time=None):
     """
-    Ghi nhận điểm danh: Giờ Vào / Giờ Ra.
+    Ghi nhận điểm danh (1 chiều).
     
     Args:
         mssv, lop_id, do_chinh_xac, camera_id, trang_thai, ghi_chu
-        mode: 'AUTO' (logic 30p), 'IN' (ép check-in), 'OUT' (ép check-out)
         session_start_time: (datetime or str) Nếu có, chỉ check duplicate trong khoảng thời gian diễn ra phiên.
         
     Returns:
-        dict: {'action': 'checkin'/'checkout'/'skip', 'success': bool}
+        dict: {'action': 'checkin'/'skip', 'success': bool}
     """
     current_time = time.time()
     
@@ -43,7 +42,7 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
     # Kiểm tra: hôm nay đã có bản ghi điểm danh chưa?
     if session_start_time:
         existing = execute_one("""
-            SELECT id, thoi_gian, gio_ra 
+            SELECT id, thoi_gian
             FROM diem_danh 
             WHERE sinh_vien_id = %s AND lop_id = %s 
               AND thoi_gian >= %s
@@ -52,7 +51,7 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
         """, (sinh_vien_id, lop_id, session_start_time))
     else:
         existing = execute_one("""
-            SELECT id, thoi_gian, gio_ra 
+            SELECT id, thoi_gian
             FROM diem_danh 
             WHERE sinh_vien_id = %s AND lop_id = %s 
               AND DATE(thoi_gian) = CURDATE()
@@ -60,12 +59,8 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
             LIMIT 1
         """, (sinh_vien_id, lop_id))
 
-    # --- LOGIC THEO MODE ---
-    
-    if mode == 'IN':
-        if existing:
-            return False # Đã vào rồi, không ghi nữa
-        # INSERT mới
+    if existing is None:
+        # CHECK-IN
         sql = """
             INSERT INTO diem_danh (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu)
             VALUES (%s, %s, %s, %s, %s, %s)
@@ -74,44 +69,6 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
         if result > 0:
             _last_log_times[cache_key] = current_time
             return {'action': 'checkin', 'success': True}
-            
-    elif mode == 'OUT':
-        if not existing or existing.get('gio_ra'):
-            return False # Chưa vào hoặc đã ra rồi
-        # UPDATE gio_ra
-        sql = "UPDATE diem_danh SET gio_ra = NOW() WHERE id = %s"
-        result = execute_update(sql, (existing['id'],))
-        if result > 0:
-            _last_log_times[cache_key] = current_time
-            return {'action': 'checkout', 'success': True}
-
-    else: # mode == 'AUTO'
-        if existing is None:
-            # CHECK-IN
-            sql = """
-                INSERT INTO diem_danh (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            result = execute_update(sql, (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu))
-            if result > 0:
-                _last_log_times[cache_key] = current_time
-                return {'action': 'checkin', 'success': True}
-        else:
-            if existing.get('gio_ra') is not None:
-                return False
-            
-            from datetime import datetime, timedelta
-            gio_vao = existing['thoi_gian']
-            now = datetime.now()
-            
-            # Tự động checkout sau 30 phút
-            MIN_CHECKOUT_GAP = timedelta(minutes=30)
-            if now - gio_vao >= MIN_CHECKOUT_GAP:
-                sql = "UPDATE diem_danh SET gio_ra = NOW() WHERE id = %s"
-                result = execute_update(sql, (existing['id'],))
-                if result > 0:
-                    _last_log_times[cache_key] = current_time
-                    return {'action': 'checkout', 'success': True}
     
     return False
 
@@ -119,33 +76,9 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
 def mobile_checkout(mssv, lop_id=None, camera_id=0):
     """
     Checkout tường minh cho mobile:
-    - Chỉ cập nhật gio_ra cho bản ghi gần nhất trong ngày chưa có gio_ra.
+    Hệ thống hiện tại chỉ nhận diện 1 chiều nên đã bỏ chức năng này.
     """
-    sv = execute_one("SELECT id FROM sinh_vien WHERE mssv = %s", (mssv,))
-    sinh_vien_id = sv["id"] if sv else None
-    if not sinh_vien_id:
-        return {"success": False, "message": "Không tìm thấy sinh viên"}
-
-    existing = execute_one("""
-        SELECT id, thoi_gian, gio_ra
-        FROM diem_danh
-        WHERE sinh_vien_id = %s AND lop_id = %s
-          AND DATE(thoi_gian) = CURDATE()
-        ORDER BY thoi_gian DESC
-        LIMIT 1
-    """, (sinh_vien_id, lop_id))
-
-    if not existing:
-        return {"success": False, "message": "Chưa có check-in trong ngày"}
-
-    if existing.get("gio_ra") is not None:
-        return {"success": False, "message": "Đã checkout trước đó"}
-
-    result = execute_update(
-        "UPDATE diem_danh SET gio_ra = NOW(), camera_id = %s WHERE id = %s",
-        (camera_id, existing["id"]),
-    )
-    return {"success": result > 0, "message": "Checkout thành công" if result > 0 else "Checkout thất bại"}
+    return {"success": False, "message": "Hệ thống chỉ điểm danh 1 chiều."}
 
 
 def log_unknown(camera_id=0, anh_chup=None, ghi_chu=None):

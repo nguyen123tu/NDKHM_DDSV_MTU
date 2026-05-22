@@ -16,12 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoFeed = document.getElementById('videoFeed');
     const logList = document.getElementById('attendanceLog');
     const toastContainer = document.getElementById('toastContainer');
-    
+
     // Khởi tạo SocketIO
     const socket = io();
-    
+
     let isRunning = false;
-    
+
     // Cooldown phía client: tránh spam log panel mỗi frame
     const logCooldowns = {};  // {mssv: timestamp}
     const LOG_COOLDOWN_MS = 5000;  // 5 giây giữa mỗi lần hiển thị cùng 1 MSSV
@@ -36,15 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
         addLogEntry(data.mssv, data.ho_ten, data.thoi_gian, data.similarity, data.action, data.avatar);
     });
 
-    // Khi có cảnh báo kẻ lạ
+    // Khi có cảnh báo (spoofing)
     socket.on('alert', (data) => {
-        showAlert(data.message, data.thoi_gian);
+        showAlert(data.message, data.thoi_gian, data.type);
     });
 
     // Bắt đầu điểm danh
     formStart.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const lopId = document.getElementById('selectLopId').value;
         const camId = document.getElementById('selectCamId').value;
 
@@ -56,29 +56,31 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             startBtn.disabled = true;
             statusText.innerText = "Đang khởi động Camera...";
-            
+
+            let camVal = document.getElementById('selectCamId').value;
+            let finalCamId = isNaN(camVal) ? camVal : parseInt(camVal);
+
             const res = await fetch('/attendance/start', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    lop_id: lopId, 
-                    camera_id: camId,
-                    mode: document.getElementById('selectMode').value
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lop_id: document.getElementById('selectLopId').value,
+                    camera_id: finalCamId
                 })
             });
             const data = await res.json();
-            
+
             if (data.success) {
                 isRunning = true;
                 startBtn.classList.add('d-none');
                 stopBtn.classList.remove('d-none');
                 statusText.innerText = "Hệ thống đang hoạt động";
-                
+
                 const indicatorBadge = document.getElementById('statusIndicatorBadge');
                 if (indicatorBadge) indicatorBadge.classList.replace('bg-secondary', 'bg-success');
-                
+
                 showToast('Hệ thống đã sẵn sàng', 'Camera đang hoạt động, bắt đầu điểm danh...', 'success');
-                
+
                 videoFeed.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%231e293b'/%3E%3Ctext x='320' y='240' font-family='Arial' font-size='20' fill='%2394a3b8' text-anchor='middle'%3E%C4%90ang tr%E1%BB%A3c camera...%3C/text%3E%3C/svg%3E";
             } else {
                 alert('Lỗi: ' + data.msg);
@@ -97,25 +99,25 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             stopBtn.disabled = true;
             statusText.innerText = "Đang dừng Camera...";
-            
+
             await fetch('/attendance/stop', { method: 'POST' });
-            
+
             isRunning = false;
             stopBtn.classList.add('d-none');
             startBtn.classList.remove('d-none');
             startBtn.disabled = false;
-            
+
             statusText.innerText = "Hệ thống đã dừng";
             const indicatorBadge = document.getElementById('statusIndicatorBadge');
             if (indicatorBadge) {
                 indicatorBadge.classList.remove('bg-success');
                 indicatorBadge.classList.add('bg-secondary');
             }
-            
+
             showToast('Đã dừng hệ thống', 'Camera và nhận diện đã tắt.', 'warning');
-            
+
             videoFeed.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%23000'/%3E%3Ctext x='320' y='240' font-family='Arial' font-size='24' fill='%23fff' text-anchor='middle'%3ECamera %C4%91%C3%A3 t%E1%BA%AFt%3C/text%3E%3C/svg%3E";
-            
+
         } catch (err) {
             console.error(err);
             alert('Lỗi kết nối Server');
@@ -131,25 +133,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function addLogEntry(mssv, name, timeStr, similarity, action, avatarPath) {
         const emptyMsg = document.getElementById('emptyLogMsg');
         if (emptyMsg) emptyMsg.remove();
-        
+
         logCountNum++;
         const counter = document.getElementById('logCounter');
-        if(counter) counter.innerText = logCountNum;
-        
+        if (counter) counter.innerText = logCountNum;
+
         // Update Info Card Right Panel
         const waitState = document.getElementById('waitState');
         const successState = document.getElementById('successState');
-        
-        if(waitState) waitState.classList.add('d-none');
-        if(successState) successState.classList.remove('d-none');
-        
+
+        if (waitState) waitState.classList.add('d-none');
+        if (successState) successState.classList.remove('d-none');
+
         const iMssv = document.getElementById('infoMssv');
         const iName = document.getElementById('infoName');
         const iTime = document.getElementById('infoTime');
-        
-        if(iMssv) iMssv.innerText = mssv;
-        if(iName) iName.innerText = name;
-        if(iTime) iTime.innerText = timeStr;
+
+        if (iMssv) iMssv.innerText = mssv;
+        if (iName) iName.innerText = name;
+        if (iTime) iTime.innerText = timeStr;
 
         // === TOAST NOTIFICATION ===
         const isCheckout = (action === 'checkout');
@@ -158,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             showToast(`${name} — Điểm danh thành công!`, `MSSV: ${mssv} • ${timeStr}`, 'success');
         }
-        
+
         // Cập nhật banner success timeout
         const successBanner = document.getElementById('successBanner');
         const bannerName = document.getElementById('bannerName');
@@ -172,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const badgeClass = isCheckout ? 'bg-warning text-dark' : 'bg-success';
         const badgeText = isCheckout ? 'Ra' : 'Vào';
-        
+
         const tr = document.createElement('tr');
         tr.className = "slide-in";
         const imgUrl = avatarPath ? `/${avatarPath}` : `/database/${mssv}/0.jpg`;
@@ -198,20 +200,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </td>
         `;
-        
+
         logList.prepend(tr);
-        
+
         while (logList.children.length > 100) {
             logList.removeChild(logList.lastChild);
         }
     }
 
     /**
-     * Thông báo kẻ lạ
+     * Thông báo cảnh báo (Spoofing)
      */
-    function showAlert(msg, timeStr) {
-        showToast('⚠️ Cảnh báo người lạ!', msg + ' — ' + timeStr, 'danger');
-        
+    function showAlert(msg, timeStr, type = 'danger') {
+        const title = type === 'spoofing' ? '⚠️ Cảnh báo gian lận!' : '⚠️ Cảnh báo!';
+        const toastType = type === 'spoofing' ? 'warning' : 'danger';
+        showToast(title, msg + ' — ' + timeStr, toastType);
+
         const tr = document.createElement('tr');
         tr.className = "slide-in bg-danger bg-opacity-10";
         tr.innerHTML = `
@@ -221,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="small text-muted ms-2">(${timeStr})</span>
             </td>
         `;
-        
+
         logList.prepend(tr);
     }
 
@@ -230,13 +234,13 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function showToast(title, message, type = 'success') {
         if (!toastContainer) return;
-        
+
         const iconMap = {
             success: '<i class="fas fa-check-circle"></i>',
             warning: '<i class="fas fa-sign-out-alt"></i>',
-            danger:  '<i class="fas fa-exclamation-triangle"></i>'
+            danger: '<i class="fas fa-exclamation-triangle"></i>'
         };
-        
+
         const toast = document.createElement('div');
         toast.className = `attendance-toast ${type === 'warning' ? 'toast-checkout' : ''} ${type === 'danger' ? 'toast-alert' : ''}`;
         toast.innerHTML = `
@@ -249,9 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <i class="fas fa-times"></i>
             </button>
         `;
-        
+
         toastContainer.appendChild(toast);
-        
+
         // Play notification sound
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -263,14 +267,14 @@ document.addEventListener('DOMContentLoaded', () => {
             gain.gain.value = 0.08;
             osc.start();
             osc.stop(ctx.currentTime + 0.15);
-        } catch(e) {}
-        
+        } catch (e) { }
+
         // Auto remove after 4s
         setTimeout(() => {
             toast.classList.add('toast-out');
             setTimeout(() => toast.remove(), 300);
         }, 4000);
-        
+
         // Keep max 5 toasts
         while (toastContainer.children.length > 5) {
             toastContainer.removeChild(toastContainer.firstChild);

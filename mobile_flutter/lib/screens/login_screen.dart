@@ -50,8 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF1B3A5C), // MTU Deep Blue
-                  Color(0xFF2E96EB), // MTU Action Blue
+                  Color(0xFF4F46E5), // Indigo
+                  Color(0xFF7C3AED), // Violet
                 ],
               ),
             ),
@@ -101,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF1B3A5C).withOpacity(0.1),
+                                  color: const Color(0xFF1E293B).withOpacity(0.1),
                                   blurRadius: 10,
                                 )
                               ],
@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   "logo_MTU.png",
                                   width: 85,
                                   height: 85,
-                                  errorBuilder: (c, e, s) => const Icon(Icons.school, size: 50, color: Color(0xFF1B3A5C)),
+                                  errorBuilder: (c, e, s) => const Icon(Icons.school, size: 50, color: Color(0xFF1E293B)),
                                 ),
                               ),
                             ),
@@ -128,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 24, 
                               fontWeight: FontWeight.w900, 
-                              color: Color(0xFF1B3A5C),
+                              color: Color(0xFF1E293B),
                               letterSpacing: 1.5,
                             ),
                           ),
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 10, 
                               fontWeight: FontWeight.bold, 
-                              color: Color(0xFF2E96EB),
+                              color: Color(0xFF4F46E5),
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -181,10 +181,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: ElevatedButton(
                               onPressed: auth.isLoading ? null : _handleLogin,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1B3A5C),
+                                backgroundColor: const Color(0xFF4F46E5),
                                 foregroundColor: Colors.white,
                                 elevation: 4,
-                                shadowColor: const Color(0xFF1B3A5C).withOpacity(0.5),
+                                shadowColor: const Color(0xFF4F46E5).withOpacity(0.5),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                               child: auth.isLoading
@@ -199,8 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 24),
 
                           // Register Support
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               const Text(
                                 "Chưa có tài khoản?",
@@ -216,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: const Text(
                                   "Đăng ký ngay",
                                   style: TextStyle(
-                                    color: Color(0xFF2E96EB),
+                                    color: Color(0xFF4F46E5),
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),
@@ -259,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-        prefixIcon: Icon(icon, color: const Color(0xFF2E96EB), size: 22),
+        prefixIcon: Icon(icon, color: const Color(0xFF4F46E5), size: 22),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
@@ -278,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF2E96EB), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
         ),
       ),
     );

@@ -5,6 +5,17 @@ fraud_bp = Blueprint('fraud', __name__, url_prefix='/fraud')
 
 @fraud_bp.route('/', methods=['GET'])
 def index():
+    """
+    /
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
         
@@ -21,6 +32,17 @@ def index():
 
 @fraud_bp.route('/mark_resolved/<int:alert_id>', methods=['POST'])
 def mark_resolved(alert_id):
+    """
+    /mark_resolved/<int:alert_id>
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
         
@@ -32,6 +54,17 @@ def mark_resolved(alert_id):
 
 @fraud_bp.route('/delete/<int:alert_id>', methods=['POST'])
 def delete_alert(alert_id):
+    """
+    /delete/<int:alert_id>
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
         
@@ -43,7 +76,15 @@ def delete_alert(alert_id):
 
 @fraud_bp.route('/api/report', methods=['POST'])
 def report_fraud_api():
-    """API cho Mobile App gọi lên khi phát hiện Fake GPS hoặc gian lận khác"""
+    """
+    API cho Mobile App gọi lên khi phát hiện Fake GPS hoặc gian lận khác
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     data = request.json
     if not data:
         return jsonify({'success': False, 'message': 'Thiếu dữ liệu'}), 400

@@ -62,10 +62,10 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Điểm Danh', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1B3A5C),
+        backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -73,7 +73,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
         ],
       ),
       body: _isLoading
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B3A5C)))
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
         : _errorMessage != null
           ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               const Icon(Icons.wifi_off, size: 48, color: Colors.grey),
@@ -104,7 +104,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF1B3A5C), Color(0xFF2A5298)]),
+          gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(children: [
@@ -159,9 +159,9 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
             ),
             const SizedBox(width: 14),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(session.tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B3A5C))),
+              Text(session.tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
               const SizedBox(height: 4),
-              Text(session.maLop, style: TextStyle(color: const Color(0xFF1B3A5C).withOpacity(0.5), fontSize: 13)),
+              Text(session.maLop, style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 13)),
             ])),
             if (session.daDiemDanhChua)
               Container(
@@ -194,11 +194,11 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
   Widget _infoChip(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: const Color(0xFF1B3A5C).withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: const Color(0xFF1E293B).withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 12, color: const Color(0xFF1B3A5C).withOpacity(0.5)),
+        Icon(icon, size: 12, color: const Color(0xFF1E293B).withOpacity(0.5)),
         const SizedBox(width: 4),
-        Flexible(child: Text(text, style: TextStyle(fontSize: 11, color: const Color(0xFF1B3A5C).withOpacity(0.6)), overflow: TextOverflow.ellipsis)),
+        Flexible(child: Text(text, style: TextStyle(fontSize: 11, color: const Color(0xFF1E293B).withOpacity(0.6)), overflow: TextOverflow.ellipsis)),
       ]),
     );
   }
@@ -207,19 +207,19 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: const Color(0xFF1B3A5C).withOpacity(0.06), shape: BoxShape.circle),
-        child: const Icon(Icons.event_busy, color: Color(0xFF1B3A5C), size: 48),
+        decoration: BoxDecoration(color: const Color(0xFF1E293B).withOpacity(0.06), shape: BoxShape.circle),
+        child: const Icon(Icons.event_busy, color: Color(0xFF1E293B), size: 48),
       ),
       const SizedBox(height: 20),
-      const Text('Không có phiên điểm danh', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C))),
+      const Text('Không có phiên điểm danh', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
       const SizedBox(height: 8),
-      Text('Chờ Admin mở phiên điểm danh cho lớp bạn', style: TextStyle(color: const Color(0xFF1B3A5C).withOpacity(0.5), fontSize: 14)),
+      Text('Chờ Admin mở phiên điểm danh cho lớp bạn', style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 14)),
       const SizedBox(height: 24),
       ElevatedButton.icon(
         onPressed: () { setState(() => _isLoading = true); _loadSessions(); },
         icon: const Icon(Icons.refresh),
         label: const Text('Làm mới'),
-        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3A5C), foregroundColor: Colors.white,
+        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E293B), foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
       ),
     ]));
@@ -432,7 +432,7 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
                       shape: BoxShape.circle,
                       gradient: LinearGradient(colors: [
                         _isProcessing ? Colors.orange : const Color(0xFF2E96EB),
-                        _isProcessing ? Colors.deepOrange : const Color(0xFF1B3A5C),
+                        _isProcessing ? Colors.deepOrange : const Color(0xFF1E293B),
                       ]),
                     ),
                     child: Icon(_isProcessing ? Icons.hourglass_empty : Icons.face_retouching_natural,

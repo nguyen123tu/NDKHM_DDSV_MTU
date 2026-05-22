@@ -35,7 +35,7 @@ class FaceAttendanceApp extends StatelessWidget {
       title: 'MTU Kiosk Face Attendance',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E96EB)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F46E5)),
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),

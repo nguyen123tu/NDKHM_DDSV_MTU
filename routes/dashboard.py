@@ -14,6 +14,17 @@ from db.connection import execute_one as db_execute_one
 @dashboard_bp.route('/')
 @login_required
 def index():
+    """
+    /
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     # Lấy thông kê hôm nay
     today_stats = get_today_summary()
     
@@ -38,12 +49,28 @@ def index():
 @dashboard_bp.route('/api/weekly-chart')
 @login_required
 def weekly_chart():
-    """API trả về dữ liệu vẽ biểu đồ Chart.js"""
+    """
+    API trả về dữ liệu vẽ biểu đồ Chart.js
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     data = get_weekly_chart_data()
     return jsonify(data)
 
 @dashboard_bp.route('/kiosk')
 @login_required
 def kiosk():
-    """Trạm điểm danh chuyên nghiệp (Kiosk Mode)"""
+    """
+    Trạm điểm danh chuyên nghiệp (Kiosk Mode)
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     return render_template('dashboard/kiosk.html')

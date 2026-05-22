@@ -47,7 +47,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Lịch học MTU"),
-        backgroundColor: const Color(0xFF1B3A5C),
+        backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
       ),
       body: _isLoading
@@ -89,7 +89,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             Container(
               width: 80,
               decoration: const BoxDecoration(
-                color: Color(0xFF1B3A5C),
+                color: Color(0xFF1E293B),
                 borderRadius: BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
               ),
               child: Column(
@@ -106,7 +106,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item['mon_hoc'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B3A5C))),
+                    Text(item['mon_hoc'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
                     const SizedBox(height: 8),
                     Row(
                       children: [

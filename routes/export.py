@@ -11,12 +11,34 @@ from services import class_service, export_service
 @export_bp.route('/')
 @login_required
 def index():
+    """
+    /
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     classes = class_service.get_all(active_only=False)
     return render_template('export/index.html', classes=classes)
 
 @export_bp.route('/download', methods=['POST'])
 @login_required
 def download():
+    """
+    /download
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     lop_id = request.form.get('lop_id', type=int)
     date = request.form.get('date')
     fmt = request.form.get('format', 'excel')
@@ -57,7 +79,15 @@ def download():
 @export_bp.route('/roster', methods=['POST'])
 @login_required
 def roster():
-    """Xuất danh sách lớp trắng (Roster)."""
+    """
+    Xuất danh sách lớp trắng (Roster).
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     lop_id = request.form.get('lop_id', type=int)
     
     if not lop_id:
@@ -89,7 +119,15 @@ def roster():
 @export_bp.route('/monthly', methods=['POST'])
 @login_required
 def monthly():
-    """Xuất ma trận điểm danh theo tháng."""
+    """
+    Xuất ma trận điểm danh theo tháng.
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     lop_id = request.form.get('lop_id', type=int)
     month = request.form.get('month', type=int)
     year = request.form.get('year', type=int)

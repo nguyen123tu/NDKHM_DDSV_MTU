@@ -53,7 +53,7 @@ class _FaceApprovalScreenState extends State<FaceApprovalScreen> {
       appBar: AppBar(
         title: const Text("Phê duyệt khuôn mặt", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1B3A5C),
+        foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
       ),
       body: _isLoading

@@ -1,4 +1,4 @@
-import 'dart:convert';
+Simport 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,7 +20,7 @@ class ApiService {
   // 4. Triển khai lên VPS/Cloud (Production):
   //    static const String baseUrl = 'https://your-domain.com';
   // ============================================================
-  static const String baseUrl = 'http://192.168.1.67:5000';
+  static const String baseUrl = 'http://192.168.1.105:5000';
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();

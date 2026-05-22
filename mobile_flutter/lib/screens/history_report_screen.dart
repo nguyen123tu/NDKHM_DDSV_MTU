@@ -73,7 +73,7 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
       appBar: AppBar(
         title: const Text("Báo cáo điểm danh", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1B3A5C),
+        foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
         actions: [
           if (_history.isNotEmpty)
@@ -144,7 +144,7 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                   height: 45,
                   child: ElevatedButton(
                     onPressed: _fetchHistory,
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3A5C)),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E293B)),
                     child: const Text("LỌC DỮ LIỆU", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
@@ -166,7 +166,7 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
-                          leading: const CircleAvatar(backgroundColor: Color(0xFFEDF2F9), child: Icon(Icons.person, color: Color(0xFF1B3A5C))),
+                          leading: const CircleAvatar(backgroundColor: Color(0xFFEDF2F9), child: Icon(Icons.person, color: Color(0xFF1E293B))),
                           title: Text(item['ho_ten'], style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text("${item['mssv']} • ${item['ma_lop']}"),
                           trailing: Column(

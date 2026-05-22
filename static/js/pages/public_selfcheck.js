@@ -36,6 +36,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function processFrame() {
         if (isProcessing) return;
+
+        const lopId = document.getElementById('selectLopId').value;
+        if (!lopId) {
+            // Chưa chọn lớp thì không nhận diện để tránh log nhầm
+            hideScanBox();
+            document.getElementById('infoEmptyState').style.display = 'flex';
+            document.getElementById('infoSuccessState').style.display = 'none';
+            return;
+        }
+
         isProcessing = true;
 
         canvas.width = video.videoWidth || 640;
@@ -47,20 +57,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/public/api/recognize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: imageData, lop_id: null })
+                body: JSON.stringify({ image: imageData, lop_id: parseInt(lopId) })
             });
             const data = await res.json();
 
             if (data.success && data.student) {
-                const now = Date.now();
-                if (data.student.mssv === lastMSSV && (now - lastTime) < 5000) {
-                    if (data.bbox) updateMask(data.bbox, data.student.ho_ten);
-                    isProcessing = false;
-                    return;
+                // Luôn cập nhật bounding box để user biết camera vẫn bắt được mặt
+                if (data.bbox) updateMask(data.bbox, data.student.ho_ten);
+
+                // Chỉ hiện Panel + Log nếu có record điểm danh thực sự (tránh spam)
+                if (data.attendance && data.attendance.action) {
+                    const now = Date.now();
+                    if (data.student.mssv !== lastMSSV || (now - lastTime) >= 5000) {
+                        lastMSSV = data.student.mssv;
+                        lastTime = now;
+                        showResult(data.student, imageData, data.bbox);
+                    }
                 }
-                lastMSSV = data.student.mssv;
-                lastTime = now;
-                showResult(data.student, imageData, data.bbox);
             } else {
                 hideScanBox();
             }

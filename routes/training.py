@@ -21,6 +21,17 @@ _training_thread = None
 @training_bp.route('/')
 @login_required
 def index():
+    """
+    /
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     # Lấy danh sách SV có thông tin số lượng ảnh và da_train
     students = student_service.get_all(per_page=1000)['items']
     
@@ -48,7 +59,15 @@ def index():
 @training_bp.route('/switch-engine', methods=['POST'])
 @login_required
 def switch_engine():
-    """Chuyển đổi AI Engine giữa InsightFace, YOLOv8+ResNet50, và DeepFace."""
+    """
+    Chuyển đổi AI Engine giữa InsightFace, YOLOv8+ResNet50, và DeepFace.
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     data = request.json
     new_engine = data.get('engine', 'insightface')
     
@@ -95,6 +114,17 @@ def switch_engine():
 @training_bp.route('/start', methods=['POST'])
 @login_required
 def start():
+    """
+    /start
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     global _training_thread
     
     if _training_thread and _training_thread.is_alive():
@@ -116,7 +146,15 @@ def start():
 @training_bp.route('/progress')
 @login_required
 def progress():
-    """SSE endpoint để stream tiến độ về client"""
+    """
+    SSE endpoint để stream tiến độ về client
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+    """
     def generate():
         while True:
             import time
@@ -130,6 +168,17 @@ def progress():
 @training_bp.route('/student/<mssv>', methods=['POST'])
 @login_required
 def train_single(mssv):
+    """
+    /student/<mssv>
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     success = _trainer.train_one(mssv)
     if success:
         student_service.mark_trained(mssv)
@@ -139,6 +188,17 @@ def train_single(mssv):
 @training_bp.route('/capture/<mssv>', methods=['GET', 'POST'])
 @login_required
 def capture(mssv):
+    """
+    /capture/<mssv>
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     # Form GET trả về page chụp ảnh AJAX
     if request.method == 'GET':
         sv = student_service.get_by_mssv(mssv)

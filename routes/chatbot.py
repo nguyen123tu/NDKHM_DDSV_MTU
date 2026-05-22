@@ -13,7 +13,15 @@ chatbot_bp = Blueprint('chatbot', __name__, url_prefix='/chatbot')
 
 @chatbot_bp.route('/')
 def chat_page():
-    """Trang chat AI"""
+    """
+    Trang chat AI
+    ---
+    tags:
+      - Chatbot AI API
+    responses:
+      200:
+        description: Thành công
+    """
     # Tạo session_id cho cuộc trò chuyện
     if 'chat_session_id' not in session:
         session['chat_session_id'] = str(uuid.uuid4())
@@ -32,7 +40,15 @@ def chat_page():
 
 @chatbot_bp.route('/ask', methods=['POST'])
 def ask():
-    """API: Gửi câu hỏi cho AI"""
+    """
+    API: Gửi câu hỏi cho AI
+    ---
+    tags:
+      - Chatbot AI API
+    responses:
+      200:
+        description: Thành công
+    """
     data = request.get_json()
     question = data.get('question', '').strip()
 
@@ -53,7 +69,15 @@ def ask():
 
 @chatbot_bp.route('/clear', methods=['POST'])
 def clear_chat():
-    """API: Xóa lịch sử chat"""
+    """
+    API: Xóa lịch sử chat
+    ---
+    tags:
+      - Chatbot AI API
+    responses:
+      200:
+        description: Thành công
+    """
     session_id = session.get('chat_session_id', 'default')
 
     from services.ai_chatbot import get_chatbot
@@ -68,7 +92,15 @@ def clear_chat():
 
 @chatbot_bp.route('/build-knowledge', methods=['POST'])
 def build_knowledge():
-    """API: Xây dựng/rebuild kho tri thức"""
+    """
+    API: Xây dựng/rebuild kho tri thức
+    ---
+    tags:
+      - Chatbot AI API
+    responses:
+      200:
+        description: Thành công
+    """
     from services.knowledge_builder import get_knowledge_builder
     kb = get_knowledge_builder()
     result = kb.build()
@@ -77,7 +109,15 @@ def build_knowledge():
 
 @chatbot_bp.route('/knowledge-progress')
 def knowledge_progress():
-    """SSE: Stream tiến độ xây dựng kho tri thức"""
+    """
+    SSE: Stream tiến độ xây dựng kho tri thức
+    ---
+    tags:
+      - Chatbot AI API
+    responses:
+      200:
+        description: Thành công
+    """
     from services.knowledge_builder import get_knowledge_builder
     kb = get_knowledge_builder()
 
@@ -102,7 +142,15 @@ def knowledge_progress():
 
 @chatbot_bp.route('/knowledge-status')
 def knowledge_status():
-    """API: Trạng thái kho tri thức"""
+    """
+    API: Trạng thái kho tri thức
+    ---
+    tags:
+      - Chatbot AI API
+    responses:
+      200:
+        description: Thành công
+    """
     from services.knowledge_builder import get_knowledge_builder
     kb = get_knowledge_builder()
     return jsonify(kb.get_status())

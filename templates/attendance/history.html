@@ -62,8 +62,7 @@
         <!-- Header Row -->
         <div class="history-header d-none d-md-flex">
             <div class="col-stt">STT</div>
-            <div class="col-time">Thời gian vào</div>
-            <div class="col-time">Thời gian ra</div>
+            <div class="col-time">Thời gian</div>
             <div class="col-info">Sinh viên</div>
             <div class="col-evidence">Bằng chứng</div>
             <div class="col-status">Trạng thái</div>
@@ -76,19 +75,11 @@
             </div>
             
             <div class="col-time">
-                <span class="d-md-none fw-bold text-secondary me-2">Vào:</span>
+                <span class="d-md-none fw-bold text-secondary me-2">Thời gian:</span>
                 <div class="time-badge time-in">
-                    <i class="fas fa-sign-in-alt me-1"></i>
+                    <i class="fas fa-clock me-1"></i>
                     {{ item.thoi_gian.strftime('%H:%M:%S') if item.thoi_gian else '--:--' }}
                     <small class="d-block text-muted" style="font-size:.65rem">{{ item.thoi_gian.strftime('%d/%m/%Y') if item.thoi_gian else '' }}</small>
-                </div>
-            </div>
-
-            <div class="col-time">
-                <span class="d-md-none fw-bold text-secondary me-2">Ra:</span>
-                <div class="time-badge time-out">
-                    <i class="fas fa-sign-out-alt me-1"></i>
-                    {{ item.gio_ra.strftime('%H:%M:%S') if item.gio_ra else '--:--' }}
                 </div>
             </div>
 

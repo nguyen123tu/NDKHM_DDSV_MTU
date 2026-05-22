@@ -52,200 +52,134 @@ class _HomeScreenState extends State<HomeScreen> {
     final userName = auth.user?.name ?? 'Admin';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: const Color(0xFF1B3A5C),
-          onRefresh: () => attendance.fetchDashboardData(),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: RefreshIndicator(
+        color: const Color(0xFF4F46E5),
+        onRefresh: () => attendance.fetchDashboardData(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ====== HEADER ======
+              Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  const SizedBox(height: 20),
-
-                  // ====== TOP BAR ======
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      bool isNarrow = constraints.maxWidth < 300;
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Logo
-                          Flexible(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                               children: [
-                                 Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
-                                  ),
-                                  child: Image.asset(
-                                    "assets/images/logo_MTU.png", 
-                                    width: 32, 
-                                    height: 32,
-                                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.face_retouching_natural, color: Color(0xFF1B3A5C), size: 22),
-                                  ),
-                                ),
-                                if (!isNarrow) ...[
-                                   const SizedBox(width: 10),
-                                   const Text("MTU FACE", style: TextStyle(color: Color(0xFF1B3A5C), fontWeight: FontWeight.bold, fontSize: 16)),
-                                ],
-                               ],
-                            ),
-                          ),
-                          // Actions
-                          Flexible(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                if (isAdmin && !isNarrow)
-                                  Flexible(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1B3A5C).withOpacity(0.08),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.admin_panel_settings, color: Color(0xFF1B3A5C), size: 14),
-                                          SizedBox(width: 4),
-                                          Flexible(child: Text("Admin", overflow: TextOverflow.ellipsis, style: TextStyle(color: Color(0xFF1B3A5C), fontSize: 11, fontWeight: FontWeight.w600))),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF1B3A5C).withOpacity(0.08),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Icon(Icons.person_outline, color: Color(0xFF1B3A5C), size: 20),
-                                  ),
-                                ),
-                                if (!isNarrow) ...[
-                                    const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () => auth.logout(),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF1B3A5C).withOpacity(0.08),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: const Icon(Icons.logout, color: Color(0xFF1B3A5C), size: 20),
-                                      ),
-                                    ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ====== GREETING ======
-                  Text(
-                    "Xin chào, $userName!",
-                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C)),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _getGreeting(),
-                    style: TextStyle(fontSize: 14, color: const Color(0xFF1B3A5C).withOpacity(0.5)),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ====== WELCOME CARD (Navy) ======
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                    padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 80),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Color(0xFF1B3A5C), Color(0xFF2A5298)],
                       ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(color: const Color(0xFF1B3A5C).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8)),
-                      ],
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(32),
+                        bottomRight: Radius.circular(32),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Avatar
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.2),
-                                border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  userName[0].toUpperCase(),
-                                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+                                  child: Image.asset("assets/images/logo_MTU.png", width: 28, height: 28,
+                                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.face_retouching_natural, color: Color(0xFF4F46E5), size: 22)),
                                 ),
-                              ),
+                                const SizedBox(width: 12),
+                                const Text("MTU FACE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1)),
+                              ],
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text("Tổng quan hôm nay", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                                  Text("Hệ thống điểm danh AI", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
-                                ],
-                              ),
-                            ),
+                            Row(
+                              children: [
+                                if (isAdmin)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    margin: const EdgeInsets.only(right: 12),
+                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.admin_panel_settings, color: Colors.white, size: 14),
+                                        SizedBox(width: 4),
+                                        Text("Admin", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
+                                  ),
+                                GestureDetector(
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                                    child: const Icon(Icons.person, color: Colors.white, size: 20),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                GestureDetector(
+                                  onTap: () => auth.logout(),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                                    child: const Icon(Icons.logout, color: Colors.white, size: 20),
+                                  ),
+                                ),
+                              ],
+                            )
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        // Stats row
-                        Row(
-                          children: [
-                            Expanded(child: _buildNavyStat("Sĩ số", "${attendance.stats?.total ?? '--'}")),
-                            Container(width: 1, height: 36, color: Colors.white.withOpacity(0.2)),
-                            Expanded(child: _buildNavyStat("Có mặt", "${attendance.stats?.present ?? '--'}")),
-                            Container(width: 1, height: 36, color: Colors.white.withOpacity(0.2)),
-                            Expanded(child: _buildNavyStat("Vắng", "${attendance.stats?.absent ?? '--'}")),
-                          ],
-                        ),
+                        const SizedBox(height: 36),
+                        Text(_getGreeting(), style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14)),
+                        const SizedBox(height: 4),
+                        Text(userName, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 28),
-
-                  // ====== CHỨC NĂNG ======
+                  Positioned(
+                    bottom: -40,
+                    left: 20,
+                    right: 20,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [BoxShadow(color: const Color(0xFF4F46E5).withOpacity(0.12), blurRadius: 24, offset: const Offset(0, 10))],
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(child: _buildStatItem(isAdmin ? "Sĩ số" : "Phiên mở", "${attendance.stats?.total ?? '--'}")),
+                          Container(width: 1, height: 40, color: const Color(0xFFF1F5F9)),
+                          Expanded(child: _buildStatItem(isAdmin ? "Có mặt" : "Đã ĐD", "${attendance.stats?.present ?? '--'}", highlightColor: const Color(0xFF10B981))),
+                          Container(width: 1, height: 40, color: const Color(0xFFF1F5F9)),
+                          Expanded(child: _buildStatItem(isAdmin ? "Vắng" : "Chưa ĐD", "${attendance.stats?.absent ?? '--'}", highlightColor: const Color(0xFFF43F5E))),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 64),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                                        // ====== CHỨC NĂNG ======
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(child: Text("Chức năng", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C)))),
+                      const Expanded(child: Text("Chức năng", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)))),
                       GestureDetector(
                         onTap: () => setState(() => _isFeaturesExpanded = !(_isFeaturesExpanded ?? false)),
                         child: Text(
                           (_isFeaturesExpanded ?? false) ? "Thu gọn" : "Xem tất cả", 
-                          style: TextStyle(fontSize: 13, color: (_isFeaturesExpanded ?? false) ? const Color(0xFF10B981) : const Color(0xFF1B3A5C).withOpacity(0.4), fontWeight: (_isFeaturesExpanded ?? false) ? FontWeight.bold : FontWeight.normal)
+                          style: TextStyle(fontSize: 13, color: (_isFeaturesExpanded ?? false) ? const Color(0xFF10B981) : const Color(0xFF1E293B).withOpacity(0.4), fontWeight: (_isFeaturesExpanded ?? false) ? FontWeight.bold : FontWeight.normal)
                         ),
                       ),
                     ],
@@ -413,11 +347,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Row(children: [
                             Icon(
                               _isHistoryCollapsed ? Icons.keyboard_arrow_right : Icons.keyboard_arrow_down,
-                              color: const Color(0xFF1B3A5C), size: 20,
+                              color: const Color(0xFF1E293B), size: 20,
                             ),
                             const SizedBox(width: 4),
                             const Text("Hoạt động gần đây",
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C), overflow: TextOverflow.ellipsis)
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)
                             ),
                           ]),
                         ),
@@ -467,12 +401,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1B3A5C).withOpacity(0.08),
+                                color: const Color(0xFF1E293B).withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 "${attendance.history.length}",
-                                style: const TextStyle(color: Color(0xFF1B3A5C), fontSize: 11, fontWeight: FontWeight.w600),
+                                style: const TextStyle(color: Color(0xFF1E293B), fontSize: 11, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ],
@@ -487,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (attendance.isLoading)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 40),
-                        child: Center(child: CircularProgressIndicator(color: Color(0xFF1B3A5C))),
+                        child: Center(child: CircularProgressIndicator(color: Color(0xFF1E293B))),
                       )
                     else if (attendance.history.isEmpty)
                       _buildEmptyState()
@@ -499,19 +433,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  // ====== Navy Stat ======
-  Widget _buildNavyStat(String label, String value) {
+  // ====== Stat Item ======
+  Widget _buildStatItem(String label, String value, {Color? highlightColor}) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(value, style: TextStyle(color: highlightColor ?? const Color(0xFF1E293B), fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+        Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -548,9 +483,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Icon(icon, color: iconBgColor, size: 24),
             ),
             const SizedBox(height: 14),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1B3A5C))),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
             const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(fontSize: 12, color: const Color(0xFF1B3A5C).withOpacity(0.4))),
+            Text(subtitle, style: TextStyle(fontSize: 12, color: const Color(0xFF1E293B).withOpacity(0.4))),
             const SizedBox(height: 12),
             // Progress bar giả lập
             ClipRRect(
@@ -578,15 +513,15 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B3A5C).withOpacity(0.06),
+              color: const Color(0xFF1E293B).withOpacity(0.06),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.inbox_rounded, color: Color(0xFF1B3A5C), size: 40),
+            child: const Icon(Icons.inbox_rounded, color: Color(0xFF1E293B), size: 40),
           ),
           const SizedBox(height: 16),
           const Text("Chưa có dữ liệu", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 15, fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
-          Text("Bắt đầu điểm danh để xem kết quả", style: TextStyle(color: const Color(0xFF1B3A5C).withOpacity(0.3), fontSize: 12)),
+          Text("Bắt đầu điểm danh để xem kết quả", style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.3), fontSize: 12)),
         ],
       ),
     );
@@ -612,9 +547,9 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF1B3A5C).withOpacity(0.08),
+              color: const Color(0xFF1E293B).withOpacity(0.08),
             ),
-            child: const Icon(Icons.person, color: Color(0xFF1B3A5C), size: 22),
+            child: const Icon(Icons.person, color: Color(0xFF1E293B), size: 22),
           ),
           const SizedBox(width: 14),
           // Info
@@ -625,7 +560,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(record.hoTen, 
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1B3A5C), fontSize: 14.5)
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B), fontSize: 14.5)
                 ),
                 const SizedBox(height: 3),
                 Row(
@@ -633,13 +568,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1B3A5C).withOpacity(0.06),
+                        color: const Color(0xFF1E293B).withOpacity(0.06),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(record.mssv, style: const TextStyle(fontSize: 10, color: Color(0xFF1B3A5C), fontWeight: FontWeight.w500)),
+                      child: Text(record.mssv, style: const TextStyle(fontSize: 10, color: Color(0xFF1E293B), fontWeight: FontWeight.w500)),
                     ),
                     const SizedBox(width: 6),
-                    Text("• ${record.maLop}", style: TextStyle(fontSize: 11, color: const Color(0xFF1B3A5C).withOpacity(0.4))),
+                    Text("• ${record.maLop}", style: TextStyle(fontSize: 11, color: const Color(0xFF1E293B).withOpacity(0.4))),
                   ],
                 ),
               ],
@@ -651,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 record.thoiGian.split(' ')[1],
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1B3A5C)),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
               ),
               const SizedBox(height: 4),
               Container(

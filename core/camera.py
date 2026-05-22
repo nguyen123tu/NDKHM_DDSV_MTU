@@ -5,6 +5,63 @@ Thread-safe, hỗ trợ USB, IP, RTSP, RTMP.
 
 import cv2
 import threading
+import numpy as np
+import urllib.request
+
+
+class IPCamera:
+    """Đọc luồng MJPEG từ IP Camera bằng urllib để tránh lỗi timeout của OpenCV"""
+    def __init__(self, url):
+        self.url = url
+        self.is_opened = False
+        self.frame = None
+        self.lock = threading.Lock()
+        self.thread = None
+        self.running = False
+        self.open()
+
+    def open(self):
+        try:
+            self.stream = urllib.request.urlopen(self.url, timeout=5)
+            self.is_opened = True
+            self.running = True
+            self.thread = threading.Thread(target=self._update, daemon=True)
+            self.thread.start()
+        except Exception as e:
+            print(f"[IPCAMERA] Không thể mở luồng: {e}")
+            self.is_opened = False
+
+    def _update(self):
+        bytes_data = b''
+        while self.running:
+            try:
+                bytes_data += self.stream.read(2048)
+                a = bytes_data.find(b'\xff\xd8')
+                b = bytes_data.find(b'\xff\xd9')
+                if a != -1 and b != -1:
+                    jpg = bytes_data[a:b+2]
+                    bytes_data = bytes_data[b+2:]
+                    frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                    if frame is not None:
+                        with self.lock:
+                            self.frame = frame
+            except Exception:
+                self.running = False
+                self.is_opened = False
+                break
+
+    def isOpened(self):
+        return self.is_opened
+
+    def read(self):
+        with self.lock:
+            if self.frame is not None:
+                return True, self.frame.copy()
+            return False, None
+
+    def release(self):
+        self.running = False
+        self.is_opened = False
 
 
 class CameraManager:
@@ -44,7 +101,12 @@ class CameraManager:
                 if isinstance(source, str) and source.isdigit():
                     source = int(source)
 
-                cap = cv2.VideoCapture(source)
+                if isinstance(source, str) and source.startswith("http"):
+                    print(f"[CAMERA] Dùng bộ đọc thủ công (IPCamera) cho luồng HTTP: {source}")
+                    cap = IPCamera(source)
+                else:
+                    cap = cv2.VideoCapture(source)
+                    
                 if cap.isOpened():
                     self._cameras[camera_id] = cap
                     print(f"[CAMERA] Kết nối thành công camera {camera_id} (source={source})")

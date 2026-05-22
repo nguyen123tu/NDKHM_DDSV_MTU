@@ -42,10 +42,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Thông Báo', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1B3A5C),
+        backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -53,7 +53,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B3A5C)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
           : RefreshIndicator(
               onRefresh: _loadNotifications,
               child: _notifications.isEmpty
@@ -86,7 +86,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               n['tieu_de'] ?? 'Thông báo',
                               style: TextStyle(
                                 fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                                color: const Color(0xFF1B3A5C),
+                                color: const Color(0xFF1E293B),
                               ),
                             ),
                             subtitle: Column(

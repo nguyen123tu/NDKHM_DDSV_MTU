@@ -118,14 +118,7 @@ class AIChatbot:
             if "429" in error_msg or "quota" in error_msg.lower():
                 return {
                     "answer": (
-                        "⏳ **API đang bị giới hạn tạm thời (Rate Limit)**\n\n"
-                        "Nguyên nhân: Bạn đã gửi quá nhiều request trong thời gian ngắn.\n\n"
-                        "**Cách khắc phục:**\n"
-                        "1. ⏰ **Đợi 1-2 phút** rồi thử lại\n"
-                        "2. 🔑 **Tạo API key mới** tại [Google AI Studio](https://aistudio.google.com/apikey)\n"
-                        "3. 🔄 Cập nhật key mới vào file `.env` → restart server\n\n"
-                        "Hoặc chuyển sang **NVIDIA NIM** (miễn phí 1000 credits):\n"
-                        "```\nAI_CHATBOT_LLM=nvidia\nNVIDIA_API_KEY=nvapi-xxx\n```"
+                        "Hiện tại không phản hồi xin liên hệ lại sau ít phút"
                     ),
                     "sources": [],
                     "duration_ms": duration_ms,
@@ -137,18 +130,7 @@ class AIChatbot:
             if "API_KEY" in error_msg or "api_key" in error_msg or "401" in error_msg:
                 return {
                     "answer": (
-                        "⚠️ **Chưa cấu hình API Key!**\n\n"
-                        "Để sử dụng AI Chatbot, bạn cần:\n\n"
-                        "**Google Gemini (miễn phí):**\n"
-                        "1. Truy cập [Google AI Studio](https://aistudio.google.com/apikey)\n"
-                        "2. Tạo API Key miễn phí\n"
-                        "3. Thêm vào file `.env`:\n"
-                        "```\nGEMINI_API_KEY=your_key_here\n```\n\n"
-                        "**NVIDIA NIM:**\n"
-                        "1. Truy cập [NVIDIA Build](https://build.nvidia.com)\n"
-                        "2. Tạo API Key\n"
-                        "3. Thêm vào `.env`:\n"
-                        "```\nAI_CHATBOT_LLM=nvidia\nNVIDIA_API_KEY=your_key_here\n```"
+                        "Hiện tại không phản hồi xin liên hệ lại sau ít phút"
                     ),
                     "sources": [],
                     "duration_ms": duration_ms,
@@ -179,7 +161,7 @@ class AIChatbot:
             "API mobile hỗ trợ những endpoint nào?",
             "Cách cấu hình camera IP cho hệ thống?",
             "Ngưỡng similarity threshold là gì?",
-            "Hệ thống phát hiện người lạ bằng cách nào?",
+            "Hệ thống phát hiện gian lận bằng cách nào?",
         ]
 
     # ─── PRIVATE METHODS ─────────────────────────────────────────────────

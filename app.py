@@ -11,6 +11,7 @@ eventlet.monkey_patch()
 from flask import Flask, render_template, send_from_directory
 from flask_socketio import SocketIO
 from flask_cors import CORS
+from flasgger import Swagger
 from config import config_map, Config
 
 # Global SocketIO object
@@ -21,6 +22,17 @@ def create_app(config_name='default'):
     app = Flask(__name__)
     CORS(app) # Enable CORS for all routes
     
+    # Cấu hình Swagger UI (Flasgger)
+    swagger_template = {
+        "swagger": "2.0",
+        "info": {
+            "title": "MTUFace API Documentation",
+            "description": "Danh sách tất cả các API đang sử dụng trong hệ thống Kiosk, Mobile App và Web",
+            "version": "1.0.0"
+        }
+    }
+    Swagger(app, template=swagger_template)
+    
     # Nạp config
     app.config.from_object(config_map[config_name])
     
@@ -28,7 +40,7 @@ def create_app(config_name='default'):
     from routes import (
         auth_bp, dashboard_bp, students_bp, classes_bp,
         attendance_bp, training_bp, camera_mgmt_bp, 
-        export_bp, public_bp, api_mobile_bp, deepface_bp,
+        export_bp, public_bp, api_mobile_bp,
         chatbot_bp, fraud_bp
     )
     
@@ -42,7 +54,6 @@ def create_app(config_name='default'):
     app.register_blueprint(export_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(api_mobile_bp)
-    app.register_blueprint(deepface_bp)
     app.register_blueprint(chatbot_bp)
     app.register_blueprint(fraud_bp)
     

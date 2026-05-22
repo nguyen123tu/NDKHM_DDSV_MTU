@@ -47,10 +47,10 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Thống Kê Hệ Thống', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1B3A5C),
+        backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -58,7 +58,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B3A5C)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -83,7 +83,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C))),
+      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
     );
   }
 
@@ -163,7 +163,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(c['ten_lop'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C))),
+                    Text(c['ten_lop'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
                     Text(c['ma_lop'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   ]),
                   Text("${(percent * 100).toStringAsFixed(0)}%", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),

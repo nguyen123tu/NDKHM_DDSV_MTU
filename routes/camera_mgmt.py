@@ -10,11 +10,33 @@ from core.camera import get_camera_manager
 @camera_mgmt_bp.route('/')
 @login_required
 def index():
+    """
+    /
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     return render_template('camera/manage.html')
 
 @camera_mgmt_bp.route('/api/list')
 @login_required
 def list_cameras():
+    """
+    /api/list
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     # Fix cứng dữ liệu mẫu vì chưa code Database Camera Management hoàn chỉnh
     cam_manager = get_camera_manager()
     connected = cam_manager.list_connected()
@@ -33,6 +55,17 @@ def list_cameras():
 @camera_mgmt_bp.route('/api/scan-usb')
 @login_required
 def scan_usb():
+    """
+    /api/scan-usb
+    ---
+    tags:
+      - Web API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     manager = get_camera_manager()
     usb_cams = manager.list_available_usb(3)
     return jsonify({"available": usb_cams})

@@ -8,12 +8,28 @@ from db.connection import execute_one, execute_query
 
 @public_bp.route('/lookup')
 def lookup():
-    """Trang tra cứu thông tin điểm danh public (chuẩn Glassmorphism)"""
+    """
+    Trang tra cứu thông tin điểm danh public (chuẩn Glassmorphism)
+    ---
+    tags:
+      - Kiosk Public API
+    responses:
+      200:
+        description: Thành công
+    """
     return render_template('public/attendance_public.html')
 
 @public_bp.route('/api/lookup', methods=['POST'])
 def api_lookup():
-    """API để JS gọi từ trang public"""
+    """
+    API để JS gọi từ trang public
+    ---
+    tags:
+      - Kiosk Public API
+    responses:
+      200:
+        description: Thành công
+    """
     mssv = request.json.get('mssv')
     if not mssv:
         return jsonify({"success": False, "msg": "Vui lòng nhập MSSV"})
@@ -58,7 +74,15 @@ def api_lookup():
 
 @public_bp.route('/selfcheck')
 def selfcheck():
-    """Trang sinh viên tự điểm danh bằng webcam."""
+    """
+    Trang sinh viên tự điểm danh bằng webcam.
+    ---
+    tags:
+      - Kiosk Public API
+    responses:
+      200:
+        description: Thành công
+    """
     # Lấy danh sách lớp để SV chọn
     classes = execute_query("SELECT id, ma_lop, ten_lop FROM lop_hoc WHERE trang_thai = 1 ORDER BY ma_lop")
     return render_template('public/selfcheck.html', classes=classes)
@@ -215,6 +239,13 @@ def api_recognize():
     
     Request: { "image": "data:image/jpeg;base64,...", "lop_id": 1 }
     Response: { "success": true, "student": {...}, "attendance": {...} }
+    
+    ---
+    tags:
+      - Kiosk Public API
+    responses:
+      200:
+        description: Thành công
     """
     from services import attendance_service
     
@@ -290,7 +321,6 @@ def api_recognize():
     # Lấy lịch sử hôm nay
     today_records = execute_query("""
         SELECT DATE_FORMAT(dd.thoi_gian, '%H:%i') as gio_vao,
-               DATE_FORMAT(dd.gio_ra, '%H:%i') as gio_ra,
                dd.trang_thai, dd.do_chinh_xac,
                lh.ten_lop
         FROM diem_danh dd

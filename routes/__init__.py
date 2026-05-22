@@ -16,9 +16,8 @@ camera_mgmt_bp = Blueprint('camera_mgmt', __name__, url_prefix='/cameras')
 export_bp = Blueprint('export', __name__, url_prefix='/export')
 public_bp = Blueprint('public', __name__, url_prefix='/public')
 from routes.api_mobile import api_mobile_bp
-from routes.deepface_api import deepface_bp
 from routes.chatbot import chatbot_bp
 from routes.fraud import fraud_bp
 
 # Import các file route để register chức năng
-from . import auth, dashboard, students, classes, attendance, training, camera_mgmt, export, public, api_mobile, deepface_api, chatbot, fraud
+from . import auth, dashboard, students, classes, attendance, training, camera_mgmt, export, public, api_mobile, chatbot, fraud

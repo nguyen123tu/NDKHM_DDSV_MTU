@@ -46,11 +46,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFF2E96EB), // Xanh biển chủ đạo (đồng bộ web)
-              Color(0xFF1E83D4), // Đậm hơn ở dưới
+              Color(0xFF4F46E5), // Indigo
+              Color(0xFF7C3AED), // Violet
             ],
           ),
         ),
@@ -175,7 +175,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E96EB),
+                        color: Color(0xFF4F46E5),
                       ),
                     ),
                   ),

@@ -52,7 +52,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
       appBar: AppBar(
         title: const Text("Cấu hình thiết bị", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1B3A5C),
+        foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
       ),
       body: SingleChildScrollView(
@@ -82,7 +82,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                         value: _threshold,
                         strokeWidth: 15,
                         backgroundColor: const Color(0xFFEDF2F9),
-                        color: const Color(0xFF1B3A5C),
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
                     Column(
@@ -90,7 +90,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                       children: [
                         Text(
                           "${(_threshold * 100).toInt()}%",
-                          style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C)),
+                          style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                         ),
                         const Text("Ngưỡng AI", style: TextStyle(color: Colors.grey, fontSize: 14)),
                       ],
@@ -106,7 +106,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
               min: 0.1,
               max: 0.9,
               divisions: 80,
-              activeColor: const Color(0xFF1B3A5C),
+              activeColor: const Color(0xFF1E293B),
               onChanged: _canAdjust ? (val) => setState(() => _threshold = val) : null,
             ),
             TextButton(
@@ -159,7 +159,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                 child: ElevatedButton(
                   onPressed: _saveSettings,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1B3A5C),
+                    backgroundColor: const Color(0xFF1E293B),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text("LƯU CẤU HÌNH", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -178,15 +178,15 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFF1B3A5C).withOpacity(0.08),
+          color: const Color(0xFF1E293B).withOpacity(0.08),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: const Color(0xFF1B3A5C), size: 20),
+        child: Icon(icon, color: const Color(0xFF1E293B), size: 20),
       ),
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       trailing: Switch(
         value: value,
-        activeColor: const Color(0xFF1B3A5C),
+        activeColor: const Color(0xFF1E293B),
         onChanged: onChanged,
       ),
     );

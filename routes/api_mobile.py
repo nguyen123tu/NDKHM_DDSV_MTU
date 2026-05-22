@@ -115,7 +115,32 @@ def _is_within_checkin_window(session_start_str):
 
 @api_mobile_bp.route('/login', methods=['POST'])
 def mobile_login():
-    """API Đăng nhập cho ứng dụng di động"""
+    """
+    API Đăng nhập cho ứng dụng di động
+    ---
+    tags:
+      - Mobile App API
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+              example: "admin"
+            password:
+              type: string
+              example: "123456"
+    responses:
+      200:
+        description: Đăng nhập thành công
+      400:
+        description: Thiếu dữ liệu đăng nhập
+      401:
+        description: Sai tài khoản hoặc mật khẩu
+    """
     data = request.get_json(silent=True) or {}
     if 'username' not in data or 'password' not in data:
         return jsonify({"success": False, "message": "Thiếu dữ liệu đăng nhập"}), 400
@@ -169,6 +194,32 @@ def mobile_checkin():
     - Nếu là sinh viên: BẮT BUỘC chỉ được điểm danh cho chính mình.
     - Nếu là admin: được điểm danh cho bất kỳ sinh viên nào.
     - Phải có phiên điểm danh đang mở cho lớp đó.
+    ---
+    tags:
+      - Mobile App API
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            mssv:
+              type: string
+            lop_id:
+              type: integer
+            session_id:
+              type: integer
+            trang_thai:
+              type: string
+              example: "Co mat"
+            image_base64:
+              type: string
+    responses:
+      200:
+        description: Ghi nhận điểm danh thành công
+      403:
+        description: Không có quyền điểm danh
     """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
@@ -285,7 +336,15 @@ def mobile_checkin():
 
 @api_mobile_bp.route('/checkout', methods=['POST'])
 def mobile_checkout():
-    """Checkout riêng cho mobile app."""
+    """
+    Checkout riêng cho mobile app.
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     _, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -333,13 +392,50 @@ def mobile_checkout():
 
 @api_mobile_bp.route('/stats', methods=['GET'])
 def get_stats():
-    """Lấy thống kê điểm danh trong ngày cho màn hình chính"""
-    _, auth_error = _require_mobile_auth()
+    """
+    Lấy thống kê điểm danh trong ngày cho màn hình chính
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
+    payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
 
     today_str = datetime.now().strftime('%Y-%m-%d')
     try:
+        if payload.get('role') == 'student':
+            user_id = payload.get('sub')
+            
+            lop_row = execute_one("SELECT lop_id FROM sinh_vien WHERE id = %s", (user_id,))
+            lop_id = lop_row['lop_id'] if lop_row else 0
+            
+            total_sessions_row = execute_one(
+                "SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s AND DATE(bat_dau) = %s", 
+                (lop_id, today_str)
+            )
+            total_sessions = total_sessions_row['count'] if total_sessions_row else 0
+
+            present_row = execute_one(
+                "SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND DATE(thoi_gian) = %s AND trang_thai = 'Co mat'",
+                (user_id, today_str)
+            )
+            present_sv = present_row['count'] if present_row else 0
+            absent_sv = total_sessions - present_sv if total_sessions > present_sv else 0
+
+            return jsonify({
+                "success": True,
+                "data": {
+                    "total": total_sessions,
+                    "present": present_sv,
+                    "absent": absent_sv,
+                    "date": today_str
+                }
+            }), 200
+
         total_sv_row = execute_one("SELECT COUNT(*) as count FROM sinh_vien")
         present_sv_row = execute_one(
             "SELECT COUNT(DISTINCT sinh_vien_id) as count FROM diem_danh WHERE DATE(thoi_gian) = %s AND trang_thai = 'Co mat'",
@@ -363,7 +459,15 @@ def get_stats():
 
 @api_mobile_bp.route('/history', methods=['GET'])
 def get_history():
-    """Lấy danh sách điểm danh gần đây"""
+    """
+    Lấy danh sách điểm danh gần đây
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -381,7 +485,7 @@ def get_history():
         
     try:
         sql = """
-            SELECT dd.id, dd.thoi_gian, dd.gio_ra, dd.trang_thai, dd.do_chinh_xac, dd.ghi_chu,
+            SELECT dd.id, dd.thoi_gian, dd.trang_thai, dd.do_chinh_xac, dd.ghi_chu,
                    sv.ho_ten, sv.mssv, sv.avatar, l.ma_lop 
             FROM diem_danh dd
             JOIN sinh_vien sv ON dd.sinh_vien_id = sv.id
@@ -408,8 +512,6 @@ def get_history():
         for row in records:
             if 'thoi_gian' in row and row['thoi_gian']:
                 row['thoi_gian'] = row['thoi_gian'].strftime("%Y-%m-%d %H:%M:%S")
-            if 'gio_ra' in row and row['gio_ra']:
-                row['gio_ra'] = row['gio_ra'].strftime("%Y-%m-%d %H:%M:%S")
             note = row.get('ghi_chu') or ""
             if note.startswith("EVIDENCE:"):
                 row['evidence_path'] = note.replace("EVIDENCE:", "", 1)
@@ -423,7 +525,15 @@ def get_history():
 
 @api_mobile_bp.route('/attendance/<int:record_id>', methods=['DELETE'])
 def delete_attendance_record(record_id):
-    """Xóa 1 bản ghi điểm danh"""
+    """
+    Xóa 1 bản ghi điểm danh
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error:
@@ -443,7 +553,15 @@ def delete_attendance_record(record_id):
 
 @api_mobile_bp.route('/attendance/clear', methods=['DELETE'])
 def clear_attendance_history():
-    """Xóa toàn bộ lịch sử điểm danh"""
+    """
+    Xóa toàn bộ lịch sử điểm danh
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error:
@@ -459,7 +577,15 @@ def clear_attendance_history():
 
 @api_mobile_bp.route('/register_face', methods=['POST'])
 def mobile_register_face():
-    """API để Mobile App đăng ký khuôn mặt học sinh trực tiếp (Cho phép khách và sinh viên)"""
+    """
+    API để Mobile App đăng ký khuôn mặt học sinh trực tiếp (Cho phép khách và sinh viên)
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     # Bỏ yêu cầu Token để sinh viên mới chưa có tài khoản vẫn đăng ký được
 
     data = request.get_json(silent=True) or {}
@@ -530,7 +656,15 @@ def mobile_register_face():
 
 @api_mobile_bp.route('/classes', methods=['GET'])
 def get_classes():
-    """Lấy danh sách lớp học cho màn hình đăng ký"""
+    """
+    Lấy danh sách lớp học cho màn hình đăng ký
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         from services import class_service
         classes = class_service.get_all(active_only=True)
@@ -542,7 +676,15 @@ def get_classes():
 
 @api_mobile_bp.route('/profile', methods=['GET'])
 def get_profile():
-    """Lấy thông tin chi tiết sinh viên/admin đang đăng nhập"""
+    """
+    Lấy thông tin chi tiết sinh viên/admin đang đăng nhập
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -580,7 +722,15 @@ def get_profile():
 
 @api_mobile_bp.route('/change-password', methods=['POST'])
 def change_password():
-    """Đổi mật khẩu cho người dùng hiện tại"""
+    """
+    Đổi mật khẩu cho người dùng hiện tại
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -611,7 +761,15 @@ def change_password():
 
 @api_mobile_bp.route('/schedule', methods=['GET'])
 def get_schedule():
-    """Lấy lịch học của sinh viên"""
+    """
+    Lấy lịch học của sinh viên
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -634,7 +792,15 @@ def get_schedule():
 
 @api_mobile_bp.route('/update-avatar', methods=['POST'])
 def update_avatar():
-    """Cập nhật ảnh đại diện người dùng"""
+    """
+    Cập nhật ảnh đại diện người dùng
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -676,7 +842,15 @@ def update_avatar():
 
 @api_mobile_bp.route('/pending-faces', methods=['GET'])
 def get_pending_faces():
-    """Lấy danh sách sinh viên đang chờ duyệt khuôn mặt"""
+    """
+    Lấy danh sách sinh viên đang chờ duyệt khuôn mặt
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     payload, auth_error = _require_mobile_auth()
     if auth_error or payload.get('role') != 'admin':
         return jsonify({"success": False, "message": "Quyền truy cập bị từ chối"}), 403
@@ -696,7 +870,15 @@ def get_pending_faces():
 
 @api_mobile_bp.route('/approve-face', methods=['POST'])
 def approve_face():
-    """Phê duyệt hoặc từ chối khuôn mặt sinh viên"""
+    """
+    Phê duyệt hoặc từ chối khuôn mặt sinh viên
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     payload, auth_error = _require_mobile_auth()
     if auth_error or payload.get('role') != 'admin':
         return jsonify({"success": False, "message": "Quyền truy cập bị từ chối"}), 403
@@ -718,7 +900,15 @@ def approve_face():
 
 @api_mobile_bp.route('/update-profile', methods=['POST'])
 def update_profile():
-    """Cập nhật thông tin chi tiết sinh viên/admin"""
+    """
+    Cập nhật thông tin chi tiết sinh viên/admin
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -745,7 +935,15 @@ def update_profile():
 
 @api_mobile_bp.route('/face-gallery', methods=['GET'])
 def get_face_gallery():
-    """Lấy danh sách các ảnh khuôn mặt đã đăng ký của sinh viên"""
+    """
+    Lấy danh sách các ảnh khuôn mặt đã đăng ký của sinh viên
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     from flask import session
     
     # Check if there's a mobile JWT
@@ -791,7 +989,15 @@ def get_face_gallery():
 
 @api_mobile_bp.route('/sync/students', methods=['GET'])
 def pull_students():
-    """Đồng bộ (Pull) dữ liệu sinh viên từ Server xuống App."""
+    """
+    Đồng bộ (Pull) dữ liệu sinh viên từ Server xuống App.
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     _, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -832,7 +1038,15 @@ def pull_students():
 
 @api_mobile_bp.route('/sync/attendance', methods=['POST'])
 def push_attendance():
-    """Đồng bộ (Push) dữ liệu điểm danh Offline từ App lên Server."""
+    """
+    Đồng bộ (Push) dữ liệu điểm danh Offline từ App lên Server.
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     _, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -909,7 +1123,15 @@ def get_distance_meters(lat1, lon1, lat2, lon2):
 
 @api_mobile_bp.route('/sessions/create', methods=['POST'])
 def create_session():
-    """Admin tạo phiên điểm danh cho một lớp. Sinh viên sẽ thấy phiên này trên mobile."""
+    """
+    Admin tạo phiên điểm danh cho một lớp. Sinh viên sẽ thấy phiên này trên mobile.
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
@@ -969,6 +1191,13 @@ def get_active_sessions():
     Lấy danh sách các phiên điểm danh đang mở.
     - Admin: xem tất cả phiên đang mở.
     - Sinh viên: chỉ xem phiên của lớp mình.
+    
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
     """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
@@ -1071,7 +1300,7 @@ def stop_session_api(session_id):
         
         # Lấy danh sách SV vắng
         absent_sv_sql = """
-            SELECT ho_ten FROM sinh_vien 
+            SELECT id, ho_ten FROM sinh_vien 
             WHERE lop_id = %s AND trang_thai = 1 
             AND id NOT IN (
                 SELECT sinh_vien_id FROM diem_danh 
@@ -1083,14 +1312,10 @@ def stop_session_api(session_id):
 
         # Gửi thông báo vào App cho từng sinh viên vắng
         for sv_absent in absent_list:
-            # Lấy ID của sv vắng
-            sv_id_sql = "SELECT id FROM sinh_vien WHERE ho_ten = %s AND lop_id = %s"
-            sv_data = execute_one(sv_id_sql, (sv_absent['ho_ten'], lop_id))
-            if sv_data:
-                execute_update(
-                    "INSERT INTO thong_bao (sinh_vien_id, tieu_de, noi_dung) VALUES (%s, %s, %s)",
-                    (sv_data['id'], "Cảnh báo vắng học", f"Bạn đã vắng mặt trong buổi học lớp {lop['ten_lop']} vào lúc {session['bat_dau'].strftime('%H:%M')}.")
-                )
+            execute_update(
+                "INSERT INTO thong_bao (sinh_vien_id, tieu_de, noi_dung) VALUES (%s, %s, %s)",
+                (sv_absent['id'], "Cảnh báo vắng học", f"Bạn đã vắng mặt trong buổi học lớp {lop['ten_lop']} vào lúc {session['bat_dau'].strftime('%H:%M')}.")
+            )
 
         # Gửi Telegram cho giảng viên
         msg = (
@@ -1111,6 +1336,17 @@ def stop_session_api(session_id):
 
 @api_mobile_bp.route('/sessions/<int:session_id>/details', methods=['GET'])
 def get_session_details(session_id):
+    """
+    /sessions/<int:session_id>/details
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+      500:
+        description: Lỗi máy chủ
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error:
@@ -1166,7 +1402,15 @@ def get_session_details(session_id):
 
 @api_mobile_bp.route('/sessions/history', methods=['GET'])
 def get_session_history():
-    """Lấy lịch sử phiên điểm danh đã đóng"""
+    """
+    Lấy lịch sử phiên điểm danh đã đóng
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error:
@@ -1205,7 +1449,15 @@ def get_session_history():
 
 @api_mobile_bp.route('/sessions/<int:session_id>', methods=['DELETE'])
 def delete_session(session_id):
-    """Xóa phiên điểm danh và dữ liệu điểm danh liên quan"""
+    """
+    Xóa phiên điểm danh và dữ liệu điểm danh liên quan
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error:
@@ -1245,6 +1497,13 @@ def student_self_checkin():
     """
     API đặc biệt cho sinh viên tự điểm danh bằng khuôn mặt.
     Server sẽ nhận diện khuôn mặt và xác minh đúng sinh viên đang đăng nhập.
+    
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
     """
     payload, auth_error = _require_mobile_auth()
     if auth_error:
@@ -1383,7 +1642,15 @@ def student_self_checkin():
 
 @api_mobile_bp.route('/stats/classes', methods=['GET'])
 def get_class_stats():
-    """Lấy tỉ lệ đi học của từng lớp"""
+    """
+    Lấy tỉ lệ đi học của từng lớp
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error: return auth_error
@@ -1403,7 +1670,15 @@ def get_class_stats():
 
 @api_mobile_bp.route('/stats/absent-risk', methods=['GET'])
 def get_absent_risk():
-    """Danh sách SV vắng nhiều (ví dụ > 2 lần)"""
+    """
+    Danh sách SV vắng nhiều (ví dụ > 2 lần)
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error: return auth_error
@@ -1428,7 +1703,15 @@ def get_absent_risk():
 
 @api_mobile_bp.route('/stats/daily-trend', methods=['GET'])
 def get_daily_trend():
-    """Xu hướng điểm danh 7 ngày gần nhất"""
+    """
+    Xu hướng điểm danh 7 ngày gần nhất
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error: return auth_error
@@ -1457,11 +1740,23 @@ def get_daily_trend():
 
 @api_mobile_bp.route('/notifications', methods=['GET'])
 def get_notifications():
-    """Lấy danh sách thông báo của sinh viên"""
+    """
+    Lấy danh sách thông báo của sinh viên
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error: return auth_error
         
+        # Chỉ sinh viên mới có thông báo cá nhân, Admin sẽ không thấy thông báo của sinh viên có cùng ID
+        if payload.get('role') != 'student':
+            return jsonify({"success": True, "data": []}), 200
+
         user_id = payload.get('sub')
         sql = "SELECT * FROM thong_bao WHERE sinh_vien_id = %s ORDER BY created_at DESC LIMIT 50"
         results = execute_query(sql, (user_id,))
@@ -1476,7 +1771,15 @@ def get_notifications():
 
 @api_mobile_bp.route('/notifications/<int:notif_id>/read', methods=['POST'])
 def mark_notification_read(notif_id):
-    """Đánh dấu thông báo đã đọc"""
+    """
+    Đánh dấu thông báo đã đọc
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
     try:
         payload, auth_error = _require_mobile_auth()
         if auth_error: return auth_error

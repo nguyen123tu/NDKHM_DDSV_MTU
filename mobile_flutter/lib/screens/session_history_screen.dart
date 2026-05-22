@@ -112,17 +112,17 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Lịch sử điểm danh', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        backgroundColor: const Color(0xFF1B3A5C),
+        backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadHistory),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B3A5C)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
           : _error != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
@@ -148,14 +148,14 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: const Color(0xFF1B3A5C).withOpacity(0.06), shape: BoxShape.circle),
-        child: const Icon(Icons.history, color: Color(0xFF1B3A5C), size: 48),
+        decoration: BoxDecoration(color: const Color(0xFF1E293B).withOpacity(0.06), shape: BoxShape.circle),
+        child: const Icon(Icons.history, color: Color(0xFF1E293B), size: 48),
       ),
       const SizedBox(height: 20),
-      const Text('Chưa có lịch sử', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C))),
+      const Text('Chưa có lịch sử', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
       const SizedBox(height: 8),
       Text('Các phiên điểm danh đã đóng sẽ hiển thị ở đây',
-          style: TextStyle(color: const Color(0xFF1B3A5C).withOpacity(0.5), fontSize: 14)),
+          style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 14)),
     ]));
   }
 
@@ -209,9 +209,9 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
             const SizedBox(width: 14),
             // Tên lớp
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1B3A5C))),
+              Text(tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
               const SizedBox(height: 2),
-              Text(maLop, style: TextStyle(color: const Color(0xFF1B3A5C).withOpacity(0.5), fontSize: 12)),
+              Text(maLop, style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 12)),
             ])),
             // Nút xóa
             GestureDetector(
@@ -235,7 +235,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
           ]),
           const SizedBox(height: 8),
           Row(children: [
-            _infoChip(Icons.people, '$total SV', const Color(0xFF1B3A5C)),
+            _infoChip(Icons.people, '$total SV', const Color(0xFF1E293B)),
             const SizedBox(width: 8),
             _infoChip(Icons.check_circle, '$present có mặt', const Color(0xFF10B981)),
             const SizedBox(width: 8),

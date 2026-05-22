@@ -94,12 +94,12 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
               const Row(children: [
                 Icon(Icons.add_circle, color: Color(0xFF10B981), size: 28),
                 SizedBox(width: 10),
-                Text('Mở Phiên Điểm Danh', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C))),
+                Text('Mở Phiên Điểm Danh', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
               ]),
               const SizedBox(height: 24),
 
               // Chọn lớp
-              const Text('Chọn lớp *', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1B3A5C), fontSize: 14)),
+              const Text('Chọn lớp *', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B), fontSize: 14)),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -123,7 +123,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
               const SizedBox(height: 18),
 
               // Thời lượng
-              const Text('Thời lượng (phút)', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1B3A5C), fontSize: 14)),
+              const Text('Thời lượng (phút)', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B), fontSize: 14)),
               const SizedBox(height: 8),
               Row(children: [
                 for (final m in [30, 60, 90, 120])
@@ -134,12 +134,12 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: duration == m ? const Color(0xFF1B3A5C) : Colors.grey[100],
+                          color: duration == m ? const Color(0xFF1E293B) : Colors.grey[100],
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: duration == m ? const Color(0xFF1B3A5C) : Colors.grey[300]!),
+                          border: Border.all(color: duration == m ? const Color(0xFF1E293B) : Colors.grey[300]!),
                         ),
                         child: Center(child: Text('$m\'', style: TextStyle(
-                          color: duration == m ? Colors.white : const Color(0xFF1B3A5C),
+                          color: duration == m ? Colors.white : const Color(0xFF1E293B),
                           fontWeight: FontWeight.bold, fontSize: 15,
                         ))),
                       ),
@@ -149,7 +149,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
               const SizedBox(height: 18),
 
               // Ghi chú
-              const Text('Ghi chú (tùy chọn)', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1B3A5C), fontSize: 14)),
+              const Text('Ghi chú (tùy chọn)', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B), fontSize: 14)),
               const SizedBox(height: 8),
               TextField(
                 controller: moTaController,
@@ -271,10 +271,10 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Quản Lý Phiên Điểm Danh', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1B3A5C),
+        backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -285,7 +285,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
         label: const Text('Mở phiên mới', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: _isLoading
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B3A5C)))
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
         : RefreshIndicator(
             onRefresh: _loadSessions,
             child: _sessions.isEmpty
@@ -310,7 +310,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF1B3A5C), Color(0xFF2A5298)]),
+        gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(children: [
@@ -360,9 +360,9 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
           ),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(session.tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B3A5C))),
+            Text(session.tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
             const SizedBox(height: 2),
-            Text(session.maLop, style: TextStyle(color: const Color(0xFF1B3A5C).withOpacity(0.5), fontSize: 13)),
+            Text(session.maLop, style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 13)),
           ])),
           // Các nút hành động
           Row(children: [
@@ -417,18 +417,20 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
         ]),
         const SizedBox(height: 14),
         // Info row
-        Row(children: [
-          _chip(Icons.people, '${session.soDaDiemDanh} đã ĐD', const Color(0xFF10B981)),
-          const SizedBox(width: 8),
-          _chip(Icons.timer, 'Còn $remainingStr', const Color(0xFF2E96EB)),
-          if (session.giaoVien != null && session.giaoVien!.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            _chip(Icons.person, session.giaoVien!, const Color(0xFF6366F1)),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _chip(Icons.people, '${session.soDaDiemDanh} đã ĐD', const Color(0xFF10B981)),
+            _chip(Icons.timer, 'Còn $remainingStr', const Color(0xFF2E96EB)),
+            if (session.giaoVien != null && session.giaoVien!.isNotEmpty)
+              _chip(Icons.person, session.giaoVien!, const Color(0xFF6366F1)),
           ],
-        ]),
+        ),
         if (session.moTa != null && session.moTa!.isNotEmpty) ...[
           const SizedBox(height: 10),
-          Text(session.moTa!, style: TextStyle(color: const Color(0xFF1B3A5C).withOpacity(0.5), fontSize: 12, fontStyle: FontStyle.italic)),
+          Text(session.moTa!, style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 12, fontStyle: FontStyle.italic)),
         ],
       ]),
       ),
@@ -451,13 +453,13 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
     return Column(mainAxisSize: MainAxisSize.min, children: [
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: const Color(0xFF1B3A5C).withOpacity(0.06), shape: BoxShape.circle),
-        child: const Icon(Icons.event_busy, color: Color(0xFF1B3A5C), size: 48),
+        decoration: BoxDecoration(color: const Color(0xFF1E293B).withOpacity(0.06), shape: BoxShape.circle),
+        child: const Icon(Icons.event_busy, color: Color(0xFF1E293B), size: 48),
       ),
       const SizedBox(height: 20),
-      const Text('Chưa có phiên nào đang mở', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1B3A5C))),
+      const Text('Chưa có phiên nào đang mở', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
       const SizedBox(height: 8),
-      Text('Nhấn nút bên dưới để mở phiên điểm danh', style: TextStyle(color: const Color(0xFF1B3A5C).withOpacity(0.5))),
+      Text('Nhấn nút bên dưới để mở phiên điểm danh', style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5))),
     ]);
   }
 }

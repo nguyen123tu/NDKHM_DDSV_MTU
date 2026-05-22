@@ -36,18 +36,16 @@ class RecognitionSession:
     4. FPS giới hạn 15fps
     """
 
-    def __init__(self, lop_id, camera_id, socketio, mode='AUTO'):
+    def __init__(self, lop_id, camera_id, socketio):
         """
         Args:
             lop_id: ID lớp đang điểm danh
             camera_id: ID camera sử dụng
             socketio: Flask-SocketIO instance để emit events
-            mode: Chế độ điểm danh ('AUTO', 'IN', 'OUT')
         """
         self.lop_id = lop_id
         self.camera_id = camera_id
         self.socketio = socketio
-        self.mode = mode
         self._thread = None
         self._running = False
         self._lock = threading.Lock()
@@ -297,8 +295,7 @@ class RecognitionSession:
                                     mssv=mssv,
                                     lop_id=self.lop_id,
                                     do_chinh_xac=sim,
-                                    camera_id=self.camera_id,
-                                    mode=self.mode
+                                    camera_id=self.camera_id
                                 )
                                 
                                 # Nếu ghi thành công → đánh dấu đã điểm danh
@@ -326,22 +323,8 @@ class RecognitionSession:
                                     'avatar': avatar_path
                                 })
                         else:
-                            # Cảnh báo kẻ lạ
-                            now = time.time()
-                            last_alert = self._emit_cooldowns.get('__alert__', 0)
-                            if now - last_alert > 10:
-                                self._emit_cooldowns['__alert__'] = now
-                                self.socketio.emit('alert', {
-                                    'message': 'Phát hiện người lạ!',
-                                    'thoi_gian': time.strftime("%H:%M:%S")
-                                })
-
-                            from services.telegram_alert import send_telegram_photo
-                            last_tg = self._emit_cooldowns.get('__telegram__', 0)
-                            if now - last_tg > 60:
-                                self._emit_cooldowns['__telegram__'] = now
-                                msg = f"⚠️ [CẢNH BÁO] Phát hiện người lạ tại camera {self.camera_id}\nThời gian: {time.strftime('%H:%M:%S %d/%m/%Y')}"
-                                threading.Thread(target=send_telegram_photo, args=(frame.copy(), msg), daemon=True).start()
+                            # Đồ án nhận diện 1 chiều: Bỏ qua người lạ, không gửi cảnh báo SocketIO hay Telegram
+                            pass
 
                 # Vẽ bounding box từ kết quả lưu trữ (kể cả những frame không quét AI)
                 for res in self._last_ai_results:
@@ -370,8 +353,8 @@ class RecognitionSession:
                         if extra_info:
                             label += f" [{', '.join(extra_info)}]"
                     else:
-                        color = (0, 0, 255)
-                        label = "Ke La"
+                        color = (128, 128, 128)
+                        label = "Chưa nhận diện"
                         
                     cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                     frame = self._draw_vn_text(frame, label, (x1, y1 - 28), color)
@@ -408,7 +391,7 @@ def get_active_session():
     return _active_session
 
 
-def start_session(lop_id, camera_id, socketio, mode='AUTO'):
+def start_session(lop_id, camera_id, socketio):
     """
     Bắt đầu phiên điểm danh mới.
     Nếu đang có phiên cũ → dừng trước.
@@ -417,7 +400,7 @@ def start_session(lop_id, camera_id, socketio, mode='AUTO'):
     if _active_session and _active_session.is_running:
         _active_session.stop()
 
-    _active_session = RecognitionSession(lop_id, camera_id, socketio, mode=mode)
+    _active_session = RecognitionSession(lop_id, camera_id, socketio)
     _active_session.start()
     return True
 

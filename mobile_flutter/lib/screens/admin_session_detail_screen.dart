@@ -63,10 +63,10 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text('Chi tiết phiên: ${widget.tenLop}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        backgroundColor: const Color(0xFF1B3A5C),
+        backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -84,7 +84,7 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B3A5C)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
           : _error != null
               ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
               : _buildContent(),

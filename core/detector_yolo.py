@@ -34,7 +34,7 @@ class YOLOFaceDetector:
             'yolov8n.pt'
         ]
         
-        selected_model = 'yolov8n.pt'
+        selected_model = 'yolo11n.pt'
         for m in priority_models:
             if m and (os.path.exists(m) or not m.endswith('.pt')): # .pt check cho file local
                 selected_model = m
@@ -100,9 +100,8 @@ def get_yolo_detector(model_path=None, conf_threshold=0.5):
     """Lấy singleton instance của YOLOFaceDetector."""
     global _instance
     if _instance is None:
-        yolo_model_path = os.path.join(Config.MODELS_DIR, 'yolov8n-face.pt')
         _instance = YOLOFaceDetector(
-            model_path=model_path or yolo_model_path,
+            model_path=model_path,
             conf_threshold=conf_threshold
         )
     return _instance
