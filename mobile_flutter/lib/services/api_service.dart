@@ -1,6 +1,7 @@
-Simport 'dart:convert';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class ApiService {
   // ============================================================
@@ -31,11 +32,26 @@ class ApiService {
     };
   }
 
+  Future<String> _getDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? deviceId = prefs.getString('device_id');
+    if (deviceId == null) {
+      deviceId = const Uuid().v4();
+      await prefs.setString('device_id', deviceId);
+    }
+    return deviceId;
+  }
+
   Future<Map<String, dynamic>> login(String username, String password) async {
+    final deviceId = await _getDeviceId();
     final response = await http.post(
       Uri.parse('$baseUrl/api/mobile/login'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'password': password}),
+      body: jsonEncode({
+        'username': username, 
+        'password': password,
+        'device_id': deviceId,
+      }),
     );
     return jsonDecode(response.body);
   }
@@ -70,13 +86,17 @@ class ApiService {
     throw Exception('Failed to load history');
   }
 
-  Future<Map<String, dynamic>> recognizeFace(String base64Image) async {
+  Future<Map<String, dynamic>> recognizeFace(String base64Image, {double? lat, double? lng}) async {
     final headers = await _getHeaders();
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/public/api/recognize'),
         headers: headers,
-        body: jsonEncode({'image': base64Image}),
+        body: jsonEncode({
+          'image': base64Image,
+          if (lat != null) 'lat': lat,
+          if (lng != null) 'lng': lng,
+        }),
       ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
@@ -340,6 +360,16 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$baseUrl/api/mobile/notifications/$id/read'),
       headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> updateFcmToken(String fcmToken) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/fcm-token'),
+      headers: headers,
+      body: jsonEncode({'fcm_token': fcmToken}),
     );
     return jsonDecode(response.body);
   }

@@ -27,6 +27,7 @@
                             <th>Sinh viên</th>
                             <th>Lớp học</th>
                             <th>Loại gian lận</th>
+                            <th>Bằng chứng</th>
                             <th>Chi tiết</th>
                             <th>Trạng thái</th>
                             <th>Hành động</th>
@@ -34,7 +35,7 @@
                     </thead>
                     <tbody>
                         {% for alert in alerts %}
-                        <tr id="row-{{ alert.id }}" class="{% if not alert.da_xu_ly %}bg-light-danger{% endif %}">
+                        <tr id="row-{{ alert.id }}" class="{% if not alert.da_xu_ly %}bg-light-danger{% endif %} align-middle">
                             <td>{{ alert.thoi_gian.strftime('%d/%m/%Y %H:%M:%S') if alert.thoi_gian else '' }}</td>
                             <td>
                                 {% if alert.ho_ten %}
@@ -54,7 +55,20 @@
                                 <span class="badge bg-secondary">{{ alert.loai_gian_lan }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ alert.chi_tiet }}</td>
+                            <td class="text-center">
+                                {% if alert.hinh_anh %}
+                                <a href="/{{ alert.hinh_anh }}" target="_blank">
+                                    <img src="/{{ alert.hinh_anh }}" alt="Bằng chứng" class="img-thumbnail" style="height: 60px; object-fit: cover; cursor: pointer;">
+                                </a>
+                                {% else %}
+                                <span class="text-muted small">Không có</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fraud-details">
+                                    {{ alert.chi_tiet }}
+                                </div>
+                            </td>
                             <td id="status-{{ alert.id }}">
                                 {% if alert.da_xu_ly %}
                                 <span class="badge bg-success">Đã xử lý</span>
@@ -75,7 +89,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center py-4">
+                            <td colspan="8" class="text-center py-4">
                                 <img src="{{ url_for('static', filename='img/empty.svg') }}" alt="No alerts" style="max-height: 150px; opacity: 0.5;" onerror="this.style.display='none'">
                                 <p class="text-muted mt-3 mb-0">Tuyệt vời! Chưa phát hiện hành vi gian lận nào.</p>
                             </td>

@@ -8,10 +8,19 @@
 {% endblock %}
 
 {% block content %}
-<div class="chat-container" id="chatContainer">
+<!-- Animated Background Elements -->
+<div class="holo-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<div class="chat-container vip-mode" id="chatContainer">
     <!-- Header -->
     <div class="chat-header">
-        <div class="avatar">🤖</div>
+        <div class="avatar glow-icon">
+            <i class="fas fa-brain"></i>
+        </div>
         <div>
             <h5>MTU AI Assistant</h5>
             <small>Trợ lý thông minh — Hệ thống Điểm danh MTUFace</small>
@@ -40,17 +49,9 @@
 
     <!-- Messages -->
     <div class="chat-messages" id="chatMessages">
-        <div class="msg bot">
-            <div class="bubble">
-                <p>👋 Xin chào! Tôi là <strong>MTU AI Assistant</strong> — trợ lý AI của hệ thống Điểm danh Thông minh MTUFace.</p>
-                <p>Tôi có thể giúp bạn:</p>
-                <ul style="margin:0;padding-left:20px">
-                    <li>Giải thích cách hệ thống hoạt động</li>
-                    <li>Hướng dẫn sử dụng các chức năng</li>
-                    <li>Giải thích thuật toán AI (ArcFace, SCRFD...)</li>
-                    <li>Debug lỗi và hỗ trợ kỹ thuật</li>
-                </ul>
-            </div>
+        <!-- Gemini Intro (Empty State) -->
+        <div class="gemini-intro" id="geminiIntro">
+            <h2 class="greeting">Bắt đầu nhé, Admin</h2>
         </div>
 
         <!-- Typing indicator -->
@@ -68,11 +69,13 @@
 
     <!-- Input -->
     <div class="chat-input-area">
-        <textarea id="chatInput" rows="1" placeholder="Hỏi bất kỳ điều gì về hệ thống MTUFace..." 
-                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
-        <button class="btn-send" onclick="sendMessage()" id="btnSend" title="Gửi">
-            <i class="fas fa-paper-plane"></i>
-        </button>
+        <div class="input-wrapper">
+            <textarea id="chatInput" rows="1" placeholder="Hỏi bất kỳ điều gì về hệ thống MTUFace..." 
+                      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+            <button class="btn-send" onclick="sendMessage()" id="btnSend" title="Gửi">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
     </div>
 </div>
 {% endblock %}

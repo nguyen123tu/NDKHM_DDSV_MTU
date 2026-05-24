@@ -68,6 +68,26 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
         result = execute_update(sql, (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu))
         if result > 0:
             _last_log_times[cache_key] = current_time
+            
+            # Gửi Push Notification (FCM)
+            from services.fcm_service import notify_student_attendance
+            from datetime import datetime
+            from flask import request
+            
+            time_str = datetime.now().strftime("%H:%M:%S %d/%m/%Y")
+            image_url = None
+            if ghi_chu and ghi_chu.startswith("EVIDENCE:"):
+                evidence_rel_path = ghi_chu.split("EVIDENCE:")[1]
+                # Construct full URL for the image
+                base_url = request.host_url.rstrip('/')
+                # evidence_rel_path is something like evidence/20260524/...
+                # But wait, we added the route /evidence/<path:filename> 
+                # So we need to map evidence/... to /evidence/...
+                if evidence_rel_path.startswith("evidence/"):
+                    image_url = f"{base_url}/{evidence_rel_path}"
+                    
+            notify_student_attendance(mssv, time_str, f"Camera {camera_id}", image_url=image_url)
+            
             return {'action': 'checkin', 'success': True}
     
     return False

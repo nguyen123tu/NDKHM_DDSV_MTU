@@ -6,6 +6,7 @@ import os
 import uuid
 import base64
 import time
+import math
 from datetime import datetime, timedelta
 
 import jwt
@@ -19,6 +20,18 @@ from services.telegram_alert import send_telegram_message
 # Blueprint sẽ được register trong routes/__init__.py
 api_mobile_bp = Blueprint('api_mobile', __name__, url_prefix='/api/mobile')
 
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """Tính khoảng cách (mét) giữa 2 tọa độ GPS bằng công thức Haversine"""
+    R = 6371e3
+    phi1 = lat1 * math.pi / 180
+    phi2 = lat2 * math.pi / 180
+    delta_phi = (lat2 - lat1) * math.pi / 180
+    delta_lambda = (lon2 - lon1) * math.pi / 180
+    a = math.sin(delta_phi / 2) * math.sin(delta_phi / 2) + \
+        math.cos(phi1) * math.cos(phi2) * \
+        math.sin(delta_lambda / 2) * math.sin(delta_lambda / 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
 
 def _make_token(user, is_student=False):
     """Tạo JWT cho mobile app."""
@@ -147,6 +160,7 @@ def mobile_login():
         
     username = data.get('username')
     password = data.get('password')
+    device_id = data.get('device_id')
     
     # Query thử bảng admin trước tiên
     admin = execute_one("SELECT * FROM admin WHERE username = %s", (username,))
@@ -169,6 +183,16 @@ def mobile_login():
     # Tiếp theo thử bảng sinh_vien
     student = execute_one("SELECT * FROM sinh_vien WHERE mssv = %s AND trang_thai = 1", (username,))
     if student and student['password_hash'] and check_password_hash(student['password_hash'], password):
+        # === DEVICE BINDING ===
+        if not device_id:
+            return jsonify({"success": False, "message": "Thiếu thông tin thiết bị (Device ID). Vui lòng cập nhật App!"}), 400
+            
+        current_device = student.get('device_id')
+        if not current_device:
+            execute_update("UPDATE sinh_vien SET device_id = %s WHERE id = %s", (device_id, student['id']))
+        elif current_device != device_id:
+            return jsonify({"success": False, "message": "Tài khoản đã được đăng nhập trên một thiết bị khác. Không thể đăng nhập!"}), 403
+
         token = _make_token(student, is_student=True)
         return jsonify({
             "success": True,
@@ -186,6 +210,31 @@ def mobile_login():
 
     return jsonify({"success": False, "message": "Sai tài khoản hoặc mật khẩu"}), 401
 
+
+@api_mobile_bp.route('/fcm-token', methods=['POST'])
+def update_fcm_token():
+    """
+    Cập nhật FCM Device Token cho Mobile
+    """
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+        
+    data = request.get_json(silent=True) or {}
+    token = data.get('fcm_token')
+    
+    if not token:
+        return jsonify({"success": False, "message": "Thiếu fcm_token"}), 400
+        
+    user_id = payload.get('sub')
+    role = payload.get('role')
+    
+    if role == 'student':
+        execute_update("UPDATE sinh_vien SET fcm_token = %s WHERE id = %s", (token, user_id))
+    else:
+        execute_update("UPDATE admin SET fcm_token = %s WHERE id = %s", (token, user_id))
+        
+    return jsonify({"success": True, "message": "Cập nhật FCM Token thành công"}), 200
 
 @api_mobile_bp.route('/checkin', methods=['POST'])
 def mobile_checkin():
@@ -236,6 +285,8 @@ def mobile_checkin():
     trang_thai = (data.get("trang_thai") or "Co mat").strip()
     image_base64 = data.get("image_base64")
     session_start = data.get("session_start")
+    lat = data.get("lat")
+    lng = data.get("lng")
 
     # === BẢO MẬT: Sinh viên chỉ được điểm danh cho chính mình ===
     role = payload.get('role', 'admin')
@@ -275,6 +326,23 @@ def mobile_checkin():
             return jsonify({"success": False, "message": "Lớp này chưa mở phiên điểm danh. Vui lòng chờ Admin mở."}), 403
     else:
         return jsonify({"success": False, "message": "Thiếu session_id hoặc lop_id"}), 400
+
+    # === KIỂM TRA GPS (Geofencing) ===
+    if role == 'student' and lat is not None and lng is not None:
+        classroom = execute_one("SELECT latitude, longitude, radius FROM lop_hoc WHERE id = %s", (lop_id,))
+        if classroom and classroom.get('latitude') and classroom.get('longitude'):
+            dist = calculate_distance(float(lat), float(lng), classroom['latitude'], classroom['longitude'])
+            radius = classroom.get('radius') or 100
+            if dist > radius:
+                # Ghi log gian lận
+                execute_update(
+                    "INSERT INTO gian_lan_log (sinh_vien_id, loai_gian_lan, chi_tiet) VALUES (%s, %s, %s)",
+                    (payload.get('sub'), "Fake GPS", f"Khoảng cách: {dist:.1f}m (cho phép {radius}m). Tọa độ SV: {lat},{lng}")
+                )
+                return jsonify({
+                    "success": False,
+                    "message": f"Bạn đang ở ngoài phạm vi lớp học ({dist:.1f}m)! Vui lòng di chuyển vào lớp."
+                }), 403
 
     in_window, window_error = _is_within_checkin_window(session_start)
     if not in_window:
@@ -1102,6 +1170,167 @@ def push_attendance():
         "errors": errors
     }), 200
 
+
+@api_mobile_bp.route('/sync/sessions', methods=['GET'])
+def sync_sessions():
+    """
+    Đồng bộ (Pull) phiên điểm danh đang mở về App.
+    Endpoint này nhẹ hơn /sessions/active - chỉ trả dữ liệu cần thiết cho offline.
+    ---
+    tags:
+      - Mobile App API - Sync
+    responses:
+      200:
+        description: Thành công
+    """
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    try:
+        # Auto-close expired sessions
+        execute_update(
+            "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE trang_thai = 1 AND het_han IS NOT NULL AND het_han < NOW()"
+        )
+
+        role = payload.get('role', 'admin')
+        user_id = payload.get('sub')
+
+        if role == 'student':
+            student = execute_one("SELECT lop_id, mssv FROM sinh_vien WHERE id = %s", (user_id,))
+            student_mssv = student['mssv'] if student else ''
+
+            sql = """
+                SELECT p.id, p.lop_id, p.mo_ta, p.bat_dau, p.het_han, p.trang_thai,
+                       l.ma_lop, l.ten_lop, l.giao_vien,
+                       (SELECT COUNT(*) FROM diem_danh d 
+                        WHERE d.lop_id = p.lop_id AND d.thoi_gian >= p.bat_dau 
+                        AND d.trang_thai = 'Co mat') as so_da_diem_danh,
+                       (SELECT COUNT(*) FROM diem_danh d 
+                        JOIN sinh_vien sv2 ON d.sinh_vien_id = sv2.id
+                        WHERE d.lop_id = p.lop_id AND d.thoi_gian >= p.bat_dau 
+                        AND sv2.mssv = %s) as da_diem_danh_chua
+                FROM phien_diem_danh p
+                JOIN lop_hoc l ON p.lop_id = l.id
+                WHERE p.trang_thai = 1
+                ORDER BY p.bat_dau DESC
+            """
+            sessions = execute_query(sql, (student_mssv,))
+        else:
+            sql = """
+                SELECT p.id, p.lop_id, p.mo_ta, p.bat_dau, p.het_han, p.trang_thai,
+                       l.ma_lop, l.ten_lop, l.giao_vien,
+                       (SELECT COUNT(DISTINCT d.sinh_vien_id) FROM diem_danh d 
+                        WHERE d.lop_id = p.lop_id AND d.thoi_gian >= p.bat_dau 
+                        AND d.trang_thai = 'Co mat') as so_da_diem_danh,
+                       (SELECT COUNT(*) FROM sinh_vien sv WHERE sv.lop_id = p.lop_id AND sv.trang_thai = 1) as tong_sv
+                FROM phien_diem_danh p
+                JOIN lop_hoc l ON p.lop_id = l.id
+                WHERE p.trang_thai = 1
+                ORDER BY p.bat_dau DESC
+            """
+            sessions = execute_query(sql)
+
+        for s in sessions:
+            if s.get('bat_dau') and hasattr(s['bat_dau'], 'strftime'):
+                s['bat_dau'] = s['bat_dau'].strftime('%Y-%m-%d %H:%M:%S')
+            if s.get('het_han') and hasattr(s['het_han'], 'strftime'):
+                s['het_han'] = s['het_han'].strftime('%Y-%m-%d %H:%M:%S')
+
+        return jsonify({
+            "success": True,
+            "data": sessions,
+            "server_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/sync/schedule', methods=['GET'])
+def sync_schedule():
+    """
+    Đồng bộ (Pull) lịch học về App cho sinh viên.
+    ---
+    tags:
+      - Mobile App API - Sync
+    responses:
+      200:
+        description: Thành công
+    """
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    if payload.get('role') != 'student':
+        return jsonify({"success": True, "data": [], "message": "Chỉ sinh viên mới có lịch học"}), 200
+
+    user_id = payload.get('sub')
+    student = execute_one("SELECT lop_id FROM sinh_vien WHERE id = %s", (user_id,))
+
+    if not student or not student['lop_id']:
+        return jsonify({"success": True, "data": []}), 200
+
+    try:
+        sql = "SELECT * FROM lich_hoc WHERE lop_id = %s ORDER BY thu ASC, tiet_bat_dau ASC"
+        schedules = execute_query(sql, (student['lop_id'],))
+        return jsonify({
+            "success": True,
+            "data": schedules,
+            "server_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/sync/notifications', methods=['GET'])
+def sync_notifications():
+    """
+    Đồng bộ (Pull) thông báo về App.
+    ---
+    tags:
+      - Mobile App API - Sync
+    responses:
+      200:
+        description: Thành công
+    """
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    user_id = payload.get('sub')
+    role = payload.get('role')
+
+    try:
+        if role == 'student':
+            sql = """
+                SELECT id, tieu_de, noi_dung, da_doc, created_at 
+                FROM thong_bao 
+                WHERE sinh_vien_id = %s 
+                ORDER BY created_at DESC 
+                LIMIT 50
+            """
+            notifications = execute_query(sql, (user_id,))
+        else:
+            # Admin: lấy thông báo hệ thống hoặc tất cả
+            sql = """
+                SELECT id, tieu_de, noi_dung, da_doc, created_at 
+                FROM thong_bao 
+                ORDER BY created_at DESC 
+                LIMIT 50
+            """
+            notifications = execute_query(sql)
+
+        for n in notifications:
+            if n.get('created_at') and hasattr(n['created_at'], 'strftime'):
+                n['created_at'] = n['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+
+        return jsonify({
+            "success": True,
+            "data": notifications,
+            "server_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
 # Helper: Tính khoảng cách giữa 2 điểm GPS (mét)
 def get_distance_meters(lat1, lon1, lat2, lon2):

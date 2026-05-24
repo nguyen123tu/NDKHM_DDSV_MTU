@@ -5,10 +5,10 @@
 [![Flask](https://img.shields.io/badge/Flask-Web%20Backend-black.svg)](https://flask.palletsprojects.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-Database-orange.svg)](https://www.mysql.com/)
 
-**MTUFace** là hệ thống quản lý điểm danh thông minh sử dụng công nghệ nhận diện khuôn mặt Deep Learning, hỗ trợ đa engine AI (InsightFace, DeepFace/ArcFace, YOLO + ResNet). Hệ thống bao gồm 3 thành phần chính:
+**MTUFace** là hệ thống quản lý điểm danh thông minh sử dụng công nghệ nhận diện khuôn mặt Deep Learning, hỗ trợ đa engine AI (InsightFace, YOLO + ResNet). Hệ thống bao gồm 3 thành phần chính:
 
 1. **Web Admin Dashboard** (Flask + SocketIO): Giao diện quản lý cho quản trị viên với thiết kế Glassmorphism hiện đại, giám sát theo thời gian thực (Kiosk HUD), AI Chatbot hỗ trợ, và hệ thống cảnh báo gian lận.
-2. **AI Core Engine**: Pipeline nhận diện khuôn mặt đa engine — hỗ trợ chuyển đổi nóng giữa InsightFace, DeepFace (ArcFace + RetinaFace), và YOLO + ResNet. Tích hợp Liveness Detection chống giả mạo.
+2. **AI Core Engine**: Pipeline nhận diện khuôn mặt đa engine — hỗ trợ chuyển đổi nóng giữa InsightFace và YOLO + ResNet. Tích hợp Liveness Detection chống giả mạo.
 3. **Mobile App** (Flutter): Ứng dụng di động "Offline-first" dành cho sinh viên để tra cứu lịch sử điểm danh, xem thông tin cá nhân và đăng ký khuôn mặt tự động, hỗ trợ đồng bộ dữ liệu.
 
 ---
@@ -16,7 +16,7 @@
 ## 🌟 Tính Năng Nổi Bật
 
 ### 🤖 AI & Nhận Diện
-- **Đa engine AI**: Chuyển đổi nóng giữa InsightFace, DeepFace (ArcFace + RetinaFace), YOLO + ResNet — không cần restart server.
+- **Đa engine AI**: Chuyển đổi nóng giữa InsightFace, YOLO + ResNet — không cần restart server.
 - **Nhận diện khuôn mặt theo thời gian thực**: Phát hiện và nhận dạng khuôn mặt qua webcam với độ trễ thấp (<100ms).
 - **Liveness Detection**: Phát hiện gian lận bằng phân tích blur, glare, kích thước khuôn mặt — chống ảnh/video giả mạo.
 - **YOLO26 Training**: Script huấn luyện mô hình phát hiện khuôn mặt với YOLO26 (MuSGD optimizer, NMS-free inference).
@@ -48,7 +48,6 @@ NDKHM_DDSV_MTU/
 ├── config.py               # Cấu hình hệ thống (đọc từ .env)
 ├── core/                   # AI Core Engine
 │   ├── engine.py           # Engine chính (InsightFace / YOLO+ResNet)
-│   ├── engine_deepface.py  # Engine DeepFace (ArcFace + RetinaFace)
 │   ├── detector.py         # Face detector (InsightFace)
 │   ├── detector_yolo.py    # Face detector (YOLO)
 │   ├── embedder.py         # Face embedder (InsightFace)
@@ -67,7 +66,6 @@ NDKHM_DDSV_MTU/
 │   ├── chatbot.py          # AI Chatbot endpoint
 │   ├── classes.py          # Quản lý lớp học
 │   ├── dashboard.py        # Trang chủ Admin
-│   ├── deepface_api.py     # API riêng cho DeepFace engine
 │   ├── export.py           # Xuất báo cáo Excel/PDF
 │   ├── fraud.py            # Cảnh báo gian lận
 │   ├── public.py           # Trang công khai (selfcheck, tra cứu)
@@ -146,7 +144,6 @@ pip install -r requirements.txt
 - Lựa chọn engine AI:
   - `AI_ENGINE=insightface` — InsightFace (mặc định, nhanh, chính xác cao)
   - `AI_ENGINE=yolo_resnet` — YOLO + ResNet
-  - `AI_ENGINE=deepface` — DeepFace (ArcFace + RetinaFace, hỗ trợ anti-spoofing)
 - Thêm Telegram Bot Token nếu muốn nhận thông báo realtime.
 
 **Bước 4:** Khởi tạo Cơ sở dữ liệu
@@ -188,7 +185,6 @@ Hệ thống hỗ trợ chuyển đổi nóng giữa các engine AI ngay trên g
 | Engine | Model | Detector | Ưu điểm |
 |--------|-------|----------|----------|
 | `insightface` | buffalo_l | InsightFace | Nhanh, chính xác cao, ổn định |
-| `deepface` | ArcFace | RetinaFace | Hỗ trợ anti-spoofing, phân tích tuổi/giới tính |
 | `yolo_resnet` | YOLOv11 + ResNet | YOLO | Tuỳ chỉnh linh hoạt, train được trên dataset riêng |
 
 ---

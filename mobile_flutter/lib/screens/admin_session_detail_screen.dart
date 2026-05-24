@@ -1,6 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../services/export_service.dart';
+import '../theme/app_theme.dart';
 
 class AdminSessionDetailScreen extends StatefulWidget {
   final int sessionId;
@@ -63,14 +66,15 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: Text('Chi tiết phiên: ${widget.tenLop}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        backgroundColor: const Color(0xFF1E293B),
-        foregroundColor: Colors.white,
+        title: Text('Chi tiết: ${widget.tenLop}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.download),
+            icon: const Icon(Icons.download, color: AppTheme.primary),
             onPressed: () {
               if (_students.isNotEmpty) {
                 ExportService.exportSessionToExcel(_students, widget.tenLop);
@@ -78,16 +82,52 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: AppTheme.secondary),
             onPressed: _loadDetails,
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
-          : _error != null
-              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
-              : _buildContent(),
+      body: Stack(
+        children: [
+          // Ambient Glow Background
+          Positioned(
+            top: -100,
+            left: -100,
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.primary.withOpacity(0.15),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            right: -50,
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.secondary.withOpacity(0.1),
+                ),
+              ),
+            ),
+          ),
+
+          _isLoading
+              ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+              : _error != null
+                  ? Center(child: Text(_error!, style: const TextStyle(color: Colors.redAccent)))
+                  : _buildContent(),
+        ],
+      ),
     );
   }
 
@@ -97,58 +137,96 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
 
     return Column(
       children: [
-        // Header info
+        // Header Stats
         Container(
-          padding: const EdgeInsets.all(16),
-          color: Colors.white,
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: AppTheme.glassDecoration(borderRadius: 20, opacity: 0.05),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildStatInfo('Tổng số SV', _students.length.toString(), Colors.blue),
-              _buildStatInfo('Có mặt', present.toString(), Colors.green),
-              _buildStatInfo('Vắng', absent.toString(), Colors.red),
+              _buildStatInfo('Tổng SV', _students.length.toString(), AppTheme.primary, Icons.groups),
+              Container(width: 1, height: 40, color: Colors.white10),
+              _buildStatInfo('Có mặt', present.toString(), Colors.greenAccent, Icons.how_to_reg),
+              Container(width: 1, height: 40, color: Colors.white10),
+              _buildStatInfo('Vắng', absent.toString(), Colors.redAccent, Icons.person_off),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
+        ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, end: 0),
+
         // Student list
         Expanded(
           child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: _students.length,
             itemBuilder: (context, index) {
               final student = _students[index];
               bool isPresent = student['trang_thai'] == 'Co mat';
               
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: AppTheme.glassDecoration(
+                  borderRadius: 16, 
+                  opacity: isPresent ? 0.05 : 0.02,
+                ).copyWith(
+                  border: Border.all(
+                    color: isPresent ? Colors.greenAccent.withOpacity(0.2) : Colors.redAccent.withOpacity(0.1),
+                  ),
+                ),
                 child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: isPresent ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isPresent ? Colors.greenAccent.withOpacity(0.1) : Colors.redAccent.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
                     child: Icon(
-                      isPresent ? Icons.check : Icons.close,
-                      color: isPresent ? Colors.green : Colors.red,
+                      isPresent ? Icons.check_circle_outline : Icons.cancel_outlined,
+                      color: isPresent ? Colors.greenAccent : Colors.redAccent,
+                      size: 24,
                     ),
                   ),
-                  title: Text(student['ho_ten'] ?? 'Chưa cập nhật', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(student['mssv'] ?? ''),
+                  title: Text(
+                    student['ho_ten'] ?? 'Chưa cập nhật', 
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary, fontSize: 16),
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      student['mssv'] ?? '', 
+                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                    ),
+                  ),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        isPresent ? 'Có mặt' : 'Vắng',
-                        style: TextStyle(
-                          color: isPresent ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isPresent ? Colors.greenAccent.withOpacity(0.1) : Colors.redAccent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          isPresent ? 'CÓ MẶT' : 'VẮNG',
+                          style: TextStyle(
+                            color: isPresent ? Colors.greenAccent : Colors.redAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
+                      const SizedBox(height: 6),
                       if (student['thoi_gian'] != null)
-                        Text(student['thoi_gian'], style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text(
+                          student['thoi_gian'].toString().substring(11, 19), // Lấy HH:MM:SS
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontFamily: 'monospace'),
+                        ),
                     ],
                   ),
                 ),
-              );
+              ).animate().fadeIn(delay: Duration(milliseconds: 50 * index)).slideX(begin: 0.1, end: 0);
             },
           ),
         ),
@@ -156,12 +234,15 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
     );
   }
 
-  Widget _buildStatInfo(String label, String value, Color color) {
+  Widget _buildStatInfo(String label, String value, Color color, IconData icon) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
       ],
     );
   }

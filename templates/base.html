@@ -215,6 +215,12 @@
 
             <div class="nav-group-label"><span class="nav-label-text">Hệ thống</span></div>
             <li>
+                <a href="{{ url_for('fraud.index') }}" title="Cảnh báo gian lận"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('fraud') %}active{% endif %}">
+                    <i class="fas fa-shield-alt"></i> <span class="link-text">Cảnh báo gian lận</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ url_for('training.index') }}" title="Training Dữ Liệu"
                     class="nav-link {% if request.endpoint and request.endpoint.startswith('training') %}active{% endif %}">
                     <i class="fas fa-brain"></i> <span class="link-text">Training Dữ Liệu</span>

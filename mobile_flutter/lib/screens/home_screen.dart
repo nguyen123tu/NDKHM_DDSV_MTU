@@ -1,7 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/connectivity_provider.dart';
 import 'scan_screen.dart' as scan_screen;
 import 'register_screen.dart' as reg_screen;
 import 'profile_screen.dart';
@@ -15,8 +18,10 @@ import 'student_qr_scanner_screen.dart';
 import 'session_history_screen.dart';
 import 'admin_stats_screen.dart';
 import 'notifications_screen.dart';
+import 'sync_status_screen.dart';
 import '../services/export_service.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,666 +44,590 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return "Chào buổi sáng";
-    if (hour < 18) return "Chào buổi chiều";
-    return "Chào buổi tối";
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final attendance = Provider.of<AttendanceProvider>(context);
+    final connectivity = Provider.of<ConnectivityProvider>(context);
     final isAdmin = auth.user?.role != 'student';
     final userName = auth.user?.name ?? 'Admin';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: RefreshIndicator(
-        color: const Color(0xFF4F46E5),
-        onRefresh: () => attendance.fetchDashboardData(),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ====== HEADER ======
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 80),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(32),
-                        bottomRight: Radius.circular(32),
-                      ),
-                    ),
+      backgroundColor: AppTheme.background,
+      body: Stack(
+        children: [
+          // Ambient Background Glows
+          Positioned(
+            top: -100,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primary.withOpacity(0.2),
+                backgroundBlendMode: BlendMode.screen,
+              ),
+            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+             .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 4.seconds),
+          ),
+          Positioned(
+            bottom: -50,
+            right: -50,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.secondary.withOpacity(0.15),
+                backgroundBlendMode: BlendMode.screen,
+              ),
+            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+             .scale(begin: const Offset(1, 1), end: const Offset(1.3, 1.3), duration: 5.seconds),
+          ),
+
+          // Main Content
+          SafeArea(
+            bottom: false,
+            child: RefreshIndicator(
+              color: AppTheme.secondary,
+              backgroundColor: AppTheme.surface,
+              onRefresh: () async {
+                await attendance.fetchDashboardData();
+                await connectivity.refreshPendingCount();
+              },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-                                  child: Image.asset("assets/images/logo_MTU.png", width: 28, height: 28,
-                                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.face_retouching_natural, color: Color(0xFF4F46E5), size: 22)),
-                                ),
-                                const SizedBox(width: 12),
-                                const Text("MTU FACE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1)),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                if (isAdmin)
+                        // ====== OFFLINE/SYNC BANNER ======
+                        _buildSyncBanner(connectivity, auth),
+
+                        // ====== APP BAR ======
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    margin: const EdgeInsets.only(right: 12),
-                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.admin_panel_settings, color: Colors.white, size: 14),
-                                        SizedBox(width: 4),
-                                        Text("Admin", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                                      ],
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: AppTheme.glassDecoration(opacity: 0.1, borderRadius: 12),
+                                    child: const Icon(Icons.face_retouching_natural, color: AppTheme.secondary, size: 22),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    "MTU FACE",
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: 2),
+                                  ),
+                                ],
+                              ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2, end: 0),
+                              Row(
+                                children: [
+                                  if (isAdmin)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      margin: const EdgeInsets.only(right: 12),
+                                      decoration: AppTheme.glassDecoration(opacity: 0.1, borderRadius: 20),
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.admin_panel_settings, color: AppTheme.secondary, size: 14),
+                                          SizedBox(width: 4),
+                                          Text("Admin", style: TextStyle(color: AppTheme.secondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ).animate().fadeIn(delay: 100.ms),
+                                  GestureDetector(
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: AppTheme.glassDecoration(shape: BoxShape.circle),
+                                      child: const Icon(Icons.person, color: AppTheme.textPrimary, size: 20),
                                     ),
                                   ),
-                                GestureDetector(
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-                                    child: const Icon(Icons.person, color: Colors.white, size: 20),
+                                  const SizedBox(width: 12),
+                                  GestureDetector(
+                                    onTap: () => auth.logout(),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: AppTheme.glassDecoration(shape: BoxShape.circle),
+                                      child: const Icon(Icons.logout, color: AppTheme.accent, size: 20),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                GestureDetector(
-                                  onTap: () => auth.logout(),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-                                    child: const Icon(Icons.logout, color: Colors.white, size: 20),
-                                  ),
-                                ),
-                              ],
-                            )
-                          ],
+                                ],
+                              ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.2, end: 0),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 36),
-                        Text(_getGreeting(), style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14)),
-                        const SizedBox(height: 4),
-                        Text(userName, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -40,
-                    left: 20,
-                    right: 20,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [BoxShadow(color: const Color(0xFF4F46E5).withOpacity(0.12), blurRadius: 24, offset: const Offset(0, 10))],
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(child: _buildStatItem(isAdmin ? "Sĩ số" : "Phiên mở", "${attendance.stats?.total ?? '--'}")),
-                          Container(width: 1, height: 40, color: const Color(0xFFF1F5F9)),
-                          Expanded(child: _buildStatItem(isAdmin ? "Có mặt" : "Đã ĐD", "${attendance.stats?.present ?? '--'}", highlightColor: const Color(0xFF10B981))),
-                          Container(width: 1, height: 40, color: const Color(0xFFF1F5F9)),
-                          Expanded(child: _buildStatItem(isAdmin ? "Vắng" : "Chưa ĐD", "${attendance.stats?.absent ?? '--'}", highlightColor: const Color(0xFFF43F5E))),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 64),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                                        // ====== CHỨC NĂNG ======
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(child: Text("Chức năng", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)))),
-                      GestureDetector(
-                        onTap: () => setState(() => _isFeaturesExpanded = !(_isFeaturesExpanded ?? false)),
-                        child: Text(
-                          (_isFeaturesExpanded ?? false) ? "Thu gọn" : "Xem tất cả", 
-                          style: TextStyle(fontSize: 13, color: (_isFeaturesExpanded ?? false) ? const Color(0xFF10B981) : const Color(0xFF1E293B).withOpacity(0.4), fontWeight: (_isFeaturesExpanded ?? false) ? FontWeight.bold : FontWeight.normal)
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
 
-                  // Feature Grid
-                  if (isAdmin)
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildFeatureCard(
-                                icon: Icons.event_available,
-                                title: "Mở điểm danh",
-                                subtitle: "Tạo phiên cho SV",
-                                iconBgColor: const Color(0xFF10B981),
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminSessionScreen())),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: _buildFeatureCard(
-                                icon: Icons.face_retouching_natural,
-                                title: "Quét mặt",
-                                subtitle: "Camera AI",
-                                iconBgColor: const Color(0xFF2E96EB),
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const scan_screen.ScanScreen())),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_isFeaturesExpanded) ...[
-                          const SizedBox(height: 14),
-                          Row(
+                        // ====== GREETING ======
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: _buildFeatureCard(
-                                  icon: Icons.person_add_alt_1,
-                                  title: "Đăng ký",
-                                  subtitle: "Khuôn mặt mới",
-                                  iconBgColor: const Color(0xFF6366F1),
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const reg_screen.RegisterScreen())),
+                              Text(
+                                _getGreeting(),
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppTheme.secondary,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: _buildFeatureCard(
-                                  icon: Icons.fact_check_outlined,
-                                  title: "Duyệt ảnh",
-                                  subtitle: "Xác minh SV",
-                                  iconBgColor: const Color(0xFFF59E0B),
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FaceApprovalScreen())),
-                                ),
+                              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    userName,
+                                    style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 32),
+                                  ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
+                                  if (auth.isOfflineMode)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 12),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: AppTheme.glassDecoration(color: AppTheme.warning, opacity: 0.2, borderRadius: 8),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.cloud_off, color: AppTheme.warning, size: 12),
+                                            SizedBox(width: 4),
+                                            Text('Offline', style: TextStyle(color: AppTheme.warning, fontSize: 10, fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                    ).animate().fadeIn(delay: 400.ms),
+                                ],
                               ),
                             ],
                           ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildFeatureCard(
-                                  icon: Icons.history,
-                                  title: "Lịch sử ĐD",
-                                  subtitle: "Phiên đã đóng",
-                                  iconBgColor: const Color(0xFF8B5CF6),
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SessionHistoryScreen())),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: _buildFeatureCard(
-                                  icon: Icons.bar_chart_rounded,
-                                  title: "Thống kê",
-                                  subtitle: "Biểu đồ & Phân tích",
-                                  iconBgColor: const Color(0xFFEC4899),
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminStatsScreen())),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildFeatureCard(
-                                  icon: Icons.notifications_rounded,
-                                  title: "Thông báo",
-                                  subtitle: "Gửi & Xem tin",
-                                  iconBgColor: const Color(0xFFF59E0B),
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              const Expanded(child: SizedBox()),
-                            ],
-                          ),
-                        ],
-                      ],
-                    )
-                  else
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildFeatureCard(
-                                icon: Icons.qr_code_scanner,
-                                title: "Điểm danh QR",
-                                subtitle: "Quét lớp học",
-                                iconBgColor: const Color(0xFF10B981),
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentQRScannerScreen())),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: _buildFeatureCard(
-                                icon: Icons.person_add_alt_1,
-                                title: "Đăng ký",
-                                subtitle: "Cập nhật ảnh",
-                                iconBgColor: const Color(0xFF2E96EB),
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const reg_screen.RegisterScreen())),
-                              ),
-                            ),
-                          ],
                         ),
-                        if (_isFeaturesExpanded) ...[
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildFeatureCard(
-                                  icon: Icons.calendar_month_outlined,
-                                  title: "Lịch học",
-                                  subtitle: "Thời khóa biểu",
-                                  iconBgColor: const Color(0xFFF59E0B),
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScheduleScreen())),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: _buildFeatureCard(
-                                  icon: Icons.notifications_rounded,
-                                  title: "Thông báo",
-                                  subtitle: "Cảnh báo vắng",
-                                  iconBgColor: const Color(0xFFF59E0B),
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
 
-                  const SizedBox(height: 28),
+                        // ====== STATS CARDS ======
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: _buildStatsGrid(attendance).animate().fadeIn(delay: 400.ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1)),
+                        ),
 
-                  // ====== LỊCH SỬ ======
-                  GestureDetector(
-                    onTap: () => setState(() => _isHistoryCollapsed = !_isHistoryCollapsed),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(children: [
-                            Icon(
-                              _isHistoryCollapsed ? Icons.keyboard_arrow_right : Icons.keyboard_arrow_down,
-                              color: const Color(0xFF1E293B), size: 20,
-                            ),
-                            const SizedBox(width: 4),
-                            const Text("Hoạt động gần đây",
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), overflow: TextOverflow.ellipsis)
-                            ),
-                          ]),
+                        const SizedBox(height: 32),
+
+                        // ====== MAIN ACTIONS ======
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: _buildMainActions(isAdmin, auth.isOfflineMode).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0),
                         ),
-                        const SizedBox(width: 8),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isAdmin && attendance.history.isNotEmpty)
-                              GestureDetector(
-                                onTap: () => _confirmClearAll(attendance),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  margin: const EdgeInsets.only(right: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.redAccent.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      Icon(Icons.delete_sweep, color: Colors.redAccent, size: 12),
-                                      SizedBox(width: 4),
-                                      Text("Xóa hết", style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            if (isAdmin)
-                              GestureDetector(
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryReportScreen())),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  margin: const EdgeInsets.only(right: 6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      Icon(Icons.filter_list, color: Color(0xFF10B981), size: 12),
-                                      SizedBox(width: 4),
-                                      Text("Lọc", style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E293B).withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                "${attendance.history.length}",
-                                style: const TextStyle(color: Color(0xFF1E293B), fontSize: 11, fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ],
-                        ),
+
+                        const SizedBox(height: 32),
+
+                        // ====== RECENT HISTORY ======
+                        _buildRecentHistorySection(attendance, isAdmin).animate().fadeIn(delay: 600.ms).slideY(begin: 0.1, end: 0),
+
+                        const SizedBox(height: 100), // padding bottom
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
-
-                  // History list (collapsible)
-                  if (!_isHistoryCollapsed) ...[
-                    if (attendance.isLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 40),
-                        child: Center(child: CircularProgressIndicator(color: Color(0xFF1E293B))),
-                      )
-                    else if (attendance.history.isEmpty)
-                      _buildEmptyState()
-                    else
-                      ...attendance.history.map((record) => _buildHistoryItem(record, isAdmin, attendance)),
-                  ],
-
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ====== Offline/Sync Banner ======
+  Widget _buildSyncBanner(ConnectivityProvider connectivity, AuthProvider auth) {
+    if (connectivity.isOnline && connectivity.pendingSyncCount == 0 && !connectivity.isSyncing && !auth.isOfflineMode) {
+      return const SizedBox.shrink();
+    }
+
+    Color glowColor;
+    IconData icon;
+    String message;
+
+    if (!connectivity.isOnline) {
+      glowColor = AppTheme.error;
+      icon = Icons.cloud_off;
+      message = 'Offline';
+      if (connectivity.pendingSyncCount > 0) message += ' • ${connectivity.pendingSyncCount} pending';
+    } else if (connectivity.isSyncing) {
+      glowColor = AppTheme.secondary;
+      icon = Icons.sync;
+      message = connectivity.syncMessage ?? 'Syncing...';
+    } else if (connectivity.pendingSyncCount > 0) {
+      glowColor = AppTheme.warning;
+      icon = Icons.pending_outlined;
+      message = '${connectivity.pendingSyncCount} pending syncs';
+    } else {
+      glowColor = AppTheme.success;
+      icon = Icons.cloud_done;
+      message = connectivity.syncMessage ?? 'Synced';
+    }
+
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncStatusScreen())),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: AppTheme.glassDecoration(
+          color: glowColor,
+          opacity: 0.15,
+          borderRadius: 16,
+        ).copyWith(
+          border: Border.all(color: glowColor.withOpacity(0.5), width: 1),
+          boxShadow: [
+            BoxShadow(color: glowColor.withOpacity(0.2), blurRadius: 12, spreadRadius: 0),
+          ],
+        ),
+        child: Row(
+          children: [
+            if (connectivity.isSyncing)
+              SizedBox(
+                width: 16, height: 16,
+                child: CircularProgressIndicator(color: glowColor, strokeWidth: 2),
+              )
+            else
+              Icon(icon, color: glowColor, size: 16),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(color: glowColor, fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (connectivity.isOnline && connectivity.pendingSyncCount > 0 && !connectivity.isSyncing)
+              GestureDetector(
+                onTap: () => connectivity.manualSync(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: glowColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text('SYNC NOW', style: TextStyle(color: glowColor, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                ),
+              ),
+            if (!connectivity.isOnline)
+              Icon(Icons.chevron_right, color: glowColor.withOpacity(0.8), size: 18),
           ],
         ),
       ),
-    ),
-  );
-}
+    ).animate().fadeIn().slideY(begin: -0.5, end: 0);
+  }
 
-  // ====== Stat Item ======
-  Widget _buildStatItem(String label, String value, {Color? highlightColor}) {
-    return Column(
+  // ====== Stats Grid ======
+  Widget _buildStatsGrid(AttendanceProvider attendance) {
+    if (attendance.isLoading && attendance.stats == null) {
+      return const Center(child: CircularProgressIndicator(color: AppTheme.secondary));
+    }
+
+    final stats = attendance.stats;
+    return Row(
       children: [
-        Text(value, style: TextStyle(color: highlightColor ?? const Color(0xFF1E293B), fontSize: 24, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w500)),
+        Expanded(
+          child: _buildGlassStatCard(
+            title: "Tổng SV",
+            value: "${stats?.total ?? 0}",
+            icon: Icons.people_alt,
+            color: AppTheme.primary,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildGlassStatCard(
+            title: "Có mặt",
+            value: "${stats?.present ?? 0}",
+            icon: Icons.how_to_reg,
+            color: AppTheme.success,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildGlassStatCard(
+            title: "Vắng",
+            value: "${stats?.absent ?? 0}",
+            icon: Icons.person_off,
+            color: AppTheme.error,
+          ),
+        ),
       ],
     );
   }
 
-  // ====== Feature Card ======
-  Widget _buildFeatureCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color iconBgColor,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildGlassStatCard({required String title, required String value, required IconData icon, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      decoration: AppTheme.glassDecoration(borderRadius: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 12),
+          Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(title, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  // ====== Main Actions ======
+  Widget _buildMainActions(bool isAdmin, bool isOffline) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: _buildActionCard(
+                title: "Scan Face",
+                subtitle: isOffline ? "Offline Mode" : "AI Recognition",
+                icon: Icons.center_focus_strong,
+                gradient: const [AppTheme.secondary, AppTheme.primary],
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const scan_screen.ScanScreen())),
+              ),
+            ),
+            const SizedBox(width: 12),
+            if (isAdmin)
+              Expanded(
+                flex: 2,
+                child: _buildActionCard(
+                  title: "Register",
+                  subtitle: "New Face",
+                  icon: Icons.person_add,
+                  gradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const reg_screen.RegisterScreen())),
+                ),
+              )
+            else
+              Expanded(
+                flex: 2,
+                child: _buildActionCard(
+                  title: "Lịch Học",
+                  subtitle: "Schedule",
+                  icon: Icons.calendar_today,
+                  gradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScheduleScreen())),
+                ),
+              ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildSecondaryAction(
+                  title: "QR Scan",
+                  icon: Icons.qr_code_scanner,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentQRScannerScreen())),
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (isAdmin) ...[
+                Expanded(
+                  child: _buildSecondaryAction(
+                    title: "Sessions",
+                    icon: Icons.event,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminSessionScreen())),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSecondaryAction(
+                    title: "Stats",
+                    icon: Icons.bar_chart,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminStatsScreen())),
+                  ),
+                ),
+              ] else ...[
+                Expanded(
+                  child: _buildSecondaryAction(
+                    title: "Thông báo",
+                    icon: Icons.notifications,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard({required String title, required String subtitle, required IconData icon, required List<Color> gradient, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(color: gradient.first.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8)),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: iconBgColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: iconBgColor, size: 24),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
-            const SizedBox(height: 14),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+            const SizedBox(height: 16),
+            Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(fontSize: 12, color: const Color(0xFF1E293B).withOpacity(0.4))),
-            const SizedBox(height: 12),
-            // Progress bar giả lập
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: 0.7,
-                backgroundColor: iconBgColor.withOpacity(0.08),
-                color: iconBgColor,
-                minHeight: 5,
-              ),
-            ),
+            Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
           ],
         ),
       ),
     );
   }
 
-  // ====== Empty State ======
-  Widget _buildEmptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B).withOpacity(0.06),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.inbox_rounded, color: Color(0xFF1E293B), size: 40),
-          ),
-          const SizedBox(height: 16),
-          const Text("Chưa có dữ liệu", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 15, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 4),
-          Text("Bắt đầu điểm danh để xem kết quả", style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.3), fontSize: 12)),
-        ],
+  Widget _buildSecondaryAction({required String title, required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: AppTheme.glassDecoration(borderRadius: 16),
+        child: Column(
+          children: [
+            Icon(icon, color: AppTheme.secondary, size: 24),
+            const SizedBox(height: 8),
+            Text(title, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
+          ],
+        ),
       ),
     );
   }
 
-  // ====== History Item (with swipe-to-delete for Admin) ======
-  Widget _buildHistoryItem(dynamic record, bool isAdmin, AttendanceProvider attendance) {
-    final Widget card = Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Avatar
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF1E293B).withOpacity(0.08),
-            ),
-            child: const Icon(Icons.person, color: Color(0xFF1E293B), size: 22),
-          ),
-          const SizedBox(width: 14),
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(record.hoTen, 
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B), fontSize: 14.5)
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B).withOpacity(0.06),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(record.mssv, style: const TextStyle(fontSize: 10, color: Color(0xFF1E293B), fontWeight: FontWeight.w500)),
-                    ),
-                    const SizedBox(width: 6),
-                    Text("• ${record.maLop}", style: TextStyle(fontSize: 11, color: const Color(0xFF1E293B).withOpacity(0.4))),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          // Time + Status
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+  // ====== Recent History ======
+  Widget _buildRecentHistorySection(AttendanceProvider attendance, bool isAdmin) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                record.thoiGian.split(' ')[1],
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text("Hợp lệ", style: TextStyle(fontSize: 10, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+              const Text("Lịch sử gần đây", style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+              TextButton(
+                onPressed: () {
+                  setState(() => _isHistoryCollapsed = !_isHistoryCollapsed);
+                },
+                child: Text(_isHistoryCollapsed ? "Hiện" : "Ẩn", style: const TextStyle(color: AppTheme.secondary)),
               ),
             ],
           ),
-        ],
-      ),
-    );
-
-    // Admin: Vuốt sang trái để xóa
-    if (isAdmin && record.id != null) {
-      return Dismissible(
-        key: Key('record_${record.id}'),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.only(right: 20),
-          alignment: Alignment.centerRight,
-          decoration: BoxDecoration(
-            color: Colors.redAccent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(Icons.delete, color: Colors.white),
         ),
-        confirmDismiss: (direction) async {
-          return await showDialog<bool>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Xóa bản ghi này?'),
-              content: Text('Xóa điểm danh của ${record.hoTen}?'),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-                  child: const Text('Xóa'),
-                ),
-              ],
-            ),
-          );
-        },
-        onDismissed: (_) => _deleteRecord(record.id, attendance),
-        child: card,
-      );
-    }
-
-    return card;
-  }
-
-  Future<void> _deleteRecord(int recordId, AttendanceProvider attendance) async {
-    try {
-      final result = await _api.deleteAttendanceRecord(recordId);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(result['message'] ?? 'Đã xóa'),
-          backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-          duration: const Duration(seconds: 2),
-        ));
-        attendance.fetchDashboardData();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red));
-      }
-    }
-  }
-
-  Future<void> _confirmClearAll(AttendanceProvider attendance) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 28),
-          SizedBox(width: 8),
-          Text('Xóa tất cả?'),
-        ]),
-        content: const Text('Thao tác này sẽ xóa TOÀN BỘ lịch sử điểm danh.\nHành động không thể hoàn tác!'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-            child: const Text('Xóa tất cả'),
-          ),
-        ],
-      ),
+        if (!_isHistoryCollapsed)
+          attendance.isLoading && attendance.history.isEmpty
+              ? const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator(color: AppTheme.secondary)))
+              : attendance.history.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(
+                        child: Text("Chưa có dữ liệu hôm nay.", style: TextStyle(color: AppTheme.textMuted, fontStyle: FontStyle.italic)),
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: attendance.history.length > 5 ? 5 : attendance.history.length,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemBuilder: (context, index) {
+                        final record = attendance.history[index];
+                        return _buildHistoryGlassCard(record, isAdmin, index);
+                      },
+                    ),
+      ],
     );
+  }
 
-    if (confirm == true) {
-      try {
-        final result = await _api.clearAttendanceHistory();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(result['message'] ?? 'Đã xóa'),
-            backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-          ));
-          attendance.fetchDashboardData();
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red));
-        }
+  String _getAvatarUrl(String? avatarPath) {
+    if (avatarPath == null || avatarPath.isEmpty) return "";
+    if (avatarPath.startsWith("uploads/")) {
+      return "${ApiService.baseUrl}/static/$avatarPath";
+    }
+    return "${ApiService.baseUrl}/database/$avatarPath";
+  }
+
+  Widget _buildHistoryGlassCard(dynamic record, bool isAdmin, int index) {
+    final isOffline = record.trangThai == 'Unknown' || record.mssv == 'OFFLINE_PENDING';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: AppTheme.glassDecoration(borderRadius: 16, opacity: 0.05, border: false),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 48, height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: isOffline ? AppTheme.warning : AppTheme.secondary, width: 2),
+            image: record.avatar != null && record.avatar!.isNotEmpty
+                ? DecorationImage(image: NetworkImage(_getAvatarUrl(record.avatar)), fit: BoxFit.cover)
+                : null,
+          ),
+          child: record.avatar == null || record.avatar!.isEmpty
+              ? Icon(Icons.person, color: isOffline ? AppTheme.warning : AppTheme.secondary)
+              : null,
+        ),
+        title: Text(
+          isOffline ? "Bản ghi Offline" : (record.hoTen ?? 'Unknown'),
+          style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          isOffline ? "Đang chờ đồng bộ" : "${record.mssv} • Lớp ${record.maLop}",
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              _formatTimeFromISO(record.thoiGian),
+              style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: isOffline ? AppTheme.warning.withOpacity(0.2) : AppTheme.success.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                isOffline ? "Pending" : "✓ Điểm danh",
+                style: TextStyle(color: isOffline ? AppTheme.warning : AppTheme.success, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: Duration(milliseconds: 600 + (index * 100))).slideX(begin: 0.1, end: 0);
+  }
+
+  String _formatTimeFromISO(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return "--:--";
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      if (isoString.length > 16) {
+        return isoString.substring(11, 16);
       }
+      return isoString;
     }
   }
 }

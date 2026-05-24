@@ -1,9 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
-import '../services/api_service.dart';
 import 'register_screen.dart';
+import '../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
-          backgroundColor: const Color(0xFFE63946),
+          backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
@@ -41,136 +41,133 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       body: Stack(
         children: [
-          // Background Gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF4F46E5), // Indigo
-                  Color(0xFF7C3AED), // Violet
-                ],
-              ),
-            ),
-          ),
-          
-          // Decorative elements (Shapes)
+          // Ambient Background Glows
           Positioned(
             top: -100,
-            right: -100,
-            child: CircleAvatar(radius: 150, backgroundColor: Colors.white.withOpacity(0.05)),
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primary.withOpacity(0.2),
+                backgroundBlendMode: BlendMode.screen,
+              ),
+            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+             .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 4.seconds),
           ),
           Positioned(
             bottom: -50,
-            left: -50,
-            child: CircleAvatar(radius: 100, backgroundColor: Colors.black.withOpacity(0.05)),
+            right: -50,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.secondary.withOpacity(0.15),
+                backgroundBlendMode: BlendMode.screen,
+              ),
+            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+             .scale(begin: const Offset(1, 1), end: const Offset(1.3, 1.3), duration: 5.seconds),
           ),
 
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Glass Card
                     Container(
                       padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
-                            blurRadius: 30,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
+                      decoration: AppTheme.glassDecoration(
+                        borderRadius: 32,
+                        opacity: 0.05,
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // Logo Section
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Colors.white.withOpacity(0.1),
                               shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF1E293B).withOpacity(0.1),
-                                  blurRadius: 10,
+                                  color: AppTheme.primary.withOpacity(0.3),
+                                  blurRadius: 20,
                                 )
                               ],
                             ),
                             child: ClipOval(
                               child: Image.asset(
                                 "assets/images/logo_MTU.png",
-                                width: 85,
-                                height: 85,
+                                width: 80,
+                                height: 80,
                                 fit: BoxFit.contain,
                                 errorBuilder: (c, e, s) => Image.network(
                                   "logo_MTU.png",
-                                  width: 85,
-                                  height: 85,
-                                  errorBuilder: (c, e, s) => const Icon(Icons.school, size: 50, color: Color(0xFF1E293B)),
+                                  width: 80,
+                                  height: 80,
+                                  errorBuilder: (c, e, s) => const Icon(Icons.school, size: 50, color: AppTheme.textPrimary),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 20),
+                          ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1)),
+                          const SizedBox(height: 24),
                           
-                          const Text(
+                          Text(
                             "MTU FACE ID",
-                            style: TextStyle(
-                              fontSize: 24, 
-                              fontWeight: FontWeight.w900, 
-                              color: Color(0xFF1E293B),
-                              letterSpacing: 1.5,
+                            style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                              fontSize: 28,
+                              letterSpacing: 2,
                             ),
-                          ),
+                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
                           const SizedBox(height: 8),
-                          const Text(
-                            "ĐẲNG CẤP QUỐC TẾ - CHẤT LƯỢNG HÀNG ĐẦU (BAO NGẦU) ",
+                          Text(
+                            "HỆ THỐNG ĐIỂM DANH THÔNG MINH",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 10, 
                               fontWeight: FontWeight.bold, 
-                              color: Color(0xFF4F46E5),
-                              letterSpacing: 0.5,
+                              color: AppTheme.secondary,
+                              letterSpacing: 1,
                             ),
-                          ),
+                          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
                           
-                          const SizedBox(height: 35),
+                          const SizedBox(height: 40),
 
                           // Login Fields
                           _buildTextField(
                             controller: _usernameController,
                             label: "Tài khoản / MSSV",
                             icon: Icons.person_outline,
-                          ),
+                          ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1, end: 0),
                           const SizedBox(height: 20),
                           _buildTextField(
                             controller: _passwordController,
                             label: "Mật khẩu",
                             icon: Icons.lock_outline,
                             isPassword: true,
-                          ),
+                          ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.1, end: 0),
                           
                           const SizedBox(height: 12),
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: () {},
-                              child: const Text(
+                              child: Text(
                                 "Quên mật khẩu?",
-                                style: TextStyle(color: Color(0xFF6C757D), fontSize: 13),
+                                style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                               ),
                             ),
-                          ),
+                          ).animate().fadeIn(delay: 600.ms),
 
                           const SizedBox(height: 12),
                           
@@ -180,21 +177,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 55,
                             child: ElevatedButton(
                               onPressed: auth.isLoading ? null : _handleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4F46E5),
-                                foregroundColor: Colors.white,
-                                elevation: 4,
-                                shadowColor: const Color(0xFF4F46E5).withOpacity(0.5),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              ),
                               child: auth.isLoading
-                                  ? const CircularProgressIndicator(color: Colors.white)
-                                  : const Text(
-                                      "ĐĂNG NHẬP",
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1),
-                                    ),
+                                  ? const CircularProgressIndicator(color: AppTheme.textPrimary)
+                                  : const Text("ĐĂNG NHẬP"),
                             ),
-                          ),
+                          ).animate().fadeIn(delay: 700.ms).scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1)),
 
                           const SizedBox(height: 24),
 
@@ -203,9 +190,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             alignment: WrapAlignment.center,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              const Text(
+                              Text(
                                 "Chưa có tài khoản?",
-                                style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                                style: TextStyle(color: AppTheme.textMuted, fontSize: 14),
                               ),
                               TextButton(
                                 onPressed: () {
@@ -214,30 +201,31 @@ class _LoginScreenState extends State<LoginScreen> {
                                     MaterialPageRoute(builder: (context) => const RegisterScreen()),
                                   );
                                 },
-                                child: const Text(
+                                child: Text(
                                   "Đăng ký ngay",
                                   style: TextStyle(
-                                    color: Color(0xFF4F46E5),
+                                    color: AppTheme.secondary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),
                                 ),
                               ),
                             ],
-                          ),
+                          ).animate().fadeIn(delay: 800.ms),
                         ],
                       ),
                     ),
                     
                     const SizedBox(height: 40),
-                    const Text(
+                    Text(
                       "Đại học Xây dựng Miền Tây",
-                      style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, letterSpacing: 0.5),
-                    ),
-                    const Text(
+                      style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.w500, letterSpacing: 0.5),
+                    ).animate().fadeIn(delay: 900.ms),
+                    const SizedBox(height: 4),
+                    Text(
                       "MTU Face Attendance System v2.0",
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
-                    ),
+                      style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                    ).animate().fadeIn(delay: 900.ms),
                   ],
                 ),
               ),
@@ -254,32 +242,35 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     bool isPassword = false,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword && !_isPasswordVisible,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-        prefixIcon: Icon(icon, color: const Color(0xFF4F46E5), size: 22),
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey,
-                  size: 20,
-                ),
-                onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-              )
-            : null,
-        filled: true,
-        fillColor: Colors.grey[50]!.withOpacity(0.8),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.grey[200]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
+    return Container(
+      decoration: AppTheme.glassDecoration(opacity: 0.05, borderRadius: 16),
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword && !_isPasswordVisible,
+        style: const TextStyle(color: AppTheme.textPrimary),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+          prefixIcon: Icon(icon, color: AppTheme.secondary, size: 22),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                    color: AppTheme.textSecondary,
+                    size: 20,
+                  ),
+                  onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                )
+              : null,
+          filled: false,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: AppTheme.primary.withOpacity(0.5), width: 1.5),
+          ),
         ),
       ),
     );

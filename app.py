@@ -60,6 +60,10 @@ def create_app(config_name='default'):
     # Init SocketIO
     socketio.init_app(app, async_mode='eventlet')
     
+    # Khởi tạo Firebase Admin
+    from services.fcm_service import init_firebase
+    init_firebase()
+    
     # Error handlers — Trang lỗi đẹp mắt
     from datetime import datetime
     
@@ -115,6 +119,10 @@ app = create_app(os.getenv('FLASK_ENV', 'development'))
 @app.route('/database/<path:filename>')
 def serve_database_file(filename):
     return send_from_directory(Config.DATABASE_DIR, filename)
+
+@app.route('/evidence/<path:filename>')
+def serve_evidence_file(filename):
+    return send_from_directory(Config.EVIDENCE_DIR, filename)
 
 if __name__ == '__main__':
     print("\n" + "="*50)

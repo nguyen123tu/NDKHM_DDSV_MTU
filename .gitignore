@@ -57,3 +57,5 @@ models/chroma_db/
 
 # PyTorch model weights
 *.pth
+
+serviceAccountKey.json

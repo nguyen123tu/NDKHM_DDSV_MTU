@@ -3,7 +3,10 @@ from db.connection import execute_query, execute_update
 
 fraud_bp = Blueprint('fraud', __name__, url_prefix='/fraud')
 
+from utils.decorators import login_required
+
 @fraud_bp.route('/', methods=['GET'])
+@login_required
 def index():
     """
     /
@@ -16,9 +19,6 @@ def index():
       500:
         description: Lỗi máy chủ
     """
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-        
     # Get all fraud logs
     sql = """
         SELECT g.*, s.ho_ten, s.mssv, l.ma_lop 
@@ -43,7 +43,7 @@ def mark_resolved(alert_id):
       500:
         description: Lỗi máy chủ
     """
-    if 'user_id' not in session:
+    if 'admin_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
         
     sql = "UPDATE gian_lan_log SET da_xu_ly = 1 WHERE id = %s"
@@ -65,7 +65,7 @@ def delete_alert(alert_id):
       500:
         description: Lỗi máy chủ
     """
-    if 'user_id' not in session:
+    if 'admin_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
         
     sql = "DELETE FROM gian_lan_log WHERE id = %s"

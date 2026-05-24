@@ -138,44 +138,39 @@ def _do_recognize(image_data):
             "similarity": round(sim, 2)
         }
         
-    # --- KIỂM TRA LIVENESS (CHỐNG GIẢ MẠO QUA MÀN HÌNH ĐIỆN THOẠI) ---
-    def check_liveness_heuristic(image_frame, bbox):
-        x1, y1, x2, y2 = map(int, bbox)
-        face_roi = image_frame[max(0,y1):y2, max(0,x1):x2]
-        if face_roi.size == 0: return True, ""
-        
-        gray = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
-        
-        # 1. Laplacian Variance (Độ mờ - Ảnh chụp màn hình thường bị mất nét)
-        blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
-        
-        # 2. Specular Reflection (Độ chói - Màn hình điện thoại phát sáng)
-        hsv = cv2.cvtColor(face_roi, cv2.COLOR_BGR2HSV)
-        v_channel = hsv[:,:,2]
-        glare_ratio = np.sum(v_channel > 240) / (v_channel.size + 1e-6)
-        
-        is_spoof = False
-        reason = ""
-        
-        # Ngưỡng phát hiện
-        if blur_score < 10.0:
-            is_spoof = True
-            reason = f"Ảnh quá mờ ({blur_score:.1f}), nghi ngờ gian lận"
-        elif glare_ratio > 0.40: # Hơn 40% diện tích mặt bị chói lóa
-            is_spoof = True
-            reason = f"Độ lóa cao ({glare_ratio:.2%}), nghi ngờ màn hình"
-            
-        return not is_spoof, reason
-
-    is_real, spoof_reason = check_liveness_heuristic(frame, face['bbox'])
+    # --- KIỂM TRA LIVENESS (CHỐNG GIẢ MẠO BẰNG MINIFASNET) ---
+    from core.anti_spoofing import get_anti_spoofing
+    fas_model = get_anti_spoofing()
+    is_real, spoof_score, spoof_reason = fas_model.predict(frame, face['bbox'])
+    
     if not is_real:
+        # Lưu ảnh bằng chứng gian lận
+        evidence_path = None
+        try:
+            import os
+            import uuid
+            from datetime import datetime
+            from config import Config
+            
+            date_folder = datetime.now().strftime("%Y%m%d")
+            save_dir = os.path.join(Config.EVIDENCE_DIR, 'fraud', date_folder)
+            os.makedirs(save_dir, exist_ok=True)
+            
+            filename = f"fraud_{mssv}_{datetime.now().strftime('%H%M%S')}_{uuid.uuid4().hex[:6]}.jpg"
+            abs_path = os.path.join(save_dir, filename)
+            cv2.imwrite(abs_path, frame)
+            rel_path = os.path.relpath(abs_path, Config.BASE_DIR).replace('\\', '/')
+            evidence_path = rel_path
+        except Exception as e:
+            print(f"[KIOSK] Lỗi lưu bằng chứng gian lận: {e}")
+
         # Ghi nhận hành vi gian lận vào bảng gian_lan_log
         from db.connection import execute_update
         sv_temp = execute_one("SELECT id FROM sinh_vien WHERE mssv = %s", (mssv,))
         if sv_temp:
             execute_update(
-                "INSERT INTO gian_lan_log (sinh_vien_id, loai_gian_lan, chi_tiet) VALUES (%s, %s, %s)",
-                (sv_temp['id'], 'Spoofing', f"Phát hiện dùng ảnh giả: {spoof_reason}. Độ trùng khớp: {sim:.2f}")
+                "INSERT INTO gian_lan_log (sinh_vien_id, loai_gian_lan, chi_tiet, hinh_anh) VALUES (%s, %s, %s, %s)",
+                (sv_temp['id'], 'Spoofing', f"Phát hiện dùng ảnh giả: {spoof_reason}. Độ trùng khớp: {sim:.2f}", evidence_path)
             )
         return {
             "success": False,

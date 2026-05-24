@@ -5,12 +5,14 @@ import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../services/api_service.dart';
-import '../services/face_recognition_service.dart';
 import '../data/repositories/attendance_repository.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:geolocator/geolocator.dart';
+import '../theme/app_theme.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -26,6 +28,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   bool _isScanning = false;
   bool _autoScan = true;
   final ApiService _apiService = ApiService();
+  bool _isOffline = false;
   
   // Google ML Kit Face Detector
   final FaceDetector _faceDetector = FaceDetector(
@@ -56,6 +59,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initCamera();
+    _checkConnectivity();
 
     _scanLineController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2500))..repeat();
     _scanLineAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -85,14 +89,12 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
         if (!mounted) return;
         setState(() => _isInitialized = true);
 
-        // Bắt đầu auto scan mỗi 1.5 giây (Tốc độ quét liên tục cực nhanh)
+        // Bắt đầu auto scan mỗi 1.5 giây
         _autoScanTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
           if (_autoScan && !_isScanning && mounted) {
             _captureAndDetectFace();
           }
         });
-      } else {
-         throw Exception("Không tìm thấy camera");
       }
     } catch (e) {
       if (!mounted) return;
@@ -117,31 +119,26 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  /// BƯỚC 1: ML Kit xử lý Offline, tìm ra Khuôn mặt trước khi làm việc nặng
   Future<void> _captureAndDetectFace() async {
     if (_isScanning || _controller == null || !_controller!.value.isInitialized) return;
 
     try {
       final imageFile = await _controller!.takePicture();
       final inputImage = InputImage.fromFilePath(imageFile.path);
-
-      // Gọi ML Kit Offline siêu tốc
       final List<Face> faces = await _faceDetector.processImage(inputImage);
 
-      if (faces.isEmpty) {
-        // KHÔNG CÓ MẶT -> Im lặng quét tiếp, tiết kiệm RAM/Pin, không lag UI
-        return;
-      }
+      if (faces.isEmpty) return;
 
-      // CÓ MẶT -> Chuyển sang UI đang quét & Xử lý nhận diện
       setState(() {
         _isScanning = true;
         _resultSuccess = null;
       });
 
-      // BƯỚC 2: Xử lý Nhận Diện (Tạm thời vẫn gọi Flask API cho đến khi có file TFLite)
-      await _recognizeViaApi(imageFile);
-
+      if (_isOffline) {
+        await _handleOfflineScan(imageFile);
+      } else {
+        await _recognizeViaApi(imageFile);
+      }
     } catch (e) {
       print('Lỗi camera/ML: $e');
     } finally {
@@ -149,14 +146,78 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> _checkConnectivity() async {
+    try {
+      final result = await Connectivity().checkConnectivity();
+      if (mounted) setState(() => _isOffline = result.contains(ConnectivityResult.none));
+    } catch (_) {
+      if (mounted) setState(() => _isOffline = true);
+    }
+
+    Connectivity().onConnectivityChanged.listen((result) {
+      if (mounted) setState(() => _isOffline = result.contains(ConnectivityResult.none));
+    });
+  }
+
+  Future<void> _handleOfflineScan(XFile image) async {
+    try {
+      await AttendanceRepository().saveAttendanceOffline('OFFLINE_PENDING', 0.0);
+      if (!mounted) return;
+      setState(() {
+        _resultSuccess = true;
+        _resultName = 'Ghi nhận Offline';
+        _resultMssv = null;
+        _resultMessage = 'Đã lưu cục bộ. Sẽ đồng bộ khi có mạng.';
+        _autoScan = false;
+      });
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _autoScan = true);
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() { _resultSuccess = false; _resultMessage = 'Lỗi lưu offline: $e'; });
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) setState(() { _resultSuccess = null; _resultMessage = null; });
+        });
+      }
+    }
+  }
+
+  Future<Position?> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return null;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return null;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return null;
+    }
+
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+
   Future<void> _recognizeViaApi(XFile image) async {
     try {
+      final position = await _getCurrentLocation();
+      double? lat = position?.latitude;
+      double? lng = position?.longitude;
+
       final bytes = await image.readAsBytes();
       final base64Image = base64Encode(bytes);
       final dataUrl = "data:image/jpeg;base64,$base64Image";
 
-      final result = await _apiService.recognizeFace(dataUrl);
-
+      final result = await _apiService.recognizeFace(dataUrl, lat: lat, lng: lng);
       if (!mounted) return;
 
       if (result['success'] == true) {
@@ -168,12 +229,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           _resultName = student['ho_ten'] ?? 'N/A';
           _resultMssv = student['mssv'] ?? '';
           _resultMessage = att != null ? (att['msg'] ?? 'Điểm danh thành công') : 'Nhận diện thành công';
-          
-          // Khi nhận ra, delay luồng auto-scan 4 giây để xem UI thành công
           _autoScan = false;
         });
 
-        // Ghi log offline luôn cho chắc (Optional, SyncManager sẽ lo phần đẩy)
         await AttendanceRepository().saveAttendanceOffline(student['mssv'], student['do_chinh_xac'] ?? 0.99);
 
         Future.delayed(const Duration(seconds: 4), () {
@@ -191,10 +249,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _resultSuccess = false;
-          _resultMessage = 'Lỗi nhận diện: $e';
-        });
+        setState(() { _resultSuccess = false; _resultMessage = 'Lỗi nhận diện: $e'; });
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) setState(() { _resultSuccess = null; _resultMessage = null; });
         });
@@ -221,30 +276,30 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                   ),
                 )
               : Container(
-                  color: const Color(0xFF0F172A),
+                  color: AppTheme.background,
                   child: const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(color: Color(0xFF2E96EB)),
+                        CircularProgressIndicator(color: AppTheme.secondary),
                         SizedBox(height: 16),
-                        Text("Đang khởi tạo Camera & ML Kit...", style: TextStyle(color: Colors.white60)),
+                        Text("Khởi tạo hệ thống...", style: TextStyle(color: AppTheme.textSecondary)),
                       ],
                     ),
                   ),
                 ),
 
-          // Lớp phủ tối
-          Positioned.fill(child: Container(color: Colors.black.withOpacity(0.35))),
+          // Lớp phủ tối mờ
+          Positioned.fill(child: Container(color: Colors.black.withOpacity(0.4))),
 
-          // ====== KHUNG QUÉT TỰ ĐỘNG ======
+          // ====== HUD SCANNER (KHUNG QUÉT) ======
           Center(
             child: AnimatedBuilder(
               animation: _cornerPulseAnimation,
               builder: (context, child) {
                 return CustomPaint(
                   size: const Size(280, 350),
-                  painter: ScanFramePainter(
+                  painter: HudScanFramePainter(
                     pulseValue: _cornerPulseAnimation.value,
                     isScanning: _isScanning,
                     isSuccess: _resultSuccess,
@@ -252,9 +307,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                 );
               },
             ),
-          ),
+          ).animate().fadeIn(duration: 800.ms),
 
-          // Đường quét laser
+          // Đường quét laser HUD
           if (_autoScan || _isScanning)
             Center(
               child: SizedBox(
@@ -264,7 +319,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                   animation: _scanLineAnimation,
                   builder: (context, child) {
                     return CustomPaint(
-                      painter: ScanLinePainter(progress: _scanLineAnimation.value),
+                      painter: HudScanLinePainter(progress: _scanLineAnimation.value),
                     );
                   },
                 ),
@@ -278,50 +333,41 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
             right: 0,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    _buildGlassButton(
-                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                    _buildHudButton(
+                      child: const Icon(Icons.arrow_back_ios_new, color: AppTheme.textPrimary, size: 18),
                       onTap: () => Navigator.pop(context),
                     ),
-                    const SizedBox(width: 10),
-                    _buildGlassContainer(
+                    const Spacer(),
+                    // Trạng thái Online/Offline
+                    _buildHudContainer(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 8,
-                            height: 8,
+                            width: 8, height: 8,
                             decoration: BoxDecoration(
-                              color: _isScanning
-                                  ? Colors.orange
-                                  : _autoScan
-                                      ? const Color(0xFF10B981)
-                                      : Colors.white54,
+                              color: _isOffline ? AppTheme.error : AppTheme.success,
                               shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (_isScanning ? Colors.orange : const Color(0xFF10B981)).withOpacity(0.6),
-                                  blurRadius: 6,
-                                ),
-                              ],
+                              boxShadow: [BoxShadow(color: (_isOffline ? AppTheme.error : AppTheme.success).withOpacity(0.6), blurRadius: 8)],
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            _isScanning ? "Đang phân tích AI..." : _autoScan ? "Chờ khuôn mặt" : "Tạm dừng",
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                            _isOffline ? 'OFFLINE' : 'ONLINE',
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
                           ),
                         ],
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 12),
                     // Nút On/Off AI
-                    _buildGlassButton(
+                    _buildHudButton(
                       child: Icon(
-                        _autoScan ? Icons.pause : Icons.smart_toy,
-                        color: _autoScan ? Colors.white : Colors.blueAccent,
+                        _autoScan ? Icons.smart_toy : Icons.pause,
+                        color: _autoScan ? AppTheme.secondary : AppTheme.textSecondary,
                         size: 20,
                       ),
                       onTap: () => setState(() => _autoScan = !_autoScan),
@@ -330,158 +376,180 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
+          ).animate().fadeIn().slideY(begin: -0.5, end: 0),
+
+          // ====== TRẠNG THÁI STATUS (DƯỚI HUD) ======
+          Positioned(
+            bottom: 120,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: _buildHudContainer(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isScanning)
+                      const SizedBox(
+                        width: 14, height: 14,
+                        child: CircularProgressIndicator(color: AppTheme.secondary, strokeWidth: 2),
+                      )
+                    else
+                      Icon(
+                        _autoScan ? Icons.radar : Icons.motion_photos_paused, 
+                        color: _autoScan ? AppTheme.secondary : AppTheme.textMuted, 
+                        size: 16
+                      ),
+                    const SizedBox(width: 10),
+                    Text(
+                      _isScanning ? "ĐANG PHÂN TÍCH AI..." : _autoScan ? "CHỜ KHUÔN MẶT" : "TẠM DỪNG",
+                      style: TextStyle(
+                        color: _isScanning ? AppTheme.secondary : AppTheme.textPrimary, 
+                        fontSize: 12, 
+                        fontWeight: FontWeight.w900, 
+                        letterSpacing: 2
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate(target: _isScanning ? 1 : 0).shimmer(duration: 1.seconds),
+            ),
           ),
 
           // ====== KẾT QUẢ HIỂN THỊ (GLASSMORPHISM) ======
           if (_resultSuccess != null)
             Positioned(
-              top: MediaQuery.of(context).padding.top + 64,
-              left: 16,
-              right: 16,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: (_resultSuccess == true ? const Color(0xFF10B981) : Colors.redAccent).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: (_resultSuccess == true ? const Color(0xFF10B981) : Colors.redAccent).withOpacity(0.4),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _resultSuccess == true ? Icons.check_circle : Icons.error_outline,
-                            color: Colors.white,
-                            size: 26,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                           crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (_resultName != null)
-                                Text(_resultName!, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                              if (_resultMssv != null)
-                                Text("MSSV: $_resultMssv", style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                              if (_resultMessage != null)
-                                Text(_resultMessage!, style: const TextStyle(color: Colors.white60, fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+              bottom: 40,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: AppTheme.glassDecoration(
+                  color: _resultSuccess == true ? AppTheme.success : AppTheme.error,
+                  opacity: 0.2,
+                  borderRadius: 24,
+                ).copyWith(
+                  border: Border.all(
+                    color: (_resultSuccess == true ? AppTheme.success : AppTheme.error).withOpacity(0.5),
                   ),
                 ),
-              ),
-            ),
-            
-          // Nút chụp thủ công ở dưới cùng
-          Positioned(
-             bottom: 30,
-             left: 0,
-             right: 0,
-             child: Center(
-               child: GestureDetector(
-                 onTap: _isScanning ? null : _captureAndDetectFace,
-                 child: Container(
-                   width: 64,
-                   height: 64,
-                   decoration: BoxDecoration(
-                     shape: BoxShape.circle,
-                     border: Border.all(color: Colors.white, width: 3),
-                   ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _resultSuccess == true ? Icons.check_circle : Icons.error_outline,
+                        color: AppTheme.textPrimary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_resultName != null)
+                            Text(_resultName!, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                          if (_resultMssv != null)
+                            Text("MSSV: $_resultMssv", style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                          if (_resultMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(_resultMessage!, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13, fontWeight: FontWeight.w500)),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn().slideY(begin: 0.5, end: 0),
+            )
+          else
+            // Nút chụp thủ công ở dưới cùng
+            Positioned(
+               bottom: 40,
+               left: 0,
+               right: 0,
+               child: Center(
+                 child: GestureDetector(
+                   onTap: _isScanning ? null : _captureAndDetectFace,
                    child: Container(
-                     margin: const EdgeInsets.all(4),
-                     decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF2E96EB)),
-                     child: const Icon(Icons.camera, color: Colors.white, size: 28),
+                     width: 64,
+                     height: 64,
+                     decoration: BoxDecoration(
+                       shape: BoxShape.circle,
+                       border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                     ),
+                     child: Container(
+                       margin: const EdgeInsets.all(4),
+                       decoration: BoxDecoration(
+                         shape: BoxShape.circle, 
+                         color: AppTheme.secondary.withOpacity(0.8),
+                         boxShadow: [BoxShadow(color: AppTheme.secondary.withOpacity(0.5), blurRadius: 10)]
+                       ),
+                       child: const Icon(Icons.camera, color: Colors.white, size: 28),
+                     ),
                    ),
                  ),
                ),
-             ),
-          )
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildGlassButton({required Widget child, required VoidCallback onTap}) {
+  Widget _buildHudButton({required Widget child, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: child,
-          ),
-        ),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: AppTheme.glassDecoration(opacity: 0.1, borderRadius: 12),
+        child: child,
       ),
     );
   }
 
-  Widget _buildGlassContainer({required Widget child}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: child,
-        ),
-      ),
+  Widget _buildHudContainer({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: AppTheme.glassDecoration(opacity: 0.15, borderRadius: 12),
+      child: child,
     );
   }
 }
 
-class ScanFramePainter extends CustomPainter {
+class HudScanFramePainter extends CustomPainter {
   final double pulseValue;
   final bool isScanning;
   final bool? isSuccess;
 
-  ScanFramePainter({required this.pulseValue, required this.isScanning, this.isSuccess});
+  HudScanFramePainter({required this.pulseValue, required this.isScanning, this.isSuccess});
 
   @override
   void paint(Canvas canvas, Size size) {
     Color frameColor;
-    if (isSuccess == true) frameColor = const Color(0xFF10B981);
-    else if (isSuccess == false) frameColor = Colors.redAccent;
-    else if (isScanning) frameColor = Colors.orange;
-    else frameColor = const Color(0xFF2E96EB);
+    if (isSuccess == true) frameColor = AppTheme.success;
+    else if (isSuccess == false) frameColor = AppTheme.error;
+    else if (isScanning) frameColor = AppTheme.primary;
+    else frameColor = AppTheme.secondary;
 
     final cornerLength = size.width * 0.15;
-    final radius = 20.0;
+    final radius = 24.0; // Bo tròn hơn HUD cũ
 
     final paint = Paint()
       ..color = frameColor.withOpacity(pulseValue)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5
+      ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
 
     final glowPaint = Paint()
-      ..color = frameColor.withOpacity(0.2 * pulseValue)
+      ..color = frameColor.withOpacity(0.3 * pulseValue)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 8.0
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+      ..strokeWidth = 12.0
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
 
     _drawCorners(canvas, size, paint, cornerLength, radius);
     _drawCorners(canvas, size, glowPaint, cornerLength, radius);
@@ -497,38 +565,41 @@ class ScanFramePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant ScanFramePainter old) =>
+  bool shouldRepaint(covariant HudScanFramePainter old) =>
       old.pulseValue != pulseValue || old.isScanning != isScanning || old.isSuccess != isSuccess;
 }
 
-class ScanLinePainter extends CustomPainter {
+class HudScanLinePainter extends CustomPainter {
   final double progress;
-  ScanLinePainter({required this.progress});
+  HudScanLinePainter({required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
     final y = size.height * progress;
+    final color = AppTheme.secondary;
 
+    // Đường tia laser
     canvas.drawRect(
       Rect.fromLTWH(0, y - 1, size.width, 2),
       Paint()
         ..shader = LinearGradient(
-          colors: [Colors.transparent, const Color(0xFF2E96EB).withOpacity(0.8), Colors.transparent],
+          colors: [Colors.transparent, color, Colors.transparent],
           stops: const [0.0, 0.5, 1.0],
         ).createShader(Rect.fromLTWH(0, y - 1, size.width, 2)),
     );
 
+    // Vệt sáng (Glow trail)
     canvas.drawRect(
-      Rect.fromLTWH(0, max(0, y - 50), size.width, 50),
+      Rect.fromLTWH(0, max(0, y - 60), size.width, 60),
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, const Color(0xFF2E96EB).withOpacity(0.12)],
-        ).createShader(Rect.fromLTWH(0, max(0, y - 50), size.width, 50)),
+          colors: [Colors.transparent, color.withOpacity(0.2)],
+        ).createShader(Rect.fromLTWH(0, max(0, y - 60), size.width, 60)),
     );
   }
 
   @override
-  bool shouldRepaint(covariant ScanLinePainter old) => old.progress != progress;
+  bool shouldRepaint(covariant HudScanLinePainter old) => old.progress != progress;
 }

@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/attendance_provider.dart';
+import 'providers/connectivity_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/sync_manager.dart';
+import 'services/firebase_messaging_service.dart'; // Thêm import FCM
+import 'theme/app_theme.dart'; // Thêm import theme
+import 'package:firebase_core/firebase_core.dart'; // Thêm import Firebase Core
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,12 +18,21 @@ void main() async {
   SyncManager.instance.initializeNetworkListener();
   // Kích hoạt đồng bộ ngay khi vừa mở app
   SyncManager.instance.syncAll();
+  
+  // Khởi tạo Firebase Cloud Messaging (FCM)
+  try {
+    await Firebase.initializeApp();
+    await FirebaseMessagingService().init();
+  } catch(e) {
+    debugPrint("Firebase init failed: \$e");
+  }
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..checkAuthStatus()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
       ],
       child: const FaceAttendanceApp(),
     ),
@@ -34,11 +47,7 @@ class FaceAttendanceApp extends StatelessWidget {
     return MaterialApp(
       title: 'MTU Kiosk Face Attendance',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F46E5)),
-        useMaterial3: true,
-        fontFamily: 'Roboto',
-      ),
+      theme: AppTheme.darkTheme, // Áp dụng Dark Theme
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           if (!auth.hasSeenOnboarding) {

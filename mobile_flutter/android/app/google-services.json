@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "866041415953",
+    "project_id": "mtuface-attendance",
+    "storage_bucket": "mtuface-attendance.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:866041415953:android:40a31eda2737b881de24b0",
+        "android_client_info": {
+          "package_name": "com.mtu.attendance.face_attendance_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDcxXNxxmT3ZKFpDtYgVG66QzFRTSQJ3yY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
