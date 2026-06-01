@@ -29,6 +29,7 @@ dependencies:
   crypto: ^3.0.3
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.0
+  flutter_markdown: ^0.7.4+3
   firebase_core: ^4.9.0
   firebase_messaging: ^16.2.2
 

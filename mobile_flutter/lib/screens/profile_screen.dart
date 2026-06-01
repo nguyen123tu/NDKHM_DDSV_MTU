@@ -154,6 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final sdtCtrl = TextEditingController(text: _profileData!['sdt']);
     final queQuanCtrl = TextEditingController(text: _profileData!['que_quan']);
     final danTocCtrl = TextEditingController(text: _profileData!['dan_toc'] ?? "Kinh");
+    final newPwdCtrl = TextEditingController();
 
     showDialog(
       context: context,
@@ -171,6 +172,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildDialogTextFieldCustom(controller: queQuanCtrl, label: "Quê quán"),
               const SizedBox(height: 8),
               _buildDialogTextFieldCustom(controller: danTocCtrl, label: "Dân tộc"),
+              const SizedBox(height: 8),
+              _buildDialogTextFieldCustom(controller: newPwdCtrl, label: "Đổi mật khẩu mới (Tùy chọn)", isPassword: true),
+              const Padding(
+                padding: EdgeInsets.only(top: 4.0),
+                child: Text("Bỏ trống nếu không muốn đổi mật khẩu", style: TextStyle(color: AppTheme.textMuted, fontSize: 11, fontStyle: FontStyle.italic)),
+              ),
             ],
           ),
         ),
@@ -184,6 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'sdt': sdtCtrl.text,
                   'que_quan': queQuanCtrl.text,
                   'dan_toc': danTocCtrl.text,
+                  if (newPwdCtrl.text.trim().isNotEmpty) 'new_password': newPwdCtrl.text.trim(),
                 });
                 if (mounted) {
                   Navigator.pop(context);
@@ -202,9 +210,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildDialogTextFieldCustom({required TextEditingController controller, required String label}) {
+  Widget _buildDialogTextFieldCustom({required TextEditingController controller, required String label, bool isPassword = false}) {
     return TextField(
       controller: controller, 
+      obscureText: isPassword,
       style: const TextStyle(color: AppTheme.textPrimary),
       decoration: InputDecoration(
         labelText: label,

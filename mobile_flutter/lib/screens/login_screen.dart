@@ -161,7 +161,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    backgroundColor: AppTheme.surface,
+                                    title: const Text("Quên mật khẩu", style: TextStyle(color: AppTheme.textPrimary)),
+                                    content: const Text(
+                                      "Vui lòng liên hệ với Quản trị viên (Admin) hoặc Giáo viên chủ nhiệm để được cấp lại mật khẩu mới.\n\nAdmin có thể dễ dàng cấp lại mật khẩu cho bạn thông qua trang Quản lý Web.",
+                                      style: TextStyle(color: AppTheme.textSecondary, height: 1.5),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text("Đã hiểu", style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                               child: Text(
                                 "Quên mật khẩu?",
                                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),

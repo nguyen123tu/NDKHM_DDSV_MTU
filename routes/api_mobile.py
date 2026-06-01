@@ -986,6 +986,8 @@ def update_profile():
     role = payload.get('role')
     
     try:
+        new_pwd = data.get('new_password')
+        
         if role == 'student':
             sql = """
                 UPDATE sinh_vien 
@@ -993,8 +995,16 @@ def update_profile():
                 WHERE id = %s
             """
             execute_update(sql, (data.get('email'), data.get('sdt'), data.get('que_quan'), data.get('dan_toc'), user_id))
+            
+            if new_pwd and new_pwd.strip():
+                new_hash = generate_password_hash(new_pwd.strip(), method='pbkdf2:sha256')
+                execute_update("UPDATE sinh_vien SET password_hash = %s WHERE id = %s", (new_hash, user_id))
         else:
             execute_update("UPDATE admin SET email = %s, sdt = %s WHERE id = %s", (data.get('email'), data.get('sdt'), user_id))
+            
+            if new_pwd and new_pwd.strip():
+                new_hash = generate_password_hash(new_pwd.strip(), method='pbkdf2:sha256')
+                execute_update("UPDATE admin SET password_hash = %s WHERE id = %s", (new_hash, user_id))
             
         return jsonify({"success": True, "message": "Cập nhật thông tin thành công"}), 200
     except Exception as e:
@@ -1400,6 +1410,43 @@ def create_session():
         (lop_id, admin_id, mo_ta, het_han.strftime('%Y-%m-%d %H:%M:%S'), vi_do, kinh_do)
     )
 
+    # === THÔNG BÁO CHO SINH VIÊN ===
+    import threading
+    def _notify_students():
+        try:
+            # Lấy tất cả SV trong lớp
+            students = execute_query(
+                "SELECT id, fcm_token FROM sinh_vien WHERE lop_id = %s AND trang_thai = 1",
+                (lop_id,)
+            )
+
+            title = f"📢 Điểm danh: {lop['ma_lop']}"
+            body = f"Phiên điểm danh lớp {lop['ten_lop']} đã mở! Thời hạn: {duration_minutes} phút."
+
+            for sv in students:
+                # 1. Lưu thông báo trong app
+                execute_update(
+                    "INSERT INTO thong_bao (sinh_vien_id, tieu_de, noi_dung) VALUES (%s, %s, %s)",
+                    (sv['id'], title, body)
+                )
+
+                # 2. Gửi Push Notification qua FCM
+                if sv.get('fcm_token'):
+                    try:
+                        from services.fcm_service import send_push_notification
+                        send_push_notification(
+                            sv['fcm_token'], title, body,
+                            data={'type': 'session_opened', 'session_id': str(new_id), 'lop_id': str(lop_id)}
+                        )
+                    except Exception:
+                        pass
+
+            print(f"[SESSION] Đã gửi thông báo cho {len(students)} sinh viên lớp {lop['ma_lop']}")
+        except Exception as e:
+            print(f"[SESSION] Lỗi gửi thông báo: {e}")
+
+    threading.Thread(target=_notify_students, daemon=True).start()
+
     return jsonify({
         "success": True,
         "message": f"Đã mở phiên điểm danh cho lớp {lop['ma_lop']}",
@@ -1777,7 +1824,7 @@ def student_self_checkin():
                 "message": "Hệ thống yêu cầu quyền truy cập vị trí để xác minh bạn đang ở lớp học."
             }), 400
             
-        distance = get_distance_meters(sv_lat, sv_lng, session['vi_do'], session['kinh_do'])
+        distance = calculate_distance(sv_lat, sv_lng, session['vi_do'], session['kinh_do'])
         max_radius = 50  # Bán kính 50 mét
         
         if distance > max_radius:
@@ -2015,5 +2062,118 @@ def mark_notification_read(notif_id):
         
         execute_update("UPDATE thong_bao SET da_doc = 1 WHERE id = %s", (notif_id,))
         return jsonify({"success": True, "message": "Đã đọc"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# ================================================================
+# AI CHATBOT (Hỏi đáp AI trên Mobile)
+# ================================================================
+
+@api_mobile_bp.route('/chatbot/ask', methods=['POST'])
+def mobile_chatbot_ask():
+    """
+    Gửi câu hỏi cho AI Chatbot từ Mobile App
+    ---
+    tags:
+      - Mobile App API
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            question:
+              type: string
+              example: "Hệ thống điểm danh hoạt động như thế nào?"
+    responses:
+      200:
+        description: Trả lời thành công
+      400:
+        description: Câu hỏi trống hoặc quá dài
+    """
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json(silent=True) or {}
+    question = (data.get('question') or '').strip()
+
+    if not question:
+        return jsonify({"success": False, "message": "Câu hỏi không được để trống"}), 400
+
+    if len(question) > 2000:
+        return jsonify({"success": False, "message": "Câu hỏi quá dài (tối đa 2000 ký tự)"}), 400
+
+    # Session ID riêng cho mỗi user mobile
+    user_id = payload.get('sub', 'unknown')
+    session_id = f"mobile_{user_id}"
+
+    try:
+        from services.ai_chatbot import get_chatbot
+        chatbot = get_chatbot()
+        result = chatbot.chat(question, session_id)
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "answer": result.get("answer", ""),
+                "sources": result.get("sources", []),
+                "duration_ms": result.get("duration_ms", 0),
+                "backend": result.get("backend", "unknown"),
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Lỗi AI Chatbot: {str(e)}"}), 500
+
+
+@api_mobile_bp.route('/chatbot/suggestions', methods=['GET'])
+def mobile_chatbot_suggestions():
+    """
+    Lấy danh sách câu hỏi gợi ý cho chatbot
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    try:
+        from services.ai_chatbot import get_chatbot
+        chatbot = get_chatbot()
+        suggestions = chatbot.get_suggested_questions()
+        return jsonify({"success": True, "data": suggestions}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@api_mobile_bp.route('/chatbot/clear', methods=['POST'])
+def mobile_chatbot_clear():
+    """
+    Xóa lịch sử chat AI trên mobile
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
+    payload, auth_error = _require_mobile_auth()
+    if auth_error:
+        return auth_error
+
+    user_id = payload.get('sub', 'unknown')
+    session_id = f"mobile_{user_id}"
+
+    try:
+        from services.ai_chatbot import get_chatbot
+        chatbot = get_chatbot()
+        chatbot.clear_history(session_id)
+        return jsonify({"success": True, "message": "Đã xóa lịch sử chat"}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500

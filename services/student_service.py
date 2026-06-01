@@ -158,8 +158,7 @@ def update(student_id, data):
     Returns:
         bool: True nếu thành công
     """
-    # Xây dựng câu SET động dựa trên data có gì
-    allowed_fields = ["ho_ten", "email", "sdt", "lop_id", "avatar", "ngay_sinh", "gioi_tinh", "da_train"]
+    allowed_fields = ["ho_ten", "email", "sdt", "lop_id", "avatar", "ngay_sinh", "gioi_tinh", "da_train", "trang_thai", "trang_thai_face", "password_hash"]
     set_parts = []
     params = []
 

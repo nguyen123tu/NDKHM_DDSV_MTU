@@ -39,6 +39,10 @@ class KnowledgeBuilder:
         "docs": [
             "bao_cao_do_an.md",
             "README.md",
+            "docs/huong_dan_su_dung.md",
+            "docs/faq.md",
+            "docs/api_documentation.md",
+            "docs/PROJECT_STRUCTURE.md",
         ],
         "database": [
             "db/schema.sql",
@@ -53,6 +57,7 @@ class KnowledgeBuilder:
             "services",
             "core",
             "utils",
+            "scripts",
         ],
     }
 

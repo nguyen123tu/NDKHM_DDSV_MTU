@@ -21,7 +21,7 @@ class ApiService {
   // 4. Triển khai lên VPS/Cloud (Production):
   //    static const String baseUrl = 'https://your-domain.com';
   // ============================================================
-  static const String baseUrl = 'http://192.168.1.105:5000';
+  static const String baseUrl = 'http://172.16.3.91:5000';
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
@@ -48,7 +48,7 @@ class ApiService {
       Uri.parse('$baseUrl/api/mobile/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'username': username, 
+        'username': username,
         'password': password,
         'device_id': deviceId,
       }),
@@ -68,14 +68,15 @@ class ApiService {
     throw Exception('Failed to load stats');
   }
 
-  Future<Map<String, dynamic>> getHistory({int limit = 20, int? lopId, String? date, int? month, int? year}) async {
+  Future<Map<String, dynamic>> getHistory(
+      {int limit = 20, int? lopId, String? date, int? month, int? year}) async {
     final headers = await _getHeaders();
     String url = '$baseUrl/api/mobile/history?limit=$limit';
     if (lopId != null) url += '&lop_id=$lopId';
     if (date != null) url += '&date=$date';
     if (month != null) url += '&month=$month';
     if (year != null) url += '&year=$year';
-    
+
     final response = await http.get(
       Uri.parse(url),
       headers: headers,
@@ -86,18 +87,21 @@ class ApiService {
     throw Exception('Failed to load history');
   }
 
-  Future<Map<String, dynamic>> recognizeFace(String base64Image, {double? lat, double? lng}) async {
+  Future<Map<String, dynamic>> recognizeFace(String base64Image,
+      {double? lat, double? lng}) async {
     final headers = await _getHeaders();
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/public/api/recognize'),
-        headers: headers,
-        body: jsonEncode({
-          'image': base64Image,
-          if (lat != null) 'lat': lat,
-          if (lng != null) 'lng': lng,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/public/api/recognize'),
+            headers: headers,
+            body: jsonEncode({
+              'image': base64Image,
+              if (lat != null) 'lat': lat,
+              if (lng != null) 'lng': lng,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
       return {'success': false, 'msg': 'Quá thời gian hoặc lỗi kết nối'};
@@ -115,19 +119,22 @@ class ApiService {
     throw Exception('Failed to load classes');
   }
 
-  Future<Map<String, dynamic>> registerFace(String mssv, String hoTen, int lopId, List<String> imagesBase64) async {
+  Future<Map<String, dynamic>> registerFace(
+      String mssv, String hoTen, int lopId, List<String> imagesBase64) async {
     final headers = await _getHeaders();
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/mobile/register_face'),
-        headers: headers,
-        body: jsonEncode({
-          'mssv': mssv,
-          'ho_ten': hoTen,
-          'lop_id': lopId,
-          'images': imagesBase64
-        }),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/mobile/register_face'),
+            headers: headers,
+            body: jsonEncode({
+              'mssv': mssv,
+              'ho_ten': hoTen,
+              'lop_id': lopId,
+              'images': imagesBase64
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
       return jsonDecode(response.body);
     } catch (e) {
       return {'success': false, 'message': 'Lỗi kết nối: $e'};
@@ -136,23 +143,27 @@ class ApiService {
 
   Future<Map<String, dynamic>> getProfile() async {
     final headers = await _getHeaders();
-    final response = await http.get(Uri.parse('$baseUrl/api/mobile/profile'), headers: headers);
+    final response = await http.get(Uri.parse('$baseUrl/api/mobile/profile'),
+        headers: headers);
     return jsonDecode(response.body);
   }
 
-  Future<Map<String, dynamic>> changePassword(String oldPassword, String newPassword) async {
+  Future<Map<String, dynamic>> changePassword(
+      String oldPassword, String newPassword) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/api/mobile/change-password'),
       headers: headers,
-      body: jsonEncode({'old_password': oldPassword, 'new_password': newPassword}),
+      body: jsonEncode(
+          {'old_password': oldPassword, 'new_password': newPassword}),
     );
     return jsonDecode(response.body);
   }
 
   Future<Map<String, dynamic>> getSchedule() async {
     final headers = await _getHeaders();
-    final response = await http.get(Uri.parse('$baseUrl/api/mobile/schedule'), headers: headers);
+    final response = await http.get(Uri.parse('$baseUrl/api/mobile/schedule'),
+        headers: headers);
     return jsonDecode(response.body);
   }
 
@@ -186,7 +197,8 @@ class ApiService {
 
   Future<Map<String, dynamic>> getPendingFaces() async {
     final headers = await _getHeaders();
-    final response = await http.get(Uri.parse('$baseUrl/api/mobile/pending-faces'), headers: headers);
+    final response = await http
+        .get(Uri.parse('$baseUrl/api/mobile/pending-faces'), headers: headers);
     return jsonDecode(response.body);
   }
 
@@ -215,7 +227,11 @@ class ApiService {
   }
 
   /// Admin tạo phiên điểm danh mới
-  Future<Map<String, dynamic>> createSession(int lopId, {String moTa = '', int durationMinutes = 90, double? lat, double? lng}) async {
+  Future<Map<String, dynamic>> createSession(int lopId,
+      {String moTa = '',
+      int durationMinutes = 90,
+      double? lat,
+      double? lng}) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/api/mobile/sessions/create'),
@@ -242,19 +258,23 @@ class ApiService {
   }
 
   /// Sinh viên tự điểm danh bằng khuôn mặt
-  Future<Map<String, dynamic>> studentSelfCheckin(int sessionId, String imageBase64, {double? lat, double? lng}) async {
+  Future<Map<String, dynamic>> studentSelfCheckin(
+      int sessionId, String imageBase64,
+      {double? lat, double? lng}) async {
     final headers = await _getHeaders();
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/mobile/student/checkin'),
-        headers: headers,
-        body: jsonEncode({
-          'session_id': sessionId,
-          'image_base64': imageBase64,
-          'vi_do': lat,
-          'kinh_do': lng,
-        }),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/mobile/student/checkin'),
+            headers: headers,
+            body: jsonEncode({
+              'session_id': sessionId,
+              'image_base64': imageBase64,
+              'vi_do': lat,
+              'kinh_do': lng,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       return jsonDecode(response.body);
     } catch (e) {
       return {'success': false, 'message': 'Lỗi kết nối: $e'};
@@ -370,6 +390,58 @@ class ApiService {
       Uri.parse('$baseUrl/api/mobile/fcm-token'),
       headers: headers,
       body: jsonEncode({'fcm_token': fcmToken}),
+    );
+    return jsonDecode(response.body);
+  }
+
+  // ================================================================
+  // AI CHATBOT (Hỏi đáp AI)
+  // ================================================================
+
+  /// Gửi câu hỏi cho AI Chatbot
+  Future<Map<String, dynamic>> askChatbot(String question) async {
+    final headers = await _getHeaders();
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/mobile/chatbot/ask'),
+            headers: headers,
+            body: jsonEncode({'question': question}),
+          )
+          .timeout(const Duration(seconds: 60));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối hoặc quá thời gian: $e'};
+    }
+  }
+
+  /// Lấy danh sách câu hỏi gợi ý
+  Future<List<String>> getChatbotSuggestions() async {
+    final headers = await _getHeaders();
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/chatbot/suggestions'),
+        headers: headers,
+      );
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return List<String>.from(data['data']);
+      }
+    } catch (_) {}
+    return [
+      'Hệ thống điểm danh hoạt động như thế nào?',
+      'Làm sao để train AI cho sinh viên mới?',
+      'Cấu trúc database gồm những bảng nào?',
+      'API mobile hỗ trợ những endpoint nào?',
+    ];
+  }
+
+  /// Xóa lịch sử chat AI
+  Future<Map<String, dynamic>> clearChatHistory() async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/chatbot/clear'),
+      headers: headers,
     );
     return jsonDecode(response.body);
   }

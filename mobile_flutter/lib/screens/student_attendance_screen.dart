@@ -303,7 +303,9 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
         }
 
         setState(() => _statusMessage = 'Đang lấy vị trí GPS...');
-        Position pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high).timeout(const Duration(seconds: 7));
+        Position pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 7)),
+        );
         lat = pos.latitude;
         lng = pos.longitude;
       } catch (e) {

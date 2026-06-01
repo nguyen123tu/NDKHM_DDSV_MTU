@@ -204,7 +204,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
       return null;
     }
 
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    return await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 10)),
+    );
   }
 
   Future<void> _recognizeViaApi(XFile image) async {

@@ -1,10 +1,26 @@
 {
-  "last_built": "2026-05-12 09:20:45",
-  "total_chunks": 876,
+  "last_built": "2026-05-31 10:44:00",
+  "total_chunks": 986,
   "sources": [
     {
       "file": "README.md",
-      "chunks": 23
+      "chunks": 21
+    },
+    {
+      "file": "docs/huong_dan_su_dung.md",
+      "chunks": 29
+    },
+    {
+      "file": "docs/faq.md",
+      "chunks": 42
+    },
+    {
+      "file": "docs/api_documentation.md",
+      "chunks": 28
+    },
+    {
+      "file": "docs/PROJECT_STRUCTURE.md",
+      "chunks": 4
     },
     {
       "file": "db/schema.sql",
@@ -24,7 +40,7 @@
     },
     {
       "file": "routes\\api_mobile.py",
-      "chunks": 168
+      "chunks": 194
     },
     {
       "file": "routes\\attendance.py",
@@ -51,10 +67,6 @@
       "chunks": 9
     },
     {
-      "file": "routes\\deepface_api.py",
-      "chunks": 24
-    },
-    {
       "file": "routes\\export.py",
       "chunks": 14
     },
@@ -64,7 +76,7 @@
     },
     {
       "file": "routes\\public.py",
-      "chunks": 29
+      "chunks": 28
     },
     {
       "file": "routes\\students.py",
@@ -76,7 +88,7 @@
     },
     {
       "file": "routes\\__init__.py",
-      "chunks": 4
+      "chunks": 3
     },
     {
       "file": "services\\ai_chatbot.py",
@@ -84,7 +96,7 @@
     },
     {
       "file": "services\\attendance_service.py",
-      "chunks": 29
+      "chunks": 31
     },
     {
       "file": "services\\class_service.py",
@@ -95,8 +107,12 @@
       "chunks": 38
     },
     {
+      "file": "services\\fcm_service.py",
+      "chunks": 7
+    },
+    {
       "file": "services\\knowledge_builder.py",
-      "chunks": 45
+      "chunks": 46
     },
     {
       "file": "services\\recognition_thread.py",
@@ -115,8 +131,12 @@
       "chunks": 1
     },
     {
+      "file": "core\\anti_spoofing.py",
+      "chunks": 10
+    },
+    {
       "file": "core\\camera.py",
-      "chunks": 22
+      "chunks": 33
     },
     {
       "file": "core\\detector.py",
@@ -137,10 +157,6 @@
     {
       "file": "core\\engine.py",
       "chunks": 17
-    },
-    {
-      "file": "core\\engine_deepface.py",
-      "chunks": 35
     },
     {
       "file": "core\\matcher.py",
@@ -165,6 +181,14 @@
     {
       "file": "utils\\__init__.py",
       "chunks": 1
+    },
+    {
+      "file": "scripts\\auto_swagger.py",
+      "chunks": 11
+    },
+    {
+      "file": "scripts\\fix_duplicates.py",
+      "chunks": 2
     }
   ]
 }

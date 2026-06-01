@@ -33,7 +33,10 @@ CREATE TABLE IF NOT EXISTS sinh_vien (
     ngay_sinh   DATE,
     gioi_tinh   TINYINT COMMENT '0=nữ, 1=nam',
     trang_thai  TINYINT DEFAULT 1 COMMENT '1=active, 0=inactive',
+    trang_thai_face TINYINT DEFAULT 0 COMMENT '0=chưa đk, 1=chờ duyệt, 2=đã duyệt, 3=chụp lại',
     face_vector TEXT COMMENT 'JSON mảng 512 số phục vụ đồng bộ offline',
+    device_id   VARCHAR(255) COMMENT 'Device ID để chống đăng nhập nhiều thiết bị',
+    fcm_token   VARCHAR(255) COMMENT 'Token để nhận Push Notification',
     created_at  DATETIME DEFAULT NOW(),
     updated_at  DATETIME DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE SET NULL,
@@ -87,6 +90,7 @@ CREATE TABLE IF NOT EXISTS admin (
     password_hash   VARCHAR(255) NOT NULL,
     ho_ten          VARCHAR(100),
     role            VARCHAR(20) DEFAULT 'admin' COMMENT 'admin / teacher',
+    fcm_token       VARCHAR(255) COMMENT 'Token để nhận Push Notification',
     created_at      DATETIME DEFAULT NOW()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -111,4 +115,22 @@ CREATE TABLE IF NOT EXISTS gian_lan_log (
     hinh_anh        VARCHAR(255) COMMENT 'Đường dẫn ảnh bằng chứng (nếu có)',
     da_xu_ly        TINYINT DEFAULT 0 COMMENT '0=chưa xử lý, 1=đã xử lý',
     FOREIGN KEY (sinh_vien_id) REFERENCES sinh_vien(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 9. Bảng PHIÊN ĐIỂM DANH (Admin mở phiên, SV tham gia)
+CREATE TABLE IF NOT EXISTS phien_diem_danh (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    lop_id      INT NOT NULL,
+    admin_id    INT,
+    trang_thai  TINYINT DEFAULT 1 COMMENT '1=đang mở, 0=đã đóng',
+    mo_ta       VARCHAR(255),
+    bat_dau     DATETIME DEFAULT NOW(),
+    ket_thuc    DATETIME NULL,
+    het_han     DATETIME NULL COMMENT 'Thời gian tự động đóng',
+    vi_do       DOUBLE NULL COMMENT 'Latitude GPS của admin',
+    kinh_do     DOUBLE NULL COMMENT 'Longitude GPS của admin',
+    created_at  DATETIME DEFAULT NOW(),
+    INDEX idx_lop_id (lop_id),
+    INDEX idx_trang_thai (trang_thai),
+    FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

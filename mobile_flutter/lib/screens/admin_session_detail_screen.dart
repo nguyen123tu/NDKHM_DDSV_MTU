@@ -220,7 +220,7 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
                       const SizedBox(height: 6),
                       if (student['thoi_gian'] != null)
                         Text(
-                          student['thoi_gian'].toString().substring(11, 19), // Lấy HH:MM:SS
+                          student['thoi_gian'].toString(),
                           style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontFamily: 'monospace'),
                         ),
                     ],

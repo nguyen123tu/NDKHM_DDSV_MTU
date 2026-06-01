@@ -19,6 +19,7 @@ import 'session_history_screen.dart';
 import 'admin_stats_screen.dart';
 import 'notifications_screen.dart';
 import 'sync_status_screen.dart';
+import 'chatbot_screen.dart';
 import '../services/export_service.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
@@ -430,6 +431,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: "QR Scan",
                   icon: Icons.qr_code_scanner,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentQRScannerScreen())),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSecondaryAction(
+                  title: "AI Chat",
+                  icon: Icons.auto_awesome,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatbotScreen())),
                 ),
               ),
               const SizedBox(width: 12),

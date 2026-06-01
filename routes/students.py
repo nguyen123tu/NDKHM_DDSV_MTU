@@ -238,6 +238,11 @@ def edit(id):
             'gioi_tinh': request.form.get('gioi_tinh', type=int)
         }
         
+        new_pwd = request.form.get('new_password')
+        if new_pwd and new_pwd.strip():
+            from werkzeug.security import generate_password_hash
+            data['password_hash'] = generate_password_hash(new_pwd.strip(), method='pbkdf2:sha256')
+        
         # Xử lý upload ảnh mới
         if 'avatar' in request.files:
             file = request.files['avatar']
