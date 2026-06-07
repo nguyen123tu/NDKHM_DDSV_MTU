@@ -1,4 +1,4 @@
-# 🎓 MTUFace - Hệ Thống Điểm Danh Bằng Nhận Diện Khuôn Mặt (Face Recognition Attendance)
+# 🎓 MTUFace - Hệ Thống Điểm Danh Bằng Nhận Diện Khuôn Mặt 
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B.svg)](https://flutter.dev/)
@@ -27,9 +27,7 @@
 - **Kiosk HUD thông minh**: Giao diện check-in chuyên nghiệp (Auto / In / Out mode) với camera tracking và feedback trực quan.
 - **Self-Check công khai**: Trang điểm danh tự phục vụ cho sinh viên, không cần đăng nhập.
 - **Quản lý lớp học & lịch học**: Tạo, sửa, xóa lớp học và quản lý lịch học theo tuần.
-- **Cảnh báo gian lận**: Trang giám sát các lần phát hiện gian lận với log chi tiết.
 - **Kết xuất báo cáo**: Xuất dữ liệu điểm danh ra file Excel/PDF.
-- **Thông báo Telegram**: Cảnh báo tự động qua Telegram Bot đối với các hành vi bất thường hoặc gian lận điểm danh.
 
 ### 📱 Mobile App (Flutter)
 - **Offline-first**: Dữ liệu lưu trữ cục bộ (SQLite), đồng bộ với server khi có mạng.
