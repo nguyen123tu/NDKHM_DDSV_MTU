@@ -23,20 +23,18 @@ def lookup():
 def api_lookup():
     """
     API để JS gọi từ trang public
-    ---
-    tags:
-      - Kiosk Public API
-    responses:
-      200:
-        description: Thành công
     """
+    import os
+    import glob
+    from config import Config
+    
     mssv = request.json.get('mssv')
     if not mssv:
         return jsonify({"success": False, "msg": "Vui lòng nhập MSSV"})
         
     # Tìm SV
     sv = execute_one("""
-        SELECT sv.ho_ten, lh.ten_lop 
+        SELECT sv.id, sv.ho_ten, sv.email, sv.sdt, sv.ngay_sinh, sv.gioi_tinh, sv.avatar, lh.ten_lop 
         FROM sinh_vien sv 
         LEFT JOIN lop_hoc lh ON sv.lop_id = lh.id
         WHERE sv.mssv = %s
@@ -48,22 +46,68 @@ def api_lookup():
     # Lấy lịch sử 10 lần gần nhất
     history = execute_query("""
         SELECT DATE_FORMAT(dd.thoi_gian, '%d/%m/%Y %H:%i') as thoi_gian, 
-               DATE_FORMAT(dd.gio_ra, '%H:%i') as gio_ra,
                dd.trang_thai, 
                lh.ten_lop 
         FROM diem_danh dd
         LEFT JOIN lop_hoc lh ON dd.lop_id = lh.id
-        WHERE dd.sinh_vien_id = (SELECT id FROM sinh_vien WHERE mssv = %s)
+        WHERE dd.sinh_vien_id = %s
         ORDER BY dd.thoi_gian DESC LIMIT 10
-    """, (mssv,))
+    """, (sv['id'],))
     
+    # Lấy tổng số lần điểm danh
+    stats_query = execute_one("""
+        SELECT COUNT(*) as total_attendance,
+               SUM(CASE WHEN trang_thai = 'Co mat' THEN 1 ELSE 0 END) as total_present
+        FROM diem_danh
+        WHERE sinh_vien_id = %s
+    """, (sv['id'],))
+    
+    total_attendance = stats_query['total_attendance'] if stats_query and stats_query['total_attendance'] else 0
+    total_present = stats_query['total_present'] if stats_query and stats_query['total_present'] else 0
+    
+    # Xử lý Avatar và Face Data (quét thư mục)
+    avatar_path = sv.get("avatar")
+    face_images = []
+    
+    db_path = os.path.join(Config.DATABASE_DIR, mssv)
+    if os.path.exists(db_path):
+        images = glob.glob(f"{db_path}/*.jpg") + glob.glob(f"{db_path}/*.png")
+        for img in images:
+            # Đường dẫn tương đối cho frontend
+            rel_path = f"database/{mssv}/{os.path.basename(img)}"
+            face_images.append(rel_path)
+            
+    if not avatar_path or not os.path.exists(os.path.join(Config.BASE_DIR, str(avatar_path))):
+        if face_images:
+            avatar_path = face_images[0]
+        else:
+            avatar_path = None
+            
+    # Format lại ngày sinh
+    ngay_sinh_str = ""
+    if sv.get("ngay_sinh"):
+        try:
+            ngay_sinh_str = sv["ngay_sinh"].strftime("%d/%m/%Y")
+        except:
+            ngay_sinh_str = str(sv["ngay_sinh"])
+            
     return jsonify({
         "success": True,
         "student": {
             "mssv": mssv,
             "ho_ten": sv["ho_ten"],
-            "ten_lop": sv["ten_lop"] or "Chưa phân lớp"
+            "ten_lop": sv["ten_lop"] or "Chưa phân lớp",
+            "email": sv.get("email") or "Chưa cập nhật",
+            "sdt": sv.get("sdt") or "Chưa cập nhật",
+            "ngay_sinh": ngay_sinh_str or "Chưa cập nhật",
+            "gioi_tinh": "Nam" if sv.get("gioi_tinh") == 1 else ("Nữ" if sv.get("gioi_tinh") == 0 else "Chưa cập nhật"),
+            "avatar": avatar_path
         },
+        "stats": {
+            "total": total_attendance,
+            "present": int(total_present)
+        },
+        "face_data": face_images,
         "history": history
     })
 
@@ -302,14 +346,12 @@ def api_recognize():
             ghi_chu=evidence_path
         )
         if log_result and isinstance(log_result, dict):
-            status_msg = "Điểm danh vào thành công!"
-            if log_result['action'] == 'checkout':
-                status_msg = "Hẹn gặp lại! Đã ghi nhận giờ ra."
-            elif log_result['action'] == 'skip':
-                status_msg = "Bạn đã điểm danh trước đó rồi."
+            status_msg = "Điểm danh thành công!"
+            if log_result.get('action') == 'checkin':
+                status_msg = "Điểm danh vào thành công!"
                 
             attendance_info = {
-                'action': log_result['action'],
+                'action': log_result.get('action', 'checkin'),
                 'msg': status_msg
             }
     
@@ -333,4 +375,28 @@ def api_recognize():
         "attendance": attendance_info,
         "today_records": today_records
     })
+
+@public_bp.route('/api/support', methods=['POST'])
+def api_support():
+    """
+    API nhận yêu cầu hỗ trợ từ sinh viên
+    """
+    data = request.json
+    mssv = data.get('mssv')
+    tieu_de = data.get('tieu_de')
+    noi_dung = data.get('noi_dung')
+    
+    if not all([mssv, tieu_de, noi_dung]):
+        return jsonify({"success": False, "msg": "Thiếu thông tin"})
+        
+    try:
+        execute_update("""
+            INSERT INTO yeu_cau_ho_tro (mssv, tieu_de, noi_dung)
+            VALUES (%s, %s, %s)
+        """, (mssv, tieu_de, noi_dung))
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"Lỗi gửi yêu cầu hỗ trợ: {e}")
+        return jsonify({"success": False, "msg": "Lỗi hệ thống"})
+
 

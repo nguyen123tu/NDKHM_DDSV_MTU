@@ -1,100 +1,202 @@
-.text-navy { color: #1B3A5C !important; }
-    .bg-navy-subtle { background-color: rgba(27, 58, 92, 0.05); }
-    .extra-small { font-size: 0.7rem; }
-    .fw-600 { font-weight: 600; }
-    .fw-500 { font-weight: 500; }
+/* ═══ Students Pending — Cyberpunk Dark Theme ═══ */
 
-    .premium-card {
-        background: #fff;
-        border-radius: 16px;
-        border: 1px solid rgba(0,0,0,0.05);
-    }
+.text-navy { color: var(--text-primary) !important; }
+.bg-navy-subtle { background-color: rgba(123, 47, 255, 0.1) !important; }
+.border-navy-subtle { border-color: rgba(123, 47, 255, 0.2) !important; }
+.extra-small { font-size: 0.7rem; }
+.fw-600 { font-weight: 600; }
+.fw-500 { font-weight: 500; }
 
-    .custom-table thead th {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        border-bottom: 1px solid #f1f5f9;
-        background-color: #f8fafc;
-    }
+/* ─── Premium Header ─── */
+.premium-header {
+    background: var(--bg-card) !important;
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 18px !important;
+    box-shadow: var(--shadow-sm);
+    color: var(--text-primary);
+    position: relative;
+    overflow: hidden;
+}
+.premium-header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
+    opacity: 0.6;
+}
+.premium-header h4 {
+    color: var(--text-primary) !important;
+}
+.premium-header h4 .text-primary {
+    color: var(--accent) !important;
+    filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+.premium-header p {
+    color: var(--text-secondary) !important;
+}
 
-    .custom-table tbody td {
-        border-bottom: 1px solid #f1f5f9;
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-    }
+/* ─── Stat Badge ─── */
+.stat-badge {
+    background: rgba(253, 203, 110, 0.1) !important;
+    color: var(--warning) !important;
+    border: 1px solid rgba(253, 203, 110, 0.25) !important;
+    border-radius: 20px !important;
+    backdrop-filter: blur(8px);
+}
 
-    .btn-image-view {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        color: #1B3A5C;
-        font-weight: 600;
-        font-size: 0.85rem;
-        padding: 0.5rem 1rem;
-        border-radius: 10px;
-        transition: all 0.2s;
-    }
-    .btn-image-view:hover {
-        background: #f1f5f9;
-        border-color: #1B3A5C;
-    }
+/* ─── Premium Card (Table Container) ─── */
+.premium-card {
+    background: var(--bg-card) !important;
+    backdrop-filter: blur(16px);
+    border-radius: 18px !important;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
 
-    .btn-action {
-        height: 38px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 0.85rem;
-        padding: 0 1.25rem;
-        transition: all 0.2s;
-    }
+/* ─── Table ─── */
+.custom-table thead th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent) !important;
+    border-bottom: 1px solid var(--glass-border) !important;
+    background: rgba(123, 47, 255, 0.08) !important;
+    padding: 14px 16px;
+}
 
-    .btn-approve {
-        background: #10B981;
-        color: #fff;
-        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
-    }
-    .btn-approve:hover {
-        background: #059669;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
-    }
+.custom-table tbody td {
+    border-bottom: 1px solid var(--glass-border) !important;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    color: var(--text-primary) !important;
+    background: transparent !important;
+}
 
-    .btn-reject {
-        background: #fee2e2;
-        color: #ef4444;
-        width: 38px;
-        padding: 0;
-    }
-    .btn-reject:hover {
-        background: #ef4444;
-        color: #fff;
-    }
+.custom-table tbody tr:hover td {
+    background: rgba(123, 47, 255, 0.05) !important;
+}
 
-    .empty-state {
-        padding: 40px;
-    }
-    .empty-icon {
-        font-size: 3rem;
-        color: #cbd5e1;
-    }
+/* ─── Avatar ─── */
+.avatar-sm {
+    border: 2px solid rgba(0, 245, 212, 0.3) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
 
-    #imageGrid img {
-        height: 140px;
-        width: 100%;
-        object-fit: cover;
-        border-radius: 12px;
-        transition: transform 0.3s;
-        cursor: zoom-in;
-    }
-    #imageGrid img:hover {
-        transform: scale(1.05);
-    }
+/* ─── Image View Button ─── */
+.btn-image-view {
+    background: rgba(123, 47, 255, 0.1) !important;
+    border: 1px solid rgba(123, 47, 255, 0.25) !important;
+    color: var(--primary-light) !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    transition: all 0.3s var(--ease);
+    cursor: pointer;
+}
+.btn-image-view:hover {
+    background: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(123, 47, 255, 0.3);
+}
 
-    .bg-gray-50 { background-color: #f9fafb; }
-    .btn-light-soft { background-color: #f1f5f9; color: #64748b; }
+/* ─── Action Buttons ─── */
+.btn-action {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0 1.25rem;
+    transition: all 0.3s var(--ease);
+    cursor: pointer;
+}
+
+.btn-approve {
+    background: linear-gradient(135deg, #00F5D4 0%, #00D4FF 100%) !important;
+    color: #0a0a1a !important;
+    box-shadow: 0 4px 12px rgba(0, 245, 212, 0.25);
+}
+.btn-approve:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 245, 212, 0.4);
+}
+
+.btn-reject {
+    background: rgba(255, 107, 107, 0.15) !important;
+    color: var(--neon-coral) !important;
+    width: 38px;
+    padding: 0;
+    border: 1px solid rgba(255, 107, 107, 0.25) !important;
+}
+.btn-reject:hover {
+    background: var(--neon-coral) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    transform: translateY(-2px);
+}
+
+/* ─── Empty State ─── */
+.empty-state {
+    padding: 50px;
+}
+.empty-icon {
+    font-size: 3.5rem;
+    color: var(--accent) !important;
+    opacity: 0.4;
+    filter: drop-shadow(0 0 12px var(--accent-glow));
+    animation: neonPulse 3s infinite;
+}
+.empty-state h6 {
+    color: var(--text-primary) !important;
+    font-size: 1.1rem;
+}
+.empty-state p {
+    color: var(--text-secondary) !important;
+}
+
+/* ─── Image Grid (Modal) ─── */
+#imageGrid img {
+    height: 140px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s var(--ease);
+    cursor: zoom-in;
+}
+#imageGrid img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(123, 47, 255, 0.2);
+    border-color: rgba(123, 47, 255, 0.3);
+}
+
+/* ─── Overrides for Bootstrap classes used in template ─── */
+.bg-gray-50 { background-color: rgba(123, 47, 255, 0.08) !important; }
+.btn-light-soft {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--glass-border) !important;
+    transition: all 0.3s var(--ease);
+}
+.btn-light-soft:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-primary) !important;
+}
+
+.bg-warning-subtle {
+    background: rgba(253, 203, 110, 0.1) !important;
+}
+.text-warning-emphasis {
+    color: var(--warning) !important;
+}
+.border-warning-subtle {
+    border-color: rgba(253, 203, 110, 0.25) !important;
+}

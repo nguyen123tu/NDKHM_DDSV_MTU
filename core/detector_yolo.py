@@ -1,6 +1,6 @@
 """
-Core AI: Phát hiện khuôn mặt bằng YOLOv8-face.
-Thay thế SCRFD (InsightFace) bằng YOLOv8 pretrained trên face dataset.
+Core AI: Phát hiện khuôn mặt bằng YOLO11-face.
+Thay thế SCRFD (InsightFace) bằng YOLO11 pretrained trên face dataset.
 Singleton pattern.
 """
 
@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 import os
+import torch
 from config import Config
 
 # Singleton instance
@@ -16,22 +17,20 @@ _instance = None
 
 class YOLOFaceDetector:
     """
-    Phát hiện khuôn mặt bằng YOLOv11 hoặc YOLOv8.
+    Phát hiện khuôn mặt bằng YOLO11.
     
-    YOLOv11 (mới nhất) cung cấp độ chính xác cao hơn và tốc độ nhanh hơn.
-    Model nên được train trên face dataset (VD: yolov11n-face.pt).
+    YOLO11 cung cấp độ chính xác cao hơn và tốc độ nhanh hơn (FPS cao hơn).
+    Model nên được train trên face dataset (VD: yolo11n-face.pt).
     """
 
     def __init__(self, model_path=None, conf_threshold=0.5):
         self._conf = conf_threshold
         
-        # Danh sách các model ưu tiên
+        # Ưu tiên sử dụng mô hình YOLO11 (yolo11n-face.pt cho khuôn mặt)
         priority_models = [
             model_path,
             os.path.join(Config.MODELS_DIR, 'yolo11n-face.pt'),
-            os.path.join(Config.MODELS_DIR, 'yolov8n-face.pt'),
-            'yolo11n.pt', # Tự động tải nếu không có file local
-            'yolov8n.pt'
+            'yolo11n.pt' # Tự động tải nếu không có file local
         ]
         
         selected_model = 'yolo11n.pt'
@@ -40,9 +39,19 @@ class YOLOFaceDetector:
                 selected_model = m
                 break
         
-        print(f"[YOLO] Đang khởi tạo model: {selected_model}...")
+        print(f"[YOLO] Đang khởi tạo model YOLO11: {selected_model}...")
         self._model = YOLO(selected_model)
         self._model_name = selected_model
+        
+        # Tối ưu hóa Inference: Sử dụng GPU FP16 (half precision) nếu có CUDA
+        self._device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self._half = True if self._device == 'cuda:0' else False
+        print(f"[YOLO] Cấu hình Inference: device={self._device}, half={self._half}")
+        
+        # Khởi động trước (Warmup) để tránh lag frame đầu tiên
+        dummy_img = np.zeros((640, 640, 3), dtype=np.uint8)
+        _ = self._model(dummy_img, verbose=False, device=self._device, half=self._half)
+        
         print(f"[YOLO] {selected_model} đã sẵn sàng (conf={self._conf})")
 
     def detect(self, frame):
@@ -61,7 +70,8 @@ class YOLOFaceDetector:
         if frame is None:
             return []
         
-        results = self._model(frame, verbose=False, conf=self._conf)
+        # Thực hiện suy luận (Inference)
+        results = self._model(frame, verbose=False, conf=self._conf, device=self._device, half=self._half)
         faces = []
         
         for result in results:

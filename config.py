@@ -72,7 +72,7 @@ class Config:
 
     # Camera
     DET_SIZE = (640, 640)
-    MAX_FPS = 15
+    MAX_FPS = 30
 
     # Telegram
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')

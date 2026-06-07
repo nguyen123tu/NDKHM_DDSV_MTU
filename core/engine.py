@@ -1,11 +1,11 @@
 """
-Core AI: Engine Factory — Chọn giữa InsightFace, YOLOv8+ResNet50, và DeepFace.
+Core AI: Engine Factory — Chọn giữa InsightFace, YOLO11+ResNet50, và DeepFace.
 
 Factory Pattern cho phép chuyển đổi AI engine mà không cần sửa code.
 Cấu hình qua Config.AI_ENGINE:
   - 'insightface'   — InsightFace buffalo_l (mặc định)
   - 'buffalo_sc'    — InsightFace buffalo_sc (nhẹ, nhanh)
-  - 'yolo_resnet'   — YOLOv8 + ResNet50
+  - 'yolo_resnet'   — YOLO11 + ResNet50
   - 'deepface'      — DeepFace (đa model: ArcFace, Facenet512, GhostFaceNet, ...)
 """
 
@@ -114,20 +114,20 @@ def _build_insightface_engine(model_name='buffalo_l'):
 
 def _build_yolo_resnet_engine():
     """
-    Engine YOLOv8 + ResNet50.
-    YOLOv8 detect → Crop face → ResNet50 embed.
+    Engine YOLO11 + ResNet50.
+    YOLO11 detect → Crop face → ResNet50 embed.
     """
     from core.detector_yolo import get_yolo_detector
     from core.embedder_resnet import get_resnet_embedder
     
-    print("[ENGINE] Đang khởi tạo YOLOv8 + ResNet50 engine...")
+    print("[ENGINE] Đang khởi tạo YOLO11 + ResNet50 engine...")
     detector = get_yolo_detector()
     embedder = get_resnet_embedder()
-    print("[ENGINE] YOLOv8 + ResNet50 engine đã sẵn sàng.")
+    print("[ENGINE] YOLO11 + ResNet50 engine đã sẵn sàng.")
     
     def detect_and_embed(frame):
         """
-        YOLOv8 detect → crop → ResNet50 embed.
+        YOLO11 detect → crop → ResNet50 embed.
         
         Returns:
             list[dict]: [{
@@ -154,7 +154,7 @@ def _build_yolo_resnet_engine():
         return results
     
     return {
-        'name': 'YOLOv8 + ResNet50',
+        'name': 'YOLO11 + ResNet50',
         'embedding_dim': embedder.embedding_dim,
         'detect_and_embed': detect_and_embed
     }

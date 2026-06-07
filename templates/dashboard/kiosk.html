@@ -24,7 +24,7 @@
     <!-- Header -->
     <div class="hud-header">
         <div class="hud-brand">
-            <img src="/static/img/logo_MTU.png" onerror="this.style.display='none'">
+            <img src="/static/img/logo_MTU.jpg" onerror="this.style.display='none'" style="mix-blend-mode: screen; border-radius: 8px;">
             <div>
                 <div class="hud-title">MTUFACE KIOSK</div>
                 <div class="hud-badges">
@@ -34,6 +34,16 @@
             </div>
         </div>
         <div class="hud-stats d-none d-md-flex">
+            <div class="hs-item">
+                <div class="hs-label">Lớp học</div>
+                <select id="kiosk-lop-id" style="background:rgba(0,0,0,.6);color:#0ff;border:1px solid rgba(0,255,255,.3);border-radius:6px;padding:2px 8px;font-size:.85rem;font-family:'Orbitron',monospace;outline:none;min-width:120px;">
+                    <option value="">-- Chọn lớp --</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}">{{ c.ma_lop }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="hs-divider"></div>
             <div class="hs-item">
                 <div class="hs-label">Local Time</div>
                 <div class="hs-value" id="clock">--:--:--</div>

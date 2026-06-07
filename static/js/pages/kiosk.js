@@ -32,12 +32,16 @@
         let isProcessing=false, lastMssv=null, lastTime=0;
         async function captureAndRecognize(){
             if(isProcessing||video.videoWidth===0) return;
+            const lopSelect = document.getElementById('kiosk-lop-id');
+            const lopId = lopSelect ? lopSelect.value : '';
             canvas.width=video.videoWidth; canvas.height=video.videoHeight;
             ctx.drawImage(video,0,0,canvas.width,canvas.height);
             const dataUrl=canvas.toDataURL('image/jpeg',0.6);
             isProcessing=true;
             try{
-                const res=await fetch('/public/api/recognize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl})});
+                const body = {image: dataUrl};
+                if(lopId) body.lop_id = parseInt(lopId);
+                const res=await fetch('/public/api/recognize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
                 if(!res.ok) throw new Error("Server error");
                 const d=await res.json();
                 if(d.success){

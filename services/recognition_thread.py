@@ -61,6 +61,9 @@ class RecognitionSession:
         # Tracking: SV đã điểm danh trong phiên này → không ghi lại
         self._attended_students = set()  # {'mssv1', 'mssv2', ...}
         
+        # Tracking: số lần nhận diện liên tiếp để ổn định (tránh nhận diện nhầm ở frame đầu)
+        self._match_history = {}  # {mssv: count}
+        
         # Load font có hỗ trợ tiếng Việt cho PIL
         self._font = None
         try:
@@ -184,10 +187,12 @@ class RecognitionSession:
             self._frame_count += 1
 
             if motion_area > Config.MOTION_AREA_THRESHOLD:
-                # TỐI ƯU HIỆU NĂNG: Chỉ gọi AI Engine (nặng) ở mỗi frame thứ 3
-                if self._frame_count % 3 == 0:
+                # TỐI ƯU HIỆU NĂNG: Với YOLO11 và MAX_FPS=30, có thể xử lý AI trên mỗi 2 frame (đạt ~15 FPS thực tế cho AI)
+                if self._frame_count % 2 == 0:
                     face_results = detect_and_embed(frame)
                     self._last_ai_results = []
+                    
+                    current_frame_mssvs = set()
                     
                     for face in face_results:
                         embedding = face['embedding']
@@ -195,7 +200,11 @@ class RecognitionSession:
 
                         # So khớp
                         mssv, sim = matcher.match(embedding)
+                        original_mssv = mssv
                         ho_ten = student_service.get_name_by_mssv(mssv) if mssv != "UNKNOWN" else "Người lạ"
+                        
+                        if original_mssv != "UNKNOWN":
+                            current_frame_mssvs.add(original_mssv)
                         
                         # ─── Heuristic Liveness Check (Chống giả mạo) ───
                         is_spoof = False
@@ -257,6 +266,16 @@ class RecognitionSession:
                                     'thoi_gian': time.strftime("%H:%M:%S")
                                 })
                             continue
+                        
+                        # ─── Ổn định nhận diện (Temporal Smoothing) ───
+                        # Chống nhận diện nhầm ở những frame đầu tiên khi camera mới mở hoặc người dùng mới bước vào
+                        if original_mssv != "UNKNOWN":
+                            self._match_history[original_mssv] = self._match_history.get(original_mssv, 0) + 1
+                            # Cần ít nhất 4 frame liên tiếp nhận diện cùng 1 người (khoảng 0.5s) mới xác nhận
+                            if self._match_history[original_mssv] < 4:
+                                mssv = "UNKNOWN"
+                                ho_ten = f"Đang xác thực ({self._match_history[original_mssv]}/4)..."
+                                # Không lưu điểm danh nếu chưa xác thực xong
                         
                         result_item = {
                             'mssv': mssv,
@@ -325,6 +344,11 @@ class RecognitionSession:
                         else:
                             # Đồ án nhận diện 1 chiều: Bỏ qua người lạ, không gửi cảnh báo SocketIO hay Telegram
                             pass
+
+                    # Reset/Giảm số đếm cho những MSSV không có trong frame này
+                    for m in list(self._match_history.keys()):
+                        if m not in current_frame_mssvs:
+                            self._match_history[m] = max(0, self._match_history[m] - 1)
 
                 # Vẽ bounding box từ kết quả lưu trữ (kể cả những frame không quét AI)
                 for res in self._last_ai_results:

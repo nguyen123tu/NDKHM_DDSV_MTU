@@ -73,4 +73,5 @@ def kiosk():
       200:
         description: Thành công
     """
-    return render_template('dashboard/kiosk.html')
+    classes = get_all_classes()
+    return render_template('dashboard/kiosk.html', classes=classes)

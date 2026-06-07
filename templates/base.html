@@ -16,6 +16,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Face Attendance System{% endblock %}</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/animated_favicon.svg') }}">
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -27,130 +30,15 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/ai_assistant.css') }}">
     {% block extra_css %}{% endblock %}
 
-    <style>
-        /* Specific Basic Layout Styles */
-        body {
-            background-color: #f4f6f9 !important;
-            color: #333;
-        }
-
-        .sidebar {
-            width: 260px;
-            background-color: #3498db;
-            /* Blue sidebar */
-            color: #fff;
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            z-index: 1000;
-            transition: all 0.3s;
-            overflow-y: auto;
-        }
-
-        .sidebar-brand {
-            padding: 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-brand a {
-            color: #fff;
-            font-weight: 700;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .sidebar-nav {
-            padding: 1rem 0.5rem;
-            list-style: none;
-            margin: 0;
-        }
-
-        .sidebar-nav li {
-            margin-bottom: 5px;
-        }
-
-        .sidebar-nav .nav-link {
-            color: rgba(255, 255, 255, 0.85);
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-
-        .sidebar-nav .nav-link i {
-            width: 24px;
-            font-size: 1.1rem;
-            margin-right: 10px;
-            text-align: center;
-        }
-
-        .sidebar-nav .nav-link:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        .sidebar-nav .nav-link.active {
-            background-color: #ffb822;
-            /* Yellow highlight */
-            color: #333 !important;
-            font-weight: 600;
-        }
-
-        .main-wrapper {
-            margin-left: 260px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .topbar {
-            background-color: #fff;
-            height: 70px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 999;
-        }
-
-        .topbar-title {
-            color: #3498db;
-            font-weight: 600;
-            font-size: 1.25rem;
-            margin: 0;
-        }
-
-        .topbar-datetime {
-            text-align: right;
-            color: #6c757d;
-            font-size: 0.85rem;
-            line-height: 1.4;
-        }
-
-        .topbar-datetime .time {
-            color: #3498db;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .content-area {
-            padding: 2rem;
-            flex-grow: 1;
-        }
-    </style>
+    <!-- All styles moved to main.css -->
 </head>
 
 <body>
+
+    <!-- Animated Mesh Gradient Background -->
+    <div class="mesh-bg"></div>
 
     {% if session.get('admin_id') %}
     <!-- SIDEBAR -->
@@ -160,9 +48,9 @@
             <i class="fas fa-chevron-left"></i>
         </div>
         <div class="sidebar-brand">
-            <a href="{{ url_for('dashboard.index') }}" class="text-decoration-none">
+            <a href="{{ url_for('dashboard.index') }}" class="text-decoration-none d-flex flex-column align-items-center">
+                <img src="{{ url_for('static', filename='img/logo_MTU.jpg') }}" alt="MTU Logo" style="height: 45px; object-fit: contain; margin-bottom: 8px; mix-blend-mode: screen; border-radius: 8px;">
                 <span class="brand-text">ĐIỂM DANH ONLINE</span>
-                <span class="brand-icon">MTU</span>
             </a>
             <div class="brand-sub">Face Recognition System</div>
         </div>
@@ -214,6 +102,12 @@
             </li>
 
             <div class="nav-group-label"><span class="nav-label-text">Hệ thống</span></div>
+            <li>
+                <a href="{{ url_for('support.index') }}" title="Yêu Cầu Hỗ Trợ"
+                    class="nav-link {% if request.endpoint and request.endpoint.startswith('support') %}active{% endif %}">
+                    <i class="fas fa-headset"></i> <span class="link-text">Yêu Cầu Hỗ Trợ</span>
+                </a>
+            </li>
             <li>
                 <a href="{{ url_for('fraud.index') }}" title="Cảnh báo gian lận"
                     class="nav-link {% if request.endpoint and request.endpoint.startswith('fraud') %}active{% endif %}">
@@ -350,10 +244,7 @@
         });
     </script>
 
-    <!-- AI Assistant Widget (chỉ hiển thị khi đã đăng nhập) -->
-    {% if session.get('admin_id') %}
-    <script src="{{ url_for('static', filename='js/components/ai_assistant.js') }}"></script>
-    {% endif %}
+
 
     {% block extra_js %}{% endblock %}
 </body>

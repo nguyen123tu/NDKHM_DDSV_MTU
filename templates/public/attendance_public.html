@@ -38,49 +38,103 @@
                 </form>
                 
                 <div class="text-center pt-4 border-top" style="border-color: rgba(255,255,255,0.1) !important;">
-                    <p class="text-white-50 small mb-3">Hoặc tự điểm danh trực tiếp qua Camera thiết bị của bạn</p>
-                    <a href="{{ url_for('public.selfcheck') }}" class="btn btn-glass rounded-pill px-4 py-2">
-                        <i class="fas fa-camera me-2"></i> Tự Điểm Danh Khuôn Mặt
-                    </a>
+                    <p class="text-white-50 small mb-3">Nếu có sai sót về dữ liệu hoặc muốn cập nhật khuôn mặt</p>
+                    <button type="button" data-bs-toggle="modal" data-bs-target="#supportModal" class="btn btn-outline-light rounded-pill px-4 py-2" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2);">
+                        <i class="fas fa-headset me-2"></i> Gửi Yêu Cầu Hỗ Trợ
+                    </button>
                 </div>
             </div>
             
-            <div id="resultsPanel" class="d-none">
-                <!-- TT Sinh viên -->
-                <div class="glass-card p-4 p-md-5 mb-4 text-center slide-up delay-1">
-                    <div class="avatar-glow mx-auto mb-4" style="width: 90px; height: 90px;">
-                        <div id="svAvatar" class="bg-dark rounded-circle text-white d-flex align-items-center justify-content-center fw-bold w-100 h-100 position-relative z-1" style="font-size: 2.5rem; border: 2px solid rgba(255,255,255,0.2);">
-                            N
+                        <div id="resultsPanel" class="d-none mt-4">
+                <div class="row g-4">
+                    <!-- Cột Trái: Thông tin cá nhân & Ảnh -->
+                    <div class="col-lg-5">
+                        <div class="glass-card p-4 text-center slide-up h-100" style="background: rgba(255, 255, 255, 0.05);">
+                            <div class="position-relative mx-auto mb-4" style="width: 120px; height: 120px;">
+                                <div class="avatar-glow w-100 h-100 position-absolute" style="top:0; left:0; border-radius: 50%; opacity: 0.5;"></div>
+                                <img id="svAvatarImg" src="" alt="Avatar" class="rounded-circle w-100 h-100 object-fit-cover position-relative z-1 d-none" style="border: 3px solid rgba(255,255,255,0.2);">
+                                <div id="svAvatar" class="bg-dark rounded-circle text-white d-flex align-items-center justify-content-center fw-bold w-100 h-100 position-relative z-1" style="font-size: 3rem; border: 3px solid rgba(255,255,255,0.2);">
+                                    N
+                                </div>
+                            </div>
+                            
+                            <h3 class="fw-bold text-white mb-1" id="svName">—</h3>
+                            <div class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50 px-3 py-2 rounded-pill mb-4" id="svAiStatus">
+                                <i class="fas fa-check-circle me-1"></i> Đã đăng ký khuôn mặt
+                            </div>
+                            
+                            <div class="text-start">
+                                <div class="d-flex justify-content-between mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                                    <span class="text-white-50"><i class="fas fa-id-card w-20px text-center me-2"></i>MSSV:</span>
+                                    <span class="text-white fw-medium" id="svId">—</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                                    <span class="text-white-50"><i class="fas fa-chalkboard-user w-20px text-center me-2"></i>Lớp:</span>
+                                    <span class="text-white fw-medium" id="svClass">—</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                                    <span class="text-white-50"><i class="fas fa-envelope w-20px text-center me-2"></i>Email:</span>
+                                    <span class="text-white fw-medium" id="svEmail">—</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                                    <span class="text-white-50"><i class="fas fa-calendar-alt w-20px text-center me-2"></i>Ngày sinh:</span>
+                                    <span class="text-white fw-medium" id="svDob">—</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50"><i class="fas fa-venus-mars w-20px text-center me-2"></i>Giới tính:</span>
+                                    <span class="text-white fw-medium" id="svGender">—</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <h2 class="fw-bold text-white mb-2" id="svName">Nguyễn Văn A</h2>
-                    <p class="text-white-50 mb-0 fs-6">
-                        <i class="fas fa-fingerprint me-1"></i> <span id="svId" class="text-white fw-medium">22Dxxx</span> 
-                        <span class="mx-3 opacity-25">|</span> 
-                        <i class="fas fa-chalkboard-user me-1"></i> Lớp <span id="svClass" class="text-white fw-medium">CNTTxx</span>
-                    </p>
-                </div>
-                
-                <!-- Lịch sử -->
-                <div class="d-flex align-items-center mb-4 slide-up delay-2">
-                    <i class="fas fa-history text-white-50 fs-5 me-3"></i>
-                    <h5 class="fw-bold mb-0 text-white">Lịch Sử Quét Khuôn Mặt Gần Đây</h5>
-                </div>
-                
-                <div class="glass-card p-4 slide-up delay-2">
-                    <div class="table-responsive">
-                        <table class="table glass-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Thời Gian</th>
-                                    <th>Học Phần/Lớp</th>
-                                    <th class="text-end">Trạng Thái</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historyTbody">
-                                <!-- Kết quả JS đổ vào đây -->
-                            </tbody>
-                        </table>
+                    
+                    <!-- Cột Phải: Thống kê & Dữ liệu AI & Lịch sử -->
+                    <div class="col-lg-7 d-flex flex-column gap-4">
+                        <div class="row g-4 slide-up delay-1">
+                            <!-- Thống kê chuyên cần -->
+                            <div class="col-md-6">
+                                <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center text-center" style="background: rgba(255, 255, 255, 0.05); border-left: 4px solid #0dcaf0;">
+                                    <h6 class="text-white-50 mb-3"><i class="fas fa-chart-pie me-2"></i>Số Lần Điểm Danh</h6>
+                                    <div class="display-4 fw-bold text-info mb-1" id="statPresent">0</div>
+                                    <div class="small text-white-50">Lượt thành công</div>
+                                </div>
+                            </div>
+                            
+                            <!-- AI Face Data -->
+                            <div class="col-md-6">
+                                <div class="glass-card p-4 h-100" style="background: rgba(255, 255, 255, 0.05);">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="text-white-50 mb-0"><i class="fas fa-expand me-2"></i>Dữ Liệu Khuôn Mặt</h6>
+                                        <span class="badge bg-primary bg-opacity-25 text-primary" id="faceCount">0 ảnh</span>
+                                    </div>
+                                    <div class="face-grid" id="faceGrid">
+                                        <!-- Render ảnh từ JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Lịch sử -->
+                        <div class="glass-card p-4 slide-up delay-2 flex-grow-1" style="background: rgba(255, 255, 255, 0.05);">
+                            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3" style="border-color: rgba(255,255,255,0.1) !important;">
+                                <h5 class="fw-bold mb-0 text-white"><i class="fas fa-history text-white-50 me-2"></i>Lịch Sử Điểm Danh</h5>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table glass-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Thời Gian</th>
+                                            <th>Học Phần/Lớp</th>
+                                            <th class="text-end">Trạng Thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTbody">
+                                        <!-- Kết quả JS đổ vào đây -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -89,6 +143,45 @@
     </div>
 </div>
 
+
+<!-- Support Modal -->
+<div class="modal fade" id="supportModal" tabindex="-1" aria-labelledby="supportModalLabel" aria-hidden="true" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass-card" style="background: rgba(30, 30, 40, 0.95); border: 1px solid rgba(255,255,255,0.1);">
+      <div class="modal-header border-bottom border-secondary">
+        <h5 class="modal-title text-white fw-bold" id="supportModalLabel"><i class="fas fa-headset me-2 text-info"></i>Gửi Yêu Cầu Hỗ Trợ</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="supportForm">
+          <div class="mb-3">
+            <label class="form-label text-white-50 small">MSSV của bạn</label>
+            <input type="text" class="form-control glass-input text-white" id="spMssv" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-white-50 small">Tiêu đề yêu cầu</label>
+            <select class="form-select glass-input text-white" id="spTitle" required>
+                <option value="">-- Chọn loại hỗ trợ --</option>
+                <option value="Sai sót điểm danh">Báo cáo sai sót điểm danh</option>
+                <option value="Cập nhật khuôn mặt">Yêu cầu cập nhật khuôn mặt</option>
+                <option value="Lỗi hệ thống">Báo lỗi hệ thống</option>
+                <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-white-50 small">Nội dung chi tiết</label>
+            <textarea class="form-control glass-input text-white" id="spContent" rows="4" placeholder="Mô tả chi tiết vấn đề của bạn..." required></textarea>
+          </div>
+          <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-info text-dark fw-bold" id="btnSubmitSupport">
+                Gửi Yêu Cầu <i class="fas fa-paper-plane ms-2"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 <footer class="mt-auto py-4 text-center position-relative" style="z-index: 1; border-top: 1px solid rgba(255,255,255,0.05);">
     <p class="text-white-50 small mb-1">Hệ Thống Điểm Danh Khuôn Mặt Bằng AI - Phát triển với Flask & InsightFace</p>
     <a href="{{ url_for('auth.login') }}" class="text-white-50 text-decoration-none small hover-white transition"><i class="fas fa-shield-alt me-1"></i> Cổng Quản Trị Hệ Thống</a>
@@ -97,6 +190,29 @@
 <style>
     .hover-white:hover { color: white !important; }
     .transition { transition: all 0.3s ease; }
+    .w-20px { width: 20px; display: inline-block; }
+    .face-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    .face-grid img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .face-empty {
+        background: rgba(255,255,255,0.05);
+        border: 1px dashed rgba(255,255,255,0.2);
+        border-radius: 6px;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255,255,255,0.3);
+    }
 </style>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

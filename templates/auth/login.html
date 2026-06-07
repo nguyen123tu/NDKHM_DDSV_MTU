@@ -1,12 +1,13 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập Quản trị viên — MTUFace</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/animated_favicon.svg') }}">
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Icons -->
@@ -16,95 +17,130 @@
 </head>
 <body>
 
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-
-    <div class="login-wrapper">
+    <div class="split-layout">
         
-        <!-- Left Branding Panel -->
-        <div class="left-panel">
-            <div class="brand-header">
-                <div class="brand-logo">
-                    <i class="fas fa-fingerprint"></i> MTUFACE
+        <!-- Left Panel -->
+        <div class="split-left">
+            <div class="left-content">
+                <div class="brand-header">
+                    <div class="brand-logo">
+                        <img src="{{ url_for('static', filename='img/logo_MTU.jpg') }}" alt="MTU Logo" style="mix-blend-mode: screen; border-radius: 8px;">
+                        <span>MTUFACE</span>
+                    </div>
+                    <div class="brand-title">
+                        <h1>MTUFACE</h1>
+                        <p>Hệ thống điểm danh thông minh bằng AI</p>
+                    </div>
                 </div>
-                <div class="brand-sub">Hệ thống điểm danh thông minh</div>
-            </div>
 
-            <div class="brand-visual">
-                <div class="scanner-graphic">
-                    <i class="fas fa-user-astronaut opacity-75"></i>
-                    <div class="scan-line"></div>
+                <div class="illustration-wrapper">
+                    <!-- Abstract Tech Illustration -->
+                    <div class="tech-graphic">
+                        <div class="face-scan-box">
+                            <i class="fas fa-expand"></i>
+                            <div class="scan-line"></div>
+                            <div class="face-icon">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                        </div>
+                        <div class="floating-badge badge-1">
+                            <i class="fas fa-check-circle"></i> AI Powered
+                        </div>
+                        <div class="floating-badge badge-2">
+                            <i class="fas fa-bolt"></i> Real-time
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="brand-footer">
-                <i class="fas fa-shield-halved me-1"></i> AI Recognition Engine v2.0
+                <div class="brand-footer">
+                    <span>AI Recognition Engine v2.0</span>
+                    <span class="mtu-copyright">© Men Tay Construction University</span>
+                </div>
             </div>
         </div>
 
-        <!-- Right Form Panel -->
-        <div class="right-panel">
-            <div class="form-header">
-                <h1 class="form-title">Chào mừng trở lại!</h1>
-                <div class="form-subtitle">Vui lòng đăng nhập để tiếp tục quản trị hệ thống.</div>
-            </div>
+        <!-- Right Panel -->
+        <div class="split-right">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2 class="form-title">Chào mừng trở lại</h2>
+                    <p class="form-subtitle">Đăng nhập để tiếp tục truy cập hệ thống</p>
+                </div>
 
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-custom alert-{{ 'danger' if category == 'error' else category }}">
-                            <i class="fas fa-info-circle"></i> {{ message }}
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-custom alert-{{ 'danger' if category == 'error' else category }}">
+                                <i class="fas fa-info-circle"></i> {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('auth.login') }}">
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="username">Tên đăng nhập</label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-user icon-prefix"></i>
+                            <input type="text" name="username" id="username" class="form-control" placeholder="Nhập tên đăng nhập" required autofocus autocomplete="username">
                         </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <form method="POST" action="{{ url_for('auth.login') }}">
-                
-                <div class="form-group">
-                    <label class="form-label">Tên đăng nhập</label>
-                    <div class="input-icon-wrapper">
-                        <input type="text" name="username" class="form-control" placeholder="admin" required autofocus autocomplete="username">
-                        <i class="fas fa-user icon-prefix"></i>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Mật khẩu</label>
-                    <div class="input-icon-wrapper">
-                        <input type="password" name="password" id="passwordField" class="form-control" placeholder="••••••••" required autocomplete="current-password">
-                        <i class="fas fa-lock icon-prefix"></i>
-                        <button type="button" class="btn-toggle-pass" onclick="togglePassword()" tabindex="-1">
-                            <i class="fas fa-eye" id="toggleIcon"></i>
-                        </button>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="password">Mật khẩu</label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-lock icon-prefix"></i>
+                            <input type="password" name="password" id="passwordField" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                            <button type="button" class="btn-toggle-pass" onclick="togglePassword()" tabindex="-1">
+                                <i class="fas fa-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="options-row">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
-                        <label class="form-check-label text-secondary fw-medium" for="rememberMe">
-                            Ghi nhớ tôi
-                        </label>
+                    
+                    <div class="options-row">
+                        <div class="form-check custom-checkbox">
+                            <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
+                            <label class="form-check-label" for="rememberMe">
+                                Ghi nhớ tôi
+                            </label>
+                        </div>
+                        <a href="#" class="forgot-link">Quên mật khẩu?</a>
                     </div>
-                    <a href="#">Quên mật khẩu?</a>
-                </div>
+                    
+                    <button type="submit" class="btn-primary-large">
+                        Đăng nhập
+                    </button>
+                </form>
                 
-                <button type="submit" class="btn-login">
-                    Đăng nhập <i class="fas fa-arrow-right ms-1"></i>
-                </button>
-            </form>
-            
-            <div class="return-link">
-                 <a href="{{ url_for('public.lookup') }}">
-                    <i class="fas fa-angle-left"></i> Quay về Cổng sinh viên
-                </a>
+                <div class="form-footer">
+                     <a href="{{ url_for('public.lookup') }}" class="back-link">
+                        <i class="fas fa-arrow-left"></i> Quay về Cổng sinh viên
+                    </a>
+                </div>
             </div>
         </div>
 
     </div>
 
+    <!-- We keep the JS file import from before if it handles any other logic, but togglePassword is below as fallback -->
     <script src="{{ url_for('static', filename='js/pages/auth_login.js') }}"></script>
+    <script>
+        function togglePassword() {
+            const passwordField = document.getElementById('passwordField');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+    </script>
 </body>
 </html>

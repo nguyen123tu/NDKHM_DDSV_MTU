@@ -18,6 +18,7 @@ public_bp = Blueprint('public', __name__, url_prefix='/public')
 from routes.api_mobile import api_mobile_bp
 from routes.chatbot import chatbot_bp
 from routes.fraud import fraud_bp
+from routes.support import support_bp
 
 # Import các file route để register chức năng
-from . import auth, dashboard, students, classes, attendance, training, camera_mgmt, export, public, api_mobile, chatbot, fraud
+from . import auth, dashboard, students, classes, attendance, training, camera_mgmt, export, public, api_mobile, chatbot, fraud, support

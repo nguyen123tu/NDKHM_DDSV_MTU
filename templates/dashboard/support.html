@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Yêu Cầu Hỗ Trợ - MTUFACE{% endblock %}
+{% block page_title %}Yêu Cầu Hỗ Trợ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-primary fw-bold"><i class="fas fa-headset me-2"></i>Danh sách Yêu Cầu Hỗ Trợ</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Thời gian</th>
+                                <th>Sinh viên</th>
+                                <th>Lớp</th>
+                                <th>Tiêu đề</th>
+                                <th>Nội dung</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end pe-4">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if requests %}
+                                {% for r in requests %}
+                                <tr>
+                                    <td class="ps-4 text-muted small">{{ r.thoi_gian.strftime('%d/%m/%Y %H:%M') if r.thoi_gian else '' }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ r.ho_ten }}</div>
+                                        <div class="small text-muted">{{ r.mssv }}</div>
+                                    </td>
+                                    <td>{{ r.ten_lop or 'N/A' }}</td>
+                                    <td><span class="badge bg-secondary">{{ r.tieu_de }}</span></td>
+                                    <td style="max-width: 250px;" class="text-truncate" title="{{ r.noi_dung }}">{{ r.noi_dung }}</td>
+                                    <td>
+                                        {% if r.trang_thai == 'Chờ xử lý' %}
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ xử lý</span>
+                                        {% else %}
+                                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã giải quyết</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-info text-white me-1" onclick="viewDetails('{{ r.ho_ten }}', '{{ r.mssv }}', '{{ r.ten_lop }}', '{{ r.tieu_de }}', '{{ r.noi_dung }}', '{{ r.thoi_gian }}')" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if r.trang_thai == 'Chờ xử lý' %}
+                                        <button class="btn btn-sm btn-success me-1" onclick="resolveRequest({{ r.id }})" title="Đánh dấu đã giải quyết">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-danger" onclick="deleteRequest({{ r.id }})" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="fas fa-inbox fs-1 mb-3 text-light"></i>
+                                        <p class="mb-0">Không có yêu cầu hỗ trợ nào</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chi tiết -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-info-circle me-2"></i>Chi Tiết Yêu Cầu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3 border-bottom pb-2">
+            <label class="text-muted small">Người gửi</label>
+            <div class="fw-bold" id="detName"></div>
+            <div class="text-muted small" id="detMssvClass"></div>
+        </div>
+        <div class="mb-3 border-bottom pb-2">
+            <label class="text-muted small">Tiêu đề</label>
+            <div class="fw-bold text-primary" id="detTitle"></div>
+        </div>
+        <div class="mb-3 border-bottom pb-2">
+            <label class="text-muted small">Thời gian gửi</label>
+            <div id="detTime"></div>
+        </div>
+        <div class="mb-3">
+            <label class="text-muted small">Nội dung</label>
+            <div class="p-3 bg-light rounded" id="detContent" style="white-space: pre-wrap;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function viewDetails(name, mssv, lop, title, content, time) {
+        document.getElementById('detName').innerText = name;
+        document.getElementById('detMssvClass').innerText = mssv + (lop ? ' - Lớp: ' + lop : '');
+        document.getElementById('detTitle').innerText = title;
+        document.getElementById('detContent').innerText = content;
+        document.getElementById('detTime').innerText = time;
+        new bootstrap.Modal(document.getElementById('detailModal')).show();
+    }
+
+    async function resolveRequest(id) {
+        if(!confirm('Đánh dấu yêu cầu này là Đã Giải Quyết?')) return;
+        try {
+            const res = await fetch(`/support/resolve/${id}`, { method: 'POST' });
+            const data = await res.json();
+            if(data.success) {
+                location.reload();
+            } else {
+                alert('Lỗi: ' + data.msg);
+            }
+        } catch (e) {
+            alert('Lỗi kết nối');
+        }
+    }
+
+    async function deleteRequest(id) {
+        if(!confirm('Bạn có chắc chắn muốn xóa yêu cầu này?')) return;
+        try {
+            const res = await fetch(`/support/delete/${id}`, { method: 'POST' });
+            const data = await res.json();
+            if(data.success) {
+                location.reload();
+            } else {
+                alert('Lỗi: ' + data.msg);
+            }
+        } catch (e) {
+            alert('Lỗi kết nối');
+        }
+    }
+</script>
+{% endblock %}

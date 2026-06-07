@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!chartCanvas) return; // Không có thì bỏ qua
 
     // Cấu hình Chart.js chung cho theme Dark
-    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.color = '#9896A8';
     Chart.defaults.font.family = 'Inter';
 
     // Fetch dữ liệu từ API
@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         {
                             label: 'Lượt Có Mặt',
                             data: coMatData,
-                            backgroundColor: 'rgba(163, 100, 243, 0.7)',
-                            borderColor: '#a364f3',
+                            backgroundColor: 'rgba(123, 47, 255, 0.6)',
+                            borderColor: '#7B2FFF',
                             borderWidth: 1,
                             borderRadius: 4,
                             barPercentage: 0.6
@@ -35,8 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         {
                             label: 'Lượt Cảnh Báo',
                             data: canhBaoData,
-                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(255, 107, 107, 0.5)',
+                            borderColor: '#FF6B6B',
                             borderWidth: 1,
                             borderRadius: 4,
                             barPercentage: 0.6

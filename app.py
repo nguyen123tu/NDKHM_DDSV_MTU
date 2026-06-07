@@ -56,6 +56,8 @@ def create_app(config_name='default'):
     app.register_blueprint(api_mobile_bp)
     app.register_blueprint(chatbot_bp)
     app.register_blueprint(fraud_bp)
+    from routes.support import support_bp
+    app.register_blueprint(support_bp, url_prefix='/support')
     
     # Init SocketIO
     socketio.init_app(app, async_mode='eventlet')
