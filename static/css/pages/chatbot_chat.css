@@ -1,5 +1,5 @@
 /* chatbot_chat.css — Premium Chat UI */
-body,.main-wrapper{background:#05050b!important;color:#e2e8f0!important}
+body,.main-wrapper{background:var(--bg-body)!important;color:var(--text-primary)!important}
 .content-area{padding:0!important;overflow:hidden}
 .topbar{display:none!important}
 .ai-fab,.ai-chat-window{display:none!important}

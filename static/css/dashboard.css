@@ -22,33 +22,33 @@ CSS riêng cho màn hình Dashboard
 
 /* Colors cho icon */
 .icon-purple {
-    background: rgba(163, 100, 243, 0.2);
-    color: #c49dff;
-    border: 1px solid rgba(163, 100, 243, 0.3);
+    background: rgba(126, 34, 206, 0.1);
+    color: #7E22CE;
+    border: 1px solid rgba(126, 34, 206, 0.2);
 }
 
 .icon-blue {
-    background: rgba(59, 130, 246, 0.2);
-    color: #93c5fd;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: rgba(29, 78, 216, 0.1);
+    color: #1D4ED8;
+    border: 1px solid rgba(29, 78, 216, 0.2);
 }
 
 .icon-green {
-    background: rgba(16, 185, 129, 0.2);
-    color: #6ee7b7;
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: rgba(4, 120, 87, 0.1);
+    color: #047857;
+    border: 1px solid rgba(4, 120, 87, 0.2);
 }
 
 .icon-red {
-    background: rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(185, 28, 28, 0.1);
+    color: #B91C1C;
+    border: 1px solid rgba(185, 28, 28, 0.2);
 }
 
 .icon-orange {
-    background: rgba(245, 158, 11, 0.2);
-    color: #fcd34d;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: rgba(194, 65, 12, 0.1);
+    color: #C2410C;
+    border: 1px solid rgba(194, 65, 12, 0.2);
 }
 
 .stat-details {
@@ -67,7 +67,7 @@ CSS riêng cho màn hình Dashboard
 .stat-value {
     font-size: 1.75rem;
     font-weight: 700;
-    color: white;
+    color: var(--text-primary);
     line-height: 1;
 }
 

@@ -1,15 +1,15 @@
 :root {
-    --primary: #6366F1; /* Primary */
-    --primary-hover: #4F46E5;
-    --secondary: #8B5CF6; /* Secondary */
-    --accent: #06B6D4; /* Accent */
+    --primary: #3464B0; /* Primary */
+    --primary-hover: #224A8A;
+    --secondary: #DA1F3C; /* Secondary */
+    --accent: #DA1F3C; /* Accent */
     --bg-light: #F8FAFC; /* Background */
-    --text-main: #0F172A; /* Text */
+    --text-main: #1E293B; /* Text */
     --text-muted: #64748B;
     --border-color: #E2E8F0;
     --input-bg: #F1F5F9;
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.2);
+    --glass-border: rgba(255, 255, 255, 0.3);
 }
 
 body {
@@ -31,7 +31,7 @@ body {
 /* --- LEFT PANEL --- */
 .split-left {
     width: 40%;
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    background: linear-gradient(135deg, #3464B0 0%, #5B84C4 100%);
     color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -54,8 +54,8 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(circle at 20% 80%, rgba(6, 182, 212, 0.3) 0%, transparent 50%), 
-                      radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.4) 0%, transparent 50%);
+    background-image: radial-gradient(circle at 20% 80%, rgba(218, 31, 60, 0.2) 0%, transparent 50%), 
+                      radial-gradient(circle at 80% 20%, rgba(52, 100, 176, 0.4) 0%, transparent 50%);
     z-index: 1;
 }
 

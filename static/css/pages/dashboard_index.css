@@ -1,7 +1,7 @@
 /* ═══ HERO WELCOME — Cyberpunk ═══ */
 .hero-welcome {
-    background: linear-gradient(135deg, rgba(123,47,255,0.3) 0%, rgba(0,245,212,0.15) 100%);
-    border: 1px solid rgba(123,47,255,0.25);
+    background: linear-gradient(135deg, #3464B0 0%, #224A8A 100%);
+    border: 1px solid #3464B0;
     border-radius: 24px;
     padding: 40px 44px;
     color: white;
@@ -13,14 +13,14 @@
 .hero-welcome::before {
     content: ''; position: absolute; top: -40%; right: -10%;
     width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(0,245,212,0.12) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
     border-radius: 50%;
     animation: floatOrb 8s ease-in-out infinite alternate;
 }
 .hero-welcome::after {
     content: ''; position: absolute; bottom: -50%; left: 10%;
     width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(123,47,255,0.15) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(218,31,60,0.15) 0%, transparent 60%);
     border-radius: 50%;
     animation: floatOrb 10s ease-in-out infinite alternate-reverse;
 }
@@ -32,7 +32,7 @@
 .hero-welcome h2 {
     font-weight: 800; font-size: 1.8rem; margin-bottom: 6px;
     position: relative; z-index: 1;
-    background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #E2E8F0 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .hero-welcome p { opacity: .75; margin: 0; font-size: .95rem; position: relative; z-index: 1; }
@@ -42,26 +42,26 @@
     backdrop-filter: blur(8px); transition: all .3s;
 }
 .hero-welcome .hero-actions .btn-light {
-    background: rgba(0,245,212,0.15); color: var(--accent);
-    border: 1px solid rgba(0,245,212,0.3);
+    background: #DA1F3C; color: white;
+    border: 1px solid #DA1F3C;
 }
 .hero-welcome .hero-actions .btn-light:hover {
-    background: var(--accent); color: #0a0a1a;
-    box-shadow: 0 0 30px var(--accent-glow);
+    background: #B01026; color: white;
+    box-shadow: 0 0 20px rgba(218, 31, 60, 0.4);
 }
 .hero-welcome .hero-actions .btn-outline-light {
-    border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.8);
-    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3); color: white;
+    background: rgba(255,255,255,0.1);
 }
 .hero-welcome .hero-actions .btn-outline-light:hover {
-    background: rgba(255,255,255,.1); color: white;
-    border-color: rgba(255,255,255,.4);
+    background: rgba(255,255,255,0.2); color: white;
+    border-color: rgba(255,255,255,0.5);
 }
 .hero-welcome .hero-actions .btn:hover { transform: translateY(-2px); }
 .hero-welcome .hero-illustration {
     position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
     font-size: 6rem; opacity: .15; z-index: 0;
-    filter: drop-shadow(0 0 20px var(--accent-glow));
+    filter: drop-shadow(0 0 20px rgba(255,255,255,0.2));
 }
 
 /* ═══ MINI STAT PILLS — Glass Neon ═══ */
@@ -83,18 +83,18 @@
 }
 .stat-pill:hover {
     transform: translateY(-4px) scale(1.01);
-    box-shadow: var(--shadow-lg), 0 0 30px rgba(123,47,255,0.1);
-    border-color: rgba(123,47,255,0.3);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(52, 100, 176, 0.3);
 }
 .stat-pill .pill-icon {
     width: 56px; height: 56px; border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.3rem; color: white; flex-shrink: 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    box-shadow: 0 4px 16px rgba(52, 100, 176, 0.1);
     position: relative;
 }
 .stat-pill:hover .pill-icon {
-    box-shadow: 0 4px 20px rgba(0,0,0,.3), 0 0 20px rgba(123,47,255,0.2);
+    box-shadow: 0 4px 20px rgba(52, 100, 176, 0.15), 0 0 20px rgba(52, 100, 176, 0.2);
 }
 .stat-pill .pill-info h3 {
     font-size: 1.7rem; font-weight: 800; margin: 0; line-height: 1;
@@ -117,7 +117,7 @@
     width: 8px; height: 8px; border-radius: 50%;
     background: var(--accent); display: inline-block;
     animation: pulse 2s infinite;
-    box-shadow: 0 0 8px var(--accent-glow);
+    box-shadow: 0 0 8px rgba(218, 31, 60, 0.4);
 }
 
 /* ═══ ACTION CARDS — Cyber ═══ */
@@ -150,7 +150,7 @@
 .action-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
-    border-color: rgba(123,47,255,0.25);
+    border-color: rgba(52, 100, 176, 0.25);
 }
 .action-card:hover::before { opacity: 1; }
 .action-card:nth-child(1)::before { background: var(--gradient-card-1); }
@@ -158,16 +158,16 @@
 .action-card:nth-child(3)::before { background: var(--gradient-card-3); }
 .action-card:nth-child(4)::before { background: var(--gradient-card-4); }
 
-.action-card:nth-child(1):hover { border-color: rgba(123,47,255,0.3); box-shadow: var(--shadow-lg), 0 0 25px rgba(123,47,255,0.1); }
-.action-card:nth-child(2):hover { border-color: rgba(0,245,212,0.3); box-shadow: var(--shadow-lg), 0 0 25px rgba(0,245,212,0.1); }
-.action-card:nth-child(3):hover { border-color: rgba(255,107,107,0.3); box-shadow: var(--shadow-lg), 0 0 25px rgba(255,107,107,0.1); }
-.action-card:nth-child(4):hover { border-color: rgba(0,212,255,0.3); box-shadow: var(--shadow-lg), 0 0 25px rgba(0,212,255,0.1); }
+.action-card:nth-child(1):hover { border-color: rgba(52, 100, 176, 0.3); box-shadow: var(--shadow-lg); }
+.action-card:nth-child(2):hover { border-color: rgba(52, 100, 176, 0.3); box-shadow: var(--shadow-lg); }
+.action-card:nth-child(3):hover { border-color: rgba(218, 31, 60, 0.3); box-shadow: var(--shadow-lg); }
+.action-card:nth-child(4):hover { border-color: rgba(52, 100, 176, 0.3); box-shadow: var(--shadow-lg); }
 
 .action-card .ac-icon {
     width: 52px; height: 52px; border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.3rem;
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-border);
 }
 .action-card .ac-title { font-weight: 700; font-size: 1rem; color: var(--text-primary); }
 .action-card .ac-desc { font-size: .83rem; color: var(--text-secondary); line-height: 1.5; margin: 0; }
@@ -195,7 +195,7 @@
 }
 .modern-table tbody tr:hover {
     transform: scale(1.005);
-    box-shadow: var(--shadow-md), 0 0 15px rgba(123,47,255,0.05);
+    box-shadow: var(--shadow-md);
     background: var(--bg-card-hover);
 }
 .modern-table tbody td {

@@ -1,8 +1,8 @@
 /* ═══ Students Pending — Cyberpunk Dark Theme ═══ */
 
 .text-navy { color: var(--text-primary) !important; }
-.bg-navy-subtle { background-color: rgba(123, 47, 255, 0.1) !important; }
-.border-navy-subtle { border-color: rgba(123, 47, 255, 0.2) !important; }
+.bg-navy-subtle { background-color: rgba(52, 100, 176, 0.1) !important; }
+.border-navy-subtle { border-color: rgba(52, 100, 176, 0.2) !important; }
 .extra-small { font-size: 0.7rem; }
 .fw-600 { font-weight: 600; }
 .fw-500 { font-weight: 500; }
@@ -37,9 +37,9 @@
 
 /* ─── Stat Badge ─── */
 .stat-badge {
-    background: rgba(253, 203, 110, 0.1) !important;
+    background: rgba(245, 158, 11, 0.1) !important;
     color: var(--warning) !important;
-    border: 1px solid rgba(253, 203, 110, 0.25) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
     border-radius: 20px !important;
     backdrop-filter: blur(8px);
 }
@@ -62,7 +62,7 @@
     letter-spacing: 0.08em;
     color: var(--accent) !important;
     border-bottom: 1px solid var(--glass-border) !important;
-    background: rgba(123, 47, 255, 0.08) !important;
+    background: rgba(52, 100, 176, 0.05) !important;
     padding: 14px 16px;
 }
 
@@ -75,19 +75,19 @@
 }
 
 .custom-table tbody tr:hover td {
-    background: rgba(123, 47, 255, 0.05) !important;
+    background: rgba(52, 100, 176, 0.05) !important;
 }
 
 /* ─── Avatar ─── */
 .avatar-sm {
-    border: 2px solid rgba(0, 245, 212, 0.3) !important;
-    background: rgba(255, 255, 255, 0.05) !important;
+    border: 2px solid rgba(52, 100, 176, 0.3) !important;
+    background: #FFFFFF !important;
 }
 
 /* ─── Image View Button ─── */
 .btn-image-view {
-    background: rgba(123, 47, 255, 0.1) !important;
-    border: 1px solid rgba(123, 47, 255, 0.25) !important;
+    background: rgba(52, 100, 176, 0.1) !important;
+    border: 1px solid rgba(52, 100, 176, 0.25) !important;
     color: var(--primary-light) !important;
     font-weight: 600;
     font-size: 0.85rem;
@@ -101,7 +101,7 @@
     color: white !important;
     border-color: var(--primary) !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(123, 47, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(52, 100, 176, 0.3);
 }
 
 /* ─── Action Buttons ─── */
@@ -120,26 +120,26 @@
 }
 
 .btn-approve {
-    background: linear-gradient(135deg, #00F5D4 0%, #00D4FF 100%) !important;
-    color: #0a0a1a !important;
-    box-shadow: 0 4px 12px rgba(0, 245, 212, 0.25);
+    background: #10B981 !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
 }
 .btn-approve:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 245, 212, 0.4);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
 .btn-reject {
-    background: rgba(255, 107, 107, 0.15) !important;
+    background: rgba(218, 31, 60, 0.15) !important;
     color: var(--neon-coral) !important;
     width: 38px;
     padding: 0;
-    border: 1px solid rgba(255, 107, 107, 0.25) !important;
+    border: 1px solid rgba(218, 31, 60, 0.25) !important;
 }
 .btn-reject:hover {
     background: var(--neon-coral) !important;
     color: white !important;
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 4px 12px rgba(218, 31, 60, 0.3);
     transform: translateY(-2px);
 }
 
@@ -174,20 +174,20 @@
 }
 #imageGrid img:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(123, 47, 255, 0.2);
-    border-color: rgba(123, 47, 255, 0.3);
+    box-shadow: 0 0 20px rgba(52, 100, 176, 0.2);
+    border-color: rgba(52, 100, 176, 0.3);
 }
 
 /* ─── Overrides for Bootstrap classes used in template ─── */
-.bg-gray-50 { background-color: rgba(123, 47, 255, 0.08) !important; }
+.bg-gray-50 { background-color: rgba(52, 100, 176, 0.05) !important; }
 .btn-light-soft {
-    background: rgba(255, 255, 255, 0.06) !important;
+    background: #FFFFFF !important;
     color: var(--text-secondary) !important;
     border: 1px solid var(--glass-border) !important;
     transition: all 0.3s var(--ease);
 }
 .btn-light-soft:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: #F1F5F9 !important;
     color: var(--text-primary) !important;
 }
 

@@ -21,7 +21,7 @@ class ApiService {
   // 4. Triển khai lên VPS/Cloud (Production):
   //    static const String baseUrl = 'https://your-domain.com';
   // ============================================================
-  static const String baseUrl = 'http://172.16.3.91:5000';
+  static const String baseUrl = 'http://192.168.1.22:5000';
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();

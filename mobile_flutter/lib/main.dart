@@ -5,7 +5,7 @@ import 'providers/attendance_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/onboarding_screen.dart';
+
 import 'services/sync_manager.dart';
 import 'services/firebase_messaging_service.dart'; // Thêm import FCM
 import 'theme/app_theme.dart'; // Thêm import theme
@@ -50,9 +50,6 @@ class FaceAttendanceApp extends StatelessWidget {
       theme: AppTheme.darkTheme, // Áp dụng Dark Theme
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
-          if (!auth.hasSeenOnboarding) {
-            return const OnboardingScreen();
-          }
           return auth.isAuthenticated ? const HomeScreen() : const LoginScreen();
         },
       ),

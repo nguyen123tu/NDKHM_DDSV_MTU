@@ -1,130 +1,118 @@
-/* fraud.css - Premium Design for Fraud Alerts */
+/* fraud.css - Premium Cyberpunk Design for Fraud Alerts */
 
-/* Card Styling */
-.card {
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
-    overflow: hidden;
-    background: #ffffff;
+/* Card Override for Cyberpunk */
+.card.border-left-danger {
+    border-left: 4px solid var(--neon-coral) !important;
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.1) !important;
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
 }
 
 .card-header {
-    background-color: #fff;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    padding: 1.25rem 1.5rem;
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    border-bottom: 1px solid var(--glass-border) !important;
 }
 
-.border-left-danger {
-    border-left: 5px solid #ff4757 !important;
-}
-
-/* Table Styling */
-.table {
-    margin-bottom: 0;
-    color: #495057;
-}
-
-.table th {
-    font-weight: 600;
-    color: #2f3640;
-    border-top: none;
-    border-bottom: 2px solid #f1f2f6;
-    padding: 1rem;
-    background-color: #f8f9fa;
+.card-header h6 {
+    color: var(--neon-coral) !important;
+    text-shadow: 0 0 10px rgba(255, 107, 107, 0.4);
+    letter-spacing: 1px;
     text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-}
-
-.table td {
-    padding: 1rem;
-    vertical-align: middle;
-    border-bottom: 1px solid #f1f2f6;
-}
-
-.table-hover tbody tr:hover {
-    background-color: #fdfdfd;
-    box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.015);
-    transition: all 0.2s ease;
 }
 
 /* Status Rows */
 .bg-light-danger {
-    background-color: #fff8f8 !important;
-    transition: background-color 0.3s ease;
+    background-color: rgba(255, 107, 107, 0.08) !important;
+    transition: background-color var(--duration) var(--ease);
 }
 .bg-light-danger:hover {
-    background-color: #ffeaea !important;
+    background-color: rgba(255, 107, 107, 0.15) !important;
 }
 
 /* Typography & Badges */
 .text-danger {
-    color: #ff4757 !important;
+    color: var(--neon-coral) !important;
+    text-shadow: 0 0 8px rgba(255, 107, 107, 0.4);
 }
 
 .badge {
-    padding: 0.5em 0.75em;
-    font-weight: 500;
-    border-radius: 6px;
+    padding: 0.5em 0.85em;
+    font-weight: 600;
+    border-radius: 8px;
     font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    border: 1px solid transparent;
 }
 
-.bg-danger {
-    background-color: #ff4757 !important;
-    color: white;
+.badge.bg-danger {
+    background-color: rgba(255, 107, 107, 0.15) !important;
+    color: var(--neon-coral) !important;
+    border-color: rgba(255, 107, 107, 0.3);
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.2);
 }
 
-.bg-warning {
-    background-color: #ffa502 !important;
-    color: white !important;
+.badge.bg-warning {
+    background-color: rgba(253, 203, 110, 0.15) !important;
+    color: var(--warning) !important;
+    border-color: rgba(253, 203, 110, 0.3);
+    box-shadow: 0 0 10px rgba(253, 203, 110, 0.2);
 }
 
-.bg-success {
-    background-color: #2ed573 !important;
-    color: white;
+.badge.bg-success {
+    background-color: rgba(0, 245, 212, 0.15) !important;
+    color: var(--accent) !important;
+    border-color: rgba(0, 245, 212, 0.3);
+    box-shadow: 0 0 10px rgba(0, 245, 212, 0.2);
 }
 
 /* Image Thumbnail */
 .img-thumbnail {
     border-radius: 8px;
-    border: 2px solid #f1f2f6;
+    border: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 
 .img-thumbnail:hover {
-    transform: scale(1.05);
-    border-color: #ff4757;
-    box-shadow: 0 4px 10px rgba(255, 71, 87, 0.2);
+    transform: scale(1.15) translateY(-2px);
+    border-color: var(--neon-coral);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+    z-index: 10;
+    position: relative;
 }
 
 /* Buttons */
 .btn-sm {
-    border-radius: 6px;
-    padding: 0.35rem 0.6rem;
-    margin: 0 0.15rem;
-    transition: all 0.2s;
+    border-radius: 8px;
+    padding: 0.4rem 0.7rem;
+    margin: 0 0.2rem;
+    transition: all 0.3s var(--ease);
+    border: 1px solid transparent;
 }
 
 .btn-success {
-    background-color: #2ed573;
-    border-color: #2ed573;
+    background-color: rgba(0, 245, 212, 0.1);
+    color: var(--accent);
+    border-color: rgba(0, 245, 212, 0.3);
 }
 .btn-success:hover {
-    background-color: #26b360;
-    border-color: #26b360;
-    transform: translateY(-1px);
+    background-color: var(--accent);
+    color: #000;
+    box-shadow: 0 0 15px var(--accent-glow);
+    transform: translateY(-2px);
 }
 
 .btn-danger {
-    background-color: #ff4757;
-    border-color: #ff4757;
+    background-color: rgba(255, 107, 107, 0.1);
+    color: var(--neon-coral);
+    border-color: rgba(255, 107, 107, 0.3);
 }
 .btn-danger:hover {
-    background-color: #e84118;
-    border-color: #e84118;
-    transform: translateY(-1px);
+    background-color: var(--neon-coral);
+    color: #fff;
+    box-shadow: 0 0 15px rgba(255, 107, 107, 0.4);
+    transform: translateY(-2px);
 }
 
 /* Alert Details Text */
@@ -132,10 +120,22 @@
     max-width: 280px;
     white-space: normal;
     font-size: 0.9em;
-    line-height: 1.5;
-    color: #57606f;
+    line-height: 1.6;
+    color: var(--text-secondary);
 }
 
 .fraud-details strong {
-    color: #2f3640;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Empty State Styling */
+.table td[colspan="8"] {
+    background: transparent !important;
+    border: none;
+}
+.table td[colspan="8"] p {
+    color: var(--accent) !important;
+    opacity: 0.7;
+    letter-spacing: 1px;
 }

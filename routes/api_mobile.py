@@ -188,10 +188,9 @@ def mobile_login():
             return jsonify({"success": False, "message": "Thiếu thông tin thiết bị (Device ID). Vui lòng cập nhật App!"}), 400
             
         current_device = student.get('device_id')
-        if not current_device:
+        if not current_device or current_device != device_id:
+            # Tự động cập nhật thiết bị mới khi đăng nhập ở máy khác (bỏ giới hạn 1 máy)
             execute_update("UPDATE sinh_vien SET device_id = %s WHERE id = %s", (device_id, student['id']))
-        elif current_device != device_id:
-            return jsonify({"success": False, "message": "Tài khoản đã được đăng nhập trên một thiết bị khác. Không thể đăng nhập!"}), 403
 
         token = _make_token(student, is_student=True)
         return jsonify({
