@@ -90,6 +90,28 @@ document.getElementById('lookupForm').addEventListener('submit', async (e) => {
                     historyTbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Bạn chưa có dữ liệu điểm danh nào.</td></tr>';
                 }
                 
+                // Đổ data bảng lịch sử hỗ trợ
+                const supportHistoryTbody = document.getElementById('supportHistoryTbody');
+                if (supportHistoryTbody) {
+                    supportHistoryTbody.innerHTML = '';
+                    if (data.support_history && data.support_history.length > 0) {
+                        data.support_history.forEach(item => {
+                            let badgeClass = item.trang_thai === 'Đã giải quyết' ? 'status-ok' : 'status-warn';
+                            let badgeIcon = item.trang_thai === 'Đã giải quyết' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-clock"></i>';
+                            
+                            supportHistoryTbody.innerHTML += `
+                                <tr>
+                                    <td class="fw-medium text-white-50"><i class="far fa-clock me-2"></i>${item.thoi_gian}</td>
+                                    <td><i class="fas fa-tag text-white-50 me-2" style="font-size: 0.8rem"></i> ${item.tieu_de}</td>
+                                    <td class="text-end"><span class="status-badge ${badgeClass}">${badgeIcon} ${item.trang_thai}</span></td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        supportHistoryTbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Bạn chưa gửi yêu cầu hỗ trợ nào.</td></tr>';
+                    }
+                }
+                
                 resultsPanel.classList.remove('d-none');
             } else {
                 alert(data.msg);
@@ -126,16 +148,45 @@ document.getElementById('lookupForm').addEventListener('submit', async (e) => {
                 const data = await res.json();
                 
                 if (data.success) {
-                    alert('Gửi yêu cầu thành công! Quản trị viên sẽ sớm xử lý.');
-                    supportForm.reset();
-                    document.getElementById('spMssv').value = mssv; // retain mssv
-                    
-                    // Close modal using bootstrap API
-                    const modalEl = document.getElementById('supportModal');
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    if(modal) modal.hide();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Thành công!',
+                            text: 'Yêu cầu hỗ trợ của bạn đã được gửi. Quản trị viên sẽ sớm xử lý.',
+                            icon: 'success',
+                            confirmButtonText: 'Đóng',
+                            background: 'rgba(30, 30, 40, 0.95)',
+                            color: '#fff',
+                            confirmButtonColor: '#0dcaf0'
+                        }).then(() => {
+                            supportForm.reset();
+                            document.getElementById('spMssv').value = mssv;
+                            const modalEl = document.getElementById('supportModal');
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if(modal) modal.hide();
+                            
+                            document.getElementById('lookupForm').dispatchEvent(new Event('submit'));
+                        });
+                    } else {
+                        alert('Gửi yêu cầu thành công! Quản trị viên sẽ sớm xử lý.');
+                        supportForm.reset();
+                        document.getElementById('spMssv').value = mssv;
+                        const modalEl = document.getElementById('supportModal');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if(modal) modal.hide();
+                        document.getElementById('lookupForm').dispatchEvent(new Event('submit'));
+                    }
                 } else {
-                    alert(data.msg || 'Đã có lỗi xảy ra');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Lỗi!',
+                            text: data.msg || 'Đã có lỗi xảy ra',
+                            icon: 'error',
+                            background: 'rgba(30, 30, 40, 0.95)',
+                            color: '#fff'
+                        });
+                    } else {
+                        alert(data.msg || 'Đã có lỗi xảy ra');
+                    }
                 }
             } catch (err) {
                 alert('Lỗi kết nối máy chủ');

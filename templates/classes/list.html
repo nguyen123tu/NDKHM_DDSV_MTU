@@ -80,8 +80,7 @@
             <a href="{{ url_for('classes.edit', id=cls.id) }}" class="ca-btn ca-btn-edit" title="Sửa">
                 <i class="fas fa-pen"></i>
             </a>
-            <form action="{{ url_for('classes.delete', id=cls.id) }}" method="POST" class="d-inline"
-                  onsubmit="return confirm('Xóa lớp {{ cls.ten_lop }}?');">
+            <form action="{{ url_for('classes.delete', id=cls.id) }}" method="POST" class="d-inline form-delete-class" data-name="{{ cls.ten_lop }}">
                 <button type="submit" class="ca-btn ca-btn-delete" title="Xóa">
                     <i class="fas fa-trash-alt"></i>
                 </button>

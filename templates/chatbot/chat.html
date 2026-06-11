@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/chatbot_chat.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/voice_chat.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -27,6 +28,9 @@
             </div>
         </div>
         <div class="header-right">
+            <button class="btn-voice-mode" id="btnVoiceMode" title="Chế độ Voice Chat">
+                <i class="fas fa-microphone"></i>
+            </button>
             <button class="btn-icon" id="btnThemeToggle" title="Sáng / Tối">
                 <i class="fas fa-moon"></i>
             </button>
@@ -122,6 +126,10 @@
                     </button>
                     <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."
                               onkeydown="handleKey(event)"></textarea>
+                    <button class="btn-mic" id="btnMic" title="Nhấn để nói">
+                        <i class="fas fa-microphone"></i>
+                        <span class="mic-wave"></span>
+                    </button>
                     <button class="btn-send" onclick="sendMessage()" id="btnSend" title="Gửi tin nhắn">
                         <i class="fas fa-paper-plane"></i>
                     </button>
@@ -157,9 +165,45 @@
         </div>
     </div>
 </div>
+
+<!-- ===== FULLSCREEN VOICE OVERLAY ===== -->
+<div class="voice-overlay" id="voiceOverlay">
+    <!-- Orb -->
+    <div class="voice-orb-container">
+        <div class="voice-orb" id="voiceOrb"></div>
+        <div class="voice-ripple"></div>
+        <div class="voice-ripple"></div>
+        <div class="voice-ripple"></div>
+    </div>
+
+    <!-- Status -->
+    <div class="voice-status" id="voiceStatus">
+        <span class="voice-status-dot"></span>
+        <span id="voiceStatusText">Sẵn sàng</span>
+    </div>
+
+    <!-- Transcript -->
+    <div class="voice-transcript">
+        <div class="voice-transcript-text" id="voiceTranscript"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="voice-controls">
+        <button class="voice-btn voice-btn-stop" id="voiceBtnStop" title="Dừng AI nói">
+            <i class="fas fa-stop"></i>
+        </button>
+        <button class="voice-btn voice-btn-mic" id="voiceBtnMic" title="Bấm để nói">
+            <i class="fas fa-microphone"></i>
+        </button>
+        <button class="voice-btn voice-btn-close" id="voiceBtnClose" title="Đóng Voice Mode">
+            <i class="fas fa-xmark"></i>
+        </button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="{{ url_for('static', filename='js/components/voice_engine.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pages/chatbot_chat.js') }}"></script>
 {% endblock %}

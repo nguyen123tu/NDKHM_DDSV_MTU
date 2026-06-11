@@ -137,5 +137,10 @@ if __name__ == '__main__':
     from core.matcher import get_matcher
     get_matcher()
     
+    # Pre-warm (Tải trước) Mô hình AI (InsightFace) vào thẳng RAM lúc bật server
+    # Giúp triệt tiêu hoàn toàn thời gian chờ 5 giây khi mở trang điểm danh
+    from core.engine import get_engine
+    get_engine()
+    
     # Khởi động SocketIO app
     socketio.run(app, host='0.0.0.0', port=5000, debug=app.config['DEBUG'])

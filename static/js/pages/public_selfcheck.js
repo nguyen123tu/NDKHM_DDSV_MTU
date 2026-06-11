@@ -108,6 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('infoTime').innerText = timeStr;
 
         addLogEntry(sv, timeStr, dateStr, imgB64);
+        
+        // Play audio greeting
+        speakGreeting(sv.ho_ten);
 
         // Auto-hide info after 5s if no new face
         setTimeout(() => {
@@ -116,6 +119,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('infoSuccessState').style.display = 'none';
             }
         }, 5000);
+    }
+    // ===== Unlock Audio =====
+    const btnUnlockAudio = document.getElementById('btnUnlockAudio');
+    const ttsAudio = document.getElementById('ttsAudio');
+    if (btnUnlockAudio) {
+        btnUnlockAudio.addEventListener('click', () => {
+            ttsAudio.play().catch(e => {}); // Play empty to unlock
+            btnUnlockAudio.classList.remove('btn-outline-info');
+            btnUnlockAudio.classList.add('btn-info');
+            btnUnlockAudio.innerHTML = '<i class="fas fa-volume-up me-1"></i> Loa đã bật';
+        });
+    }
+
+    // ===== Text to Speech (Backend gTTS) =====
+    function speakGreeting(name) {
+        if (!ttsAudio) return;
+        const text = `Xin chào ${name}, điểm danh thành công!`;
+        ttsAudio.src = `/chatbot/tts?text=${encodeURIComponent(text)}`;
+        ttsAudio.play().catch(err => {
+            console.log('Auto-play bị chặn, yêu cầu người dùng click nút Bật Loa:', err);
+            if (btnUnlockAudio) {
+                btnUnlockAudio.classList.add('btn-danger');
+                btnUnlockAudio.classList.remove('btn-outline-info', 'btn-info');
+            }
+        });
     }
 
     function addLogEntry(sv, timeStr, dateStr, imgB64) {

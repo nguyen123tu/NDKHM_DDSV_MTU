@@ -54,13 +54,35 @@
             finally{setTimeout(()=>{isProcessing=false},2000)}
         }
 
+        // ===== Unlock Audio =====
+        const btnUnlockAudio = document.getElementById('btnUnlockAudio');
+        const ttsAudio = document.getElementById('ttsAudio');
+        if (btnUnlockAudio) {
+            btnUnlockAudio.addEventListener('click', () => {
+                ttsAudio.play().catch(e => {}); // Play empty to unlock
+                btnUnlockAudio.classList.remove('btn-outline-info');
+                btnUnlockAudio.classList.add('btn-info');
+                btnUnlockAudio.innerHTML = '<i class="fas fa-volume-up"></i> Bật';
+            });
+        }
+
         function showResult(data){
             const p=document.getElementById('result-panel'), s=data.student, a=data.attendance;
             document.getElementById('res-name').innerText=s.ho_ten;
             document.getElementById('res-mssv').innerText=`MSSV: ${s.mssv}`;
             document.getElementById('res-avatar').src=s.avatar?`/${s.avatar}`:'/static/img/truong-xay-dung-mien-tay.jpg';
             document.getElementById('res-msg').innerText=a?(a.msg||"Điểm danh hoàn tất"):"Nhận diện thành công";
-            try{new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play()}catch(e){}
+            
+            // TTS Audio
+            if (ttsAudio) {
+                const text = `Xin chào ${s.ho_ten}, điểm danh thành công!`;
+                ttsAudio.src = `/chatbot/tts?text=${encodeURIComponent(text)}`;
+                ttsAudio.play().catch(e => {
+                    console.log('Audio autoplay bị chặn:', e);
+                    if (btnUnlockAudio) btnUnlockAudio.classList.add('btn-danger');
+                });
+            }
+
             p.style.display='block';
             addLog(s);
             setTimeout(()=>{p.style.display='none'},5000);

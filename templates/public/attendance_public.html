@@ -135,6 +135,27 @@
                                 </table>
                             </div>
                         </div>
+                        <!-- Lịch sử Hỗ Trợ -->
+                        <div class="glass-card p-4 slide-up delay-3 mt-4" style="background: rgba(255, 255, 255, 0.05);">
+                            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3" style="border-color: rgba(255,255,255,0.1) !important;">
+                                <h5 class="fw-bold mb-0 text-white"><i class="fas fa-headset text-white-50 me-2"></i>Lịch Sử Yêu Cầu Hỗ Trợ</h5>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table glass-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Thời Gian</th>
+                                            <th>Tiêu đề</th>
+                                            <th class="text-end">Trạng Thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="supportHistoryTbody">
+                                        <!-- Kết quả JS đổ vào đây -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -216,6 +237,8 @@
 </style>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/pages/attendance_public.js') }}"></script>
 {% endblock %}

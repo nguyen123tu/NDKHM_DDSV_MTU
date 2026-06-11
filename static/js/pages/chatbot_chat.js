@@ -210,3 +210,336 @@ function buildKnowledge() {
 }
 
 function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+// ═══════════════════════════════════════════════════════════
+// VOICE CHAT INTEGRATION
+// ═══════════════════════════════════════════════════════════
+
+(function initVoiceChat() {
+    // Check support
+    const support = VoiceEngine.isSupported();
+    if (!support.full) {
+        const btnMic = document.getElementById('btnMic');
+        const btnVoiceMode = document.getElementById('btnVoiceMode');
+        if (btnMic) btnMic.style.display = 'none';
+        if (btnVoiceMode) btnVoiceMode.style.display = 'none';
+        console.warn('[Voice] Browser does not support Speech API');
+        return;
+    }
+
+    // DOM refs
+    const overlay = document.getElementById('voiceOverlay');
+    const voiceOrb = document.getElementById('voiceOrb');
+    const voiceStatusText = document.getElementById('voiceStatusText');
+    const voiceTranscript = document.getElementById('voiceTranscript');
+    const btnMic = document.getElementById('btnMic');
+    const btnVoiceMode = document.getElementById('btnVoiceMode');
+    const voiceBtnMic = document.getElementById('voiceBtnMic');
+    const voiceBtnStop = document.getElementById('voiceBtnStop');
+    const voiceBtnClose = document.getElementById('voiceBtnClose');
+
+    let voiceMode = false;
+    let inlineMicActive = false;
+    let voiceEngine = null;
+    let isBusy = false;  // prevent double-send while processing
+
+    // ─── Create Voice Engine ─────────────────────────────────
+
+    function getEngine() {
+        if (!voiceEngine) {
+            voiceEngine = new VoiceEngine({
+                lang: 'vi-VN',
+                // preferredVoice: 'NamMinh', // <--- BỎ DẤU // ĐỂ ĐỔI GIỌNG (Ví dụ: 'NamMinh' hoặc 'HoaiMy')
+                continuous: false,   // Use single-shot mode for reliability
+                interimResults: true,
+                autoRestart: false,  // We control restart manually
+
+                onListeningStart() {
+                    console.log('[Voice] 🎤 Listening started');
+                    if (voiceMode) {
+                        setOverlayState('listening');
+                        voiceStatusText.textContent = 'Đang nghe...';
+                        voiceBtnMic.classList.add('active');
+                        voiceBtnMic.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                    }
+                    if (inlineMicActive) {
+                        btnMic.classList.add('active');
+                    }
+                },
+
+                onListeningEnd() {
+                    console.log('[Voice] 🎤 Listening ended');
+                    if (voiceMode) {
+                        voiceBtnMic.classList.remove('active');
+                        voiceBtnMic.innerHTML = '<i class="fas fa-microphone"></i>';
+                    }
+                    if (inlineMicActive) {
+                        btnMic.classList.remove('active');
+                        inlineMicActive = false;
+                    }
+                },
+
+                onResult(text, isFinal) {
+                    if (voiceMode) {
+                        voiceTranscript.textContent = text;
+                        voiceTranscript.classList.toggle('interim', !isFinal);
+                    }
+                    if (inlineMicActive && !isFinal) {
+                        inputEl.value = text;
+                        inputEl.style.height = 'auto';
+                        inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+                    }
+                },
+
+                onFinalResult(text) {
+                    if (!text) return;
+                    console.log('[Voice] 📝 Final result:', text);
+
+                    if (voiceMode && !isBusy) {
+                        voiceTranscript.textContent = text;
+                        voiceTranscript.classList.remove('interim');
+                        voiceSendAndSpeak(text);
+                    } else if (inlineMicActive) {
+                        inputEl.value = text;
+                        voiceEngine.stopListening();
+                        inlineMicActive = false;
+                        sendMessage();
+                    }
+                },
+
+                onSpeakStart() {
+                    console.log('[Voice] 🔊 Speaking started');
+                    if (voiceMode) {
+                        setOverlayState('speaking');
+                        voiceStatusText.textContent = 'AI đang trả lời...';
+                    }
+                },
+
+                onSpeakEnd() {
+                    console.log('[Voice] 🔊 Speaking ended');
+                    isBusy = false;
+
+                    if (voiceMode) {
+                        // Auto-restart listening for continuous conversation
+                        voiceTranscript.textContent = '';
+                        setOverlayState('idle');
+                        voiceStatusText.textContent = 'Đang chuẩn bị nghe...';
+
+                        setTimeout(() => {
+                            if (voiceMode) {
+                                console.log('[Voice] 🔄 Auto-restarting listening...');
+                                restartListening();
+                            }
+                        }, 800);
+                    }
+                },
+
+                onError(msg) {
+                    console.error('[Voice] ❌', msg);
+                    isBusy = false;
+                    if (voiceMode) {
+                        voiceStatusText.textContent = msg;
+                        setTimeout(() => {
+                            if (voiceMode) voiceStatusText.textContent = 'Bấm mic để thử lại';
+                        }, 3000);
+                    }
+                },
+
+                onVolumeChange(level) {
+                    if (voiceMode && voiceOrb) {
+                        const scale = 1 + level * 0.3;
+                        voiceOrb.style.transform = `scale(${scale})`;
+                    }
+                }
+            });
+        }
+        return voiceEngine;
+    }
+
+    // ─── Restart listening (force fresh start) ───────────────
+
+    function restartListening() {
+        const engine = getEngine();
+        // Force clean state
+        engine.stopListening();
+        engine.stopSpeaking();
+        engine._stopped = false;
+
+        // Small delay to let recognition fully stop before restarting
+        setTimeout(() => {
+            if (voiceMode) {
+                console.log('[Voice] 🎤 Starting fresh listen...');
+                engine.startListening();
+            }
+        }, 200);
+    }
+
+    // ─── Overlay State Machine ───────────────────────────────
+
+    function setOverlayState(state) {
+        overlay.classList.remove('listening', 'speaking', 'processing');
+        if (state) overlay.classList.add(state);
+    }
+
+    // ─── Voice Mode: Send text and speak response ────────────
+
+    function voiceSendAndSpeak(text) {
+        isBusy = true;
+
+        // Stop listening during API call
+        const engine = getEngine();
+        engine.stopListening();
+        setOverlayState('processing');
+        voiceStatusText.textContent = 'Đang suy nghĩ...';
+
+        // Also add to chat UI
+        addMsgDOM(text, 'user');
+        CH.addMsg(curId, 'user', text);
+        renderList();
+
+        fetch('/chatbot/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: text })
+        })
+        .then(r => r.json())
+        .then(data => {
+            // Add response to chat UI
+            addMsgDOM(data.answer, 'bot', data.sources, data.duration_ms);
+            CH.addMsg(curId, 'bot', data.answer, data.sources, data.duration_ms);
+
+            // Show answer in voice transcript
+            const cleanPreview = data.answer.replace(/[#*`_\[\]()]/g, '').substring(0, 100);
+            voiceTranscript.textContent = cleanPreview + (data.answer.length > 100 ? '...' : '');
+            voiceTranscript.classList.remove('interim');
+
+            // Speak the answer — onSpeakEnd will auto-restart listening
+            if (voiceMode) {
+                console.log('[Voice] 🔊 Speaking response...');
+                engine.speak(data.answer);
+            } else {
+                isBusy = false;
+            }
+        })
+        .catch(err => {
+            isBusy = false;
+            const errMsg = '❌ Lỗi: ' + err.message;
+            addMsgDOM(errMsg, 'bot');
+            CH.addMsg(curId, 'bot', errMsg);
+
+            if (voiceMode) {
+                voiceStatusText.textContent = 'Có lỗi xảy ra';
+                setOverlayState('idle');
+                // Auto-restart listening after error
+                setTimeout(() => {
+                    if (voiceMode) {
+                        restartListening();
+                    }
+                }, 2000);
+            }
+        });
+    }
+
+    // ─── Open/Close Fullscreen Voice Mode ────────────────────
+
+    function openVoiceMode() {
+        voiceMode = true;
+        isBusy = false;
+        overlay.classList.add('open');
+        voiceTranscript.textContent = '';
+        voiceStatusText.textContent = 'Đang bắt đầu...';
+        setOverlayState('idle');
+        document.body.style.overflow = 'hidden';
+
+        // Init engine
+        getEngine();
+
+        // Start listening
+        setTimeout(() => {
+            if (voiceMode) {
+                restartListening();
+            }
+        }, 500);
+    }
+
+    function closeVoiceMode() {
+        voiceMode = false;
+        isBusy = false;
+        overlay.classList.remove('open');
+        setOverlayState('');
+        document.body.style.overflow = '';
+
+        if (voiceEngine) {
+            voiceEngine.stopListening();
+            voiceEngine.stopSpeaking();
+        }
+    }
+
+    // ─── Inline Mic (quick voice input) ──────────────────────
+
+    function toggleInlineMic() {
+        const engine = getEngine();
+
+        if (inlineMicActive) {
+            engine.stopListening();
+            inlineMicActive = false;
+            btnMic.classList.remove('active');
+        } else {
+            inlineMicActive = true;
+            inputEl.value = '';
+            engine.startListening();
+        }
+    }
+
+    // ─── Event Listeners ─────────────────────────────────────
+
+    if (btnVoiceMode) {
+        btnVoiceMode.addEventListener('click', () => openVoiceMode());
+    }
+
+    if (btnMic) {
+        btnMic.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleInlineMic();
+        });
+    }
+
+    if (voiceBtnMic) {
+        voiceBtnMic.addEventListener('click', () => {
+            const engine = getEngine();
+            if (engine.isListening) {
+                engine.stopListening();
+                setOverlayState('idle');
+                voiceStatusText.textContent = 'Bấm mic để nói';
+            } else {
+                voiceTranscript.textContent = '';
+                restartListening();
+            }
+        });
+    }
+
+    if (voiceBtnStop) {
+        voiceBtnStop.addEventListener('click', () => {
+            const engine = getEngine();
+            engine.stopSpeaking();
+            isBusy = false;
+            setOverlayState('idle');
+            voiceStatusText.textContent = 'Đã dừng. Bấm mic để nói';
+        });
+    }
+
+    if (voiceBtnClose) {
+        voiceBtnClose.addEventListener('click', () => closeVoiceMode());
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && voiceMode) closeVoiceMode();
+    });
+
+    if (window.speechSynthesis) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    console.log('[Voice] Voice Chat initialized ✓');
+})();

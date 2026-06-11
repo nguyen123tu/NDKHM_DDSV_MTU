@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS sinh_vien (
     face_vector TEXT COMMENT 'JSON mảng 512 số phục vụ đồng bộ offline',
     device_id   VARCHAR(255) COMMENT 'Device ID để chống đăng nhập nhiều thiết bị',
     fcm_token   VARCHAR(255) COMMENT 'Token để nhận Push Notification',
+    is_locked   TINYINT DEFAULT 0 COMMENT '0=bt, 1=khóa do gian lận',
     created_at  DATETIME DEFAULT NOW(),
     updated_at  DATETIME DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE SET NULL,

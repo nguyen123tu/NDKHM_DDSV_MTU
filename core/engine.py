@@ -12,9 +12,12 @@ Cấu hình qua Config.AI_ENGINE:
 from config import Config
 
 
+_engine_instance = None
+
 def get_engine():
     """
     Factory: Trả về engine dict tùy theo Config.AI_ENGINE.
+    Dùng Singleton pattern để đảm bảo model chỉ được load 1 lần duy nhất vào bộ nhớ.
     
     Returns:
         dict: {
@@ -28,16 +31,22 @@ def get_engine():
             'verify_two_faces': callable,  — So sánh 2 ảnh khuôn mặt
         }
     """
+    global _engine_instance
+    if _engine_instance is not None:
+        return _engine_instance
+
     engine_name = getattr(Config, 'AI_ENGINE', 'insightface')
     
     if engine_name == 'deepface':
-        return _build_deepface_engine()
+        _engine_instance = _build_deepface_engine()
     elif engine_name == 'yolo_resnet':
-        return _build_yolo_resnet_engine()
+        _engine_instance = _build_yolo_resnet_engine()
     elif engine_name == 'buffalo_sc':
-        return _build_insightface_engine(model_name='buffalo_sc')
+        _engine_instance = _build_insightface_engine(model_name='buffalo_sc')
     else:
-        return _build_insightface_engine(model_name='buffalo_l')
+        _engine_instance = _build_insightface_engine(model_name='buffalo_l')
+        
+    return _engine_instance
 
 
 def _build_deepface_engine():

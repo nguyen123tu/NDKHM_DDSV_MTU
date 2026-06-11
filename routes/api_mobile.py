@@ -350,9 +350,12 @@ def mobile_checkin():
     if not mssv:
         return jsonify({"success": False, "message": "Thiếu MSSV"}), 400
 
-    sv = execute_one("SELECT id FROM sinh_vien WHERE mssv = %s", (mssv,))
+    sv = execute_one("SELECT id, is_locked FROM sinh_vien WHERE mssv = %s", (mssv,))
     if not sv:
         return jsonify({"success": False, "message": "Không tìm thấy sinh viên"}), 404
+        
+    if sv.get('is_locked') == 1:
+        return jsonify({"success": False, "message": "Tài khoản của bạn đã bị khóa do vi phạm quy chế. Vui lòng liên hệ Admin."}), 403
 
     evidence_path = None
     upload_image = request.files.get("image")

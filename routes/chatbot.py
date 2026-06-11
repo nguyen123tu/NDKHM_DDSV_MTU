@@ -4,6 +4,8 @@ Cung cấp giao diện chat và API tương tác với trợ lý AI
 """
 
 import uuid
+import re
+import io
 from flask import Blueprint, render_template, request, jsonify, session, Response
 import json
 import time
@@ -154,3 +156,81 @@ def knowledge_status():
     from services.knowledge_builder import get_knowledge_builder
     kb = get_knowledge_builder()
     return jsonify(kb.get_status())
+
+
+@chatbot_bp.route('/tts', methods=['GET', 'POST'])
+def text_to_speech():
+    """
+    API: Chuyển text thành giọng nói tiếng Việt (gTTS)
+    """
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        text = data.get('text', '').strip()
+    else:
+        text = request.args.get('text', '').strip()
+
+    if not text:
+        return jsonify({"error": "Text không được để trống"}), 400
+
+    if len(text) > 5000:
+        return jsonify({"error": "Text quá dài (tối đa 5000 ký tự)"}), 400
+
+    # Clean markdown for speech
+    clean_text = _clean_for_speech(text)
+    if not clean_text:
+        return jsonify({"error": "Text sau khi xử lý trống"}), 400
+
+    try:
+        audio_data = _generate_tts(clean_text)
+        return Response(
+            audio_data,
+            mimetype='audio/mpeg',
+            headers={
+                'Content-Type': 'audio/mpeg',
+                'Cache-Control': 'no-cache',
+            }
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"TTS error: {str(e)}"}), 500
+
+
+def _generate_tts(text: str) -> bytes:
+    """
+    Generate TTS audio using Google Text-to-Speech (gTTS).
+    - Miễn phí, không cần API key
+    - Hỗ trợ tiếng Việt tốt
+    - Sync, tương thích hoàn toàn với eventlet
+    """
+    from gtts import gTTS
+
+    buffer = io.BytesIO()
+    tts = gTTS(text=text, lang='vi', slow=False)
+    tts.write_to_fp(buffer)
+    buffer.seek(0)
+    audio_data = buffer.read()
+
+    print(f"[TTS] Generated {len(audio_data)} bytes of Vietnamese audio")
+    return audio_data
+
+
+def _clean_for_speech(text: str) -> str:
+    """Remove markdown formatting for clean TTS output"""
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)   # bold
+    text = re.sub(r'\*(.*?)\*', r'\1', text)        # italic
+    text = re.sub(r'#{1,6}\s*', '', text)           # headers
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)  # links
+    text = re.sub(r'```[\s\S]*?```', '', text)      # code blocks
+    text = re.sub(r'`([^`]+)`', r'\1', text)        # inline code
+    text = re.sub(r'^[\s]*[-\u2022*]\s*', '', text, flags=re.MULTILINE)  # bullets
+    # Remove emojis
+    text = re.sub(
+        r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF'
+        r'\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF'
+        r'\U00002600-\U000026FF\U00002700-\U000027BF]', '', text
+    )
+    text = re.sub(r'\n{2,}', '. ', text)
+    text = re.sub(r'\n', '. ', text)
+    text = re.sub(r'\s{2,}', ' ', text)
+    return text.strip()

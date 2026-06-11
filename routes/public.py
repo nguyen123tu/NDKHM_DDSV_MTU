@@ -4,7 +4,7 @@ Route Public (Tra cứu không cần đăng nhập)
 
 from flask import render_template, request, jsonify
 from . import public_bp
-from db.connection import execute_one, execute_query
+from db.connection import execute_one, execute_query, execute_update
 
 @public_bp.route('/lookup')
 def lookup():
@@ -65,6 +65,14 @@ def api_lookup():
     total_attendance = stats_query['total_attendance'] if stats_query and stats_query['total_attendance'] else 0
     total_present = stats_query['total_present'] if stats_query and stats_query['total_present'] else 0
     
+    # Lấy lịch sử yêu cầu hỗ trợ
+    support_history = execute_query("""
+        SELECT id, tieu_de, DATE_FORMAT(thoi_gian, '%d/%m/%Y %H:%i') as thoi_gian, trang_thai
+        FROM yeu_cau_ho_tro
+        WHERE mssv = %s
+        ORDER BY thoi_gian DESC LIMIT 5
+    """, (mssv,))
+    
     # Xử lý Avatar và Face Data (quét thư mục)
     avatar_path = sv.get("avatar")
     face_images = []
@@ -108,7 +116,8 @@ def api_lookup():
             "present": int(total_present)
         },
         "face_data": face_images,
-        "history": history
+        "history": history,
+        "support_history": support_history
     })
 
 
@@ -224,7 +233,7 @@ def _do_recognize(image_data):
     
     # Lấy thông tin SV
     sv = execute_one("""
-        SELECT sv.mssv, sv.ho_ten, sv.email, sv.sdt, sv.avatar, sv.ngay_sinh, sv.gioi_tinh, sv.lop_id,
+        SELECT sv.mssv, sv.ho_ten, sv.email, sv.sdt, sv.avatar, sv.ngay_sinh, sv.gioi_tinh, sv.lop_id, sv.is_locked,
                lh.ten_lop, lh.ma_lop
         FROM sinh_vien sv
         LEFT JOIN lop_hoc lh ON sv.lop_id = lh.id
@@ -233,6 +242,9 @@ def _do_recognize(image_data):
     
     if not sv:
         return {"success": False, "msg": "Lỗi dữ liệu sinh viên"}
+        
+    if sv.get('is_locked') == 1:
+        return {"success": False, "msg": "Tài khoản của bạn đã bị khóa do vi phạm quy chế. Vui lòng liên hệ Admin."}
     
     # Xử lý đường dẫn Avatar
     import os

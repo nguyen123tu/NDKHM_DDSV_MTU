@@ -27,13 +27,26 @@
             <img src="/static/img/logo_MTU.png" onerror="this.style.display='none'" style="border-radius: 8px;">
             <div>
                 <div class="hud-title">MTUFACE KIOSK</div>
-                <div class="hud-badges">
+                <div class="hud-badges mt-2">
                     <span class="hb hb-system"><i class="fas fa-circle me-1" style="font-size:5px"></i>System Active</span>
                     <span class="hb hb-shield"><i class="fas fa-shield-halved me-1"></i>Anti-Fraud</span>
+                    <button id="btnUnlockAudio" class="btn btn-sm btn-outline-info rounded-pill ms-2" style="font-size: 0.7rem;" title="Bật âm thanh">
+                        <i class="fas fa-volume-up"></i> Bật Loa
+                    </button>
+                    <audio id="ttsAudio" style="display:none;"></audio>
                 </div>
             </div>
         </div>
-        <div class="hud-stats d-none d-md-flex">
+        <div class="hud-stats d-none d-md-flex align-items-center">
+            <div class="hs-item me-3">
+                <select id="kiosk-lop-id" class="form-select bg-dark text-info border-info" style="font-size: 0.9rem; min-width: 200px;">
+                    <option value="">-- Chọn lớp học --</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="hs-divider"></div>
             <div class="hs-item">
                 <div class="hs-label">Local Time</div>
                 <div class="hs-value" id="clock">--:--:--</div>

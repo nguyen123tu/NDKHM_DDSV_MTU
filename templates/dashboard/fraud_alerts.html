@@ -78,11 +78,19 @@
                             </td>
                             <td>
                                 {% if not alert.da_xu_ly %}
-                                <button class="btn btn-sm btn-success" onclick="markResolved({{ alert.id }})" title="Đánh dấu đã xử lý">
+                                <button class="btn btn-sm btn-success mb-1" onclick="markResolved({{ alert.id }})" title="Đánh dấu đã xử lý">
                                     <i class="fas fa-check"></i>
                                 </button>
                                 {% endif %}
-                                <button class="btn btn-sm btn-danger" onclick="deleteAlert({{ alert.id }})" title="Xóa log">
+                                {% if alert.ho_ten %}
+                                <button class="btn btn-sm btn-warning mb-1" onclick="cancelAttendance({{ alert.id }})" title="Hủy điểm danh ngày này">
+                                    <i class="fas fa-calendar-times"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger mb-1" onclick="lockAccount({{ alert.id }}, '{{ alert.ho_ten }}')" title="Khóa/Mở tài khoản">
+                                    <i class="fas fa-user-lock"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-danger mb-1" onclick="deleteAlert({{ alert.id }})" title="Xóa log">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>

@@ -1,0 +1,480 @@
+/* ═══════════════════════════════════════════════════════════════
+   voice_chat.css — Fullscreen Voice Mode UI (Gemini Live style)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Overlay ─────────────────────────────────────────────── */
+.voice-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: radial-gradient(ellipse at 50% 40%, #0c0c2a 0%, #050510 100%);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    opacity: 0;
+    transition: opacity .4s cubic-bezier(.4, 0, .2, 1);
+}
+
+.voice-overlay.open {
+    display: flex;
+    opacity: 1;
+}
+
+/* Background particles */
+.voice-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(1.5px 1.5px at 20% 30%, rgba(99,102,241,.3), transparent),
+        radial-gradient(1px 1px at 70% 60%, rgba(6,182,212,.25), transparent),
+        radial-gradient(1.5px 1.5px at 40% 70%, rgba(236,72,153,.2), transparent),
+        radial-gradient(1px 1px at 80% 20%, rgba(99,102,241,.2), transparent);
+    background-size: 200px 200px, 150px 180px, 180px 160px, 170px 190px;
+    animation: drift 25s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes drift {
+    to { background-position: -200px 200px, 150px -180px, -180px 160px, 170px 190px; }
+}
+
+/* ─── Central Orb ─────────────────────────────────────────── */
+.voice-orb-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voice-orb {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #06b6d4 50%, #a855f7 100%);
+    background-size: 200% 200%;
+    animation: orb-gradient 4s ease infinite, orb-pulse 3s ease-in-out infinite;
+    box-shadow:
+        0 0 40px rgba(99, 102, 241, .3),
+        0 0 80px rgba(6, 182, 212, .15),
+        inset 0 0 30px rgba(255, 255, 255, .05);
+    position: relative;
+    z-index: 2;
+    transition: transform .3s, box-shadow .3s;
+}
+
+@keyframes orb-gradient {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes orb-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+}
+
+/* Ripple rings */
+.voice-ripple {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(99, 102, 241, .15);
+    z-index: 1;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ─── Listening State ─────────────────────────────────────── */
+.voice-overlay.listening .voice-orb {
+    animation: orb-gradient 3s ease infinite, orb-listen 1.5s ease-in-out infinite;
+    box-shadow:
+        0 0 50px rgba(99, 102, 241, .45),
+        0 0 100px rgba(6, 182, 212, .2),
+        inset 0 0 30px rgba(255, 255, 255, .08);
+}
+
+@keyframes orb-listen {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.voice-overlay.listening .voice-ripple {
+    animation: ripple-out 2.2s ease-out infinite;
+    border-color: rgba(99, 102, 241, .2);
+}
+
+.voice-overlay.listening .voice-ripple:nth-child(2) {
+    animation-delay: .7s;
+}
+
+.voice-overlay.listening .voice-ripple:nth-child(3) {
+    animation-delay: 1.4s;
+}
+
+@keyframes ripple-out {
+    0% { transform: scale(1); opacity: .5; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* ─── Speaking State ──────────────────────────────────────── */
+.voice-overlay.speaking .voice-orb {
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #6366f1 100%);
+    background-size: 200% 200%;
+    animation: orb-gradient 2.5s ease infinite, orb-speak 1s ease-in-out infinite;
+    box-shadow:
+        0 0 55px rgba(168, 85, 247, .45),
+        0 0 110px rgba(236, 72, 153, .2),
+        inset 0 0 30px rgba(255, 255, 255, .08);
+}
+
+@keyframes orb-speak {
+    0%, 100% { transform: scale(1); }
+    30% { transform: scale(1.08); }
+    60% { transform: scale(0.96); }
+}
+
+.voice-overlay.speaking .voice-ripple {
+    animation: ripple-speak 1.8s ease-out infinite;
+    border-color: rgba(168, 85, 247, .2);
+}
+
+.voice-overlay.speaking .voice-ripple:nth-child(2) {
+    animation-delay: .6s;
+}
+
+.voice-overlay.speaking .voice-ripple:nth-child(3) {
+    animation-delay: 1.2s;
+}
+
+@keyframes ripple-speak {
+    0% { transform: scale(1); opacity: .4; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ─── Processing State ────────────────────────────────────── */
+.voice-overlay.processing .voice-orb {
+    animation: orb-gradient 2s ease infinite, orb-process 1.2s linear infinite;
+    box-shadow:
+        0 0 40px rgba(99, 102, 241, .3),
+        0 0 80px rgba(6, 182, 212, .15);
+}
+
+@keyframes orb-process {
+    0% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(0.95) rotate(180deg); }
+    100% { transform: scale(1) rotate(360deg); }
+}
+
+.voice-overlay.processing .voice-ripple {
+    animation: ripple-spin 2s linear infinite;
+    border-color: rgba(6, 182, 212, .15);
+    border-style: dashed;
+}
+
+.voice-overlay.processing .voice-ripple:nth-child(2) {
+    animation-direction: reverse;
+    animation-duration: 3s;
+}
+
+@keyframes ripple-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─── Dynamic scale based on mic volume ───────────────────── */
+.voice-orb[data-volume] {
+    /* JS will set transform via inline style for volume reactivity */
+}
+
+/* ─── Status Label ────────────────────────────────────────── */
+.voice-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: .9rem;
+    font-weight: 500;
+    letter-spacing: .02em;
+    min-height: 24px;
+}
+
+.voice-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6366f1;
+    animation: status-blink 1.5s ease-in-out infinite;
+}
+
+.voice-overlay.listening .voice-status-dot { background: #22c55e; }
+.voice-overlay.speaking .voice-status-dot { background: #a855f7; }
+.voice-overlay.processing .voice-status-dot { background: #f59e0b; }
+
+@keyframes status-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .3; }
+}
+
+/* ─── Transcript Area ─────────────────────────────────────── */
+.voice-transcript {
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.voice-transcript-text {
+    color: #e2e8f0;
+    font-size: 1.15rem;
+    line-height: 1.7;
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 0 12px;
+    word-break: break-word;
+}
+
+.voice-transcript-text:empty::after {
+    content: 'Hãy nói gì đó...';
+    color: #475569;
+    font-style: italic;
+}
+
+.voice-transcript-text.interim {
+    color: #64748b;
+    font-style: italic;
+}
+
+/* ─── Controls ────────────────────────────────────────────── */
+.voice-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.voice-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all .25s cubic-bezier(.175, .885, .32, 1.275);
+    position: relative;
+    outline: none;
+}
+
+.voice-btn:hover {
+    transform: scale(1.1);
+}
+
+.voice-btn:active {
+    transform: scale(0.95);
+}
+
+/* Mic button (main) */
+.voice-btn-mic {
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+    background: linear-gradient(135deg, #6366f1, #06b6d4);
+    color: #fff;
+    box-shadow:
+        0 0 20px rgba(99, 102, 241, .3),
+        0 4px 16px rgba(0, 0, 0, .3);
+}
+
+.voice-btn-mic:hover {
+    box-shadow:
+        0 0 30px rgba(99, 102, 241, .45),
+        0 6px 24px rgba(0, 0, 0, .4);
+}
+
+.voice-btn-mic.active {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    box-shadow:
+        0 0 20px rgba(239, 68, 68, .3),
+        0 4px 16px rgba(0, 0, 0, .3);
+    animation: mic-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(239,68,68,.3), 0 4px 16px rgba(0,0,0,.3); }
+    50% { box-shadow: 0 0 35px rgba(239,68,68,.5), 0 4px 16px rgba(0,0,0,.3); }
+}
+
+/* Secondary buttons */
+.voice-btn-stop {
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .1);
+    color: #94a3b8;
+    font-size: 16px;
+}
+
+.voice-btn-stop:hover {
+    background: rgba(255, 255, 255, .12);
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, .2);
+}
+
+.voice-btn-close {
+    background: rgba(239, 68, 68, .1);
+    border: 1px solid rgba(239, 68, 68, .15);
+    color: #f87171;
+    font-size: 16px;
+}
+
+.voice-btn-close:hover {
+    background: rgba(239, 68, 68, .2);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, .3);
+}
+
+/* ─── Mic button in chat input area ───────────────────────── */
+.btn-mic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, .04);
+    color: #64748b;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .25s;
+    flex-shrink: 0;
+    margin-bottom: 1px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-mic:hover {
+    background: rgba(99, 102, 241, .12);
+    color: #a5b4fc;
+}
+
+.btn-mic.active {
+    background: linear-gradient(135deg, rgba(239, 68, 68, .2), rgba(249, 115, 22, .15));
+    color: #f87171;
+    animation: mic-inline-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes mic-inline-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, .2); }
+    50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.btn-mic .mic-wave {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(239, 68, 68, .3);
+    animation: mic-wave-expand 1.2s ease-out infinite;
+    display: none;
+}
+
+.btn-mic.active .mic-wave {
+    display: block;
+}
+
+@keyframes mic-wave-expand {
+    0% { transform: scale(1); opacity: .6; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* Voice Mode toggle in header */
+.btn-voice-mode {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(99, 102, 241, .15);
+    background: linear-gradient(135deg, rgba(99, 102, 241, .08), rgba(6, 182, 212, .05));
+    color: #a5b4fc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all .25s;
+}
+
+.btn-voice-mode:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, .15), rgba(6, 182, 212, .1));
+    border-color: rgba(99, 102, 241, .3);
+    color: #c7d2fe;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, .15);
+}
+
+/* ─── Voice unavailable tooltip ───────────────────────────── */
+.voice-unsupported {
+    display: none;
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .voice-orb-container {
+        width: 160px;
+        height: 160px;
+    }
+
+    .voice-orb {
+        width: 100px;
+        height: 100px;
+    }
+
+    .voice-transcript-text {
+        font-size: 1rem;
+    }
+
+    .voice-btn-mic {
+        width: 56px;
+        height: 56px;
+        font-size: 20px;
+    }
+
+    .voice-btn {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+/* ─── Light theme support ─────────────────────────────────── */
+.chat-app.light .btn-mic {
+    background: rgba(0, 0, 0, .04);
+    color: #9ca3af;
+}
+
+.chat-app.light .btn-mic:hover {
+    background: rgba(99, 102, 241, .1);
+    color: #6366f1;
+}
+
+.chat-app.light .btn-mic.active {
+    background: rgba(239, 68, 68, .08);
+    color: #ef4444;
+}
+
+.chat-app.light .btn-voice-mode {
+    background: rgba(99, 102, 241, .06);
+    border-color: rgba(99, 102, 241, .15);
+    color: #6366f1;
+}
+
+.chat-app.light .btn-voice-mode:hover {
+    background: rgba(99, 102, 241, .12);
+    border-color: rgba(99, 102, 241, .25);
+    color: #4f46e5;
+}

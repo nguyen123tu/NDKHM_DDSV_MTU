@@ -99,4 +99,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 window.location.href = `/students/${lastStudentIdForEdit}/edit`;
             }
         });
+
+        // === Xóa sinh viên với SweetAlert2 ===
+        document.querySelectorAll('.form-delete-student').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const studentName = this.getAttribute('data-name');
+                
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Xóa sinh viên?',
+                        html: `Bạn có chắc chắn muốn xóa sinh viên <strong style="color:var(--primary)">${studentName}</strong>?<br><span class="text-danger small mt-2 d-block">Hành động này không thể hoàn tác và sẽ xóa tất cả dữ liệu liên quan.</span>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#DA1F3C',
+                        cancelButtonColor: '#CBD5E1',
+                        confirmButtonText: '<i class="fas fa-trash-alt me-1"></i> Đồng ý xóa',
+                        cancelButtonText: 'Hủy',
+                        customClass: {
+                            cancelButton: 'text-dark'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.submit();
+                        }
+                    });
+                } else {
+                    if (confirm(`Xóa sinh viên ${studentName}?`)) {
+                        this.submit();
+                    }
+                }
+            });
+        });
     });

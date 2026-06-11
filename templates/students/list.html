@@ -78,8 +78,7 @@
             <a href="{{ url_for('students.edit', id=sv.id) }}" class="act-btn act-btn-edit" title="Sửa">
                 <i class="fas fa-pen"></i>
             </a>
-            <form action="{{ url_for('students.delete', id=sv.id) }}" method="POST" class="d-inline"
-                  onsubmit="return confirm('Xóa sinh viên {{ sv.ho_ten }}?');">
+            <form action="{{ url_for('students.delete', id=sv.id) }}" method="POST" class="d-inline form-delete-student" data-name="{{ sv.ho_ten }}">
                 <button type="submit" class="act-btn act-btn-delete" title="Xóa">
                     <i class="fas fa-trash-alt"></i>
                 </button>
