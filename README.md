@@ -19,7 +19,7 @@
 - **Đa engine AI**: Chuyển đổi nóng giữa InsightFace, YOLO + ResNet — không cần restart server.
 - **Nhận diện khuôn mặt theo thời gian thực**: Phát hiện và nhận dạng khuôn mặt qua webcam/Camera IP RTSP (Imou) với độ trễ thấp.
 - **Liveness Detection**: Phát hiện gian lận bằng phân tích blur, glare, kích thước khuôn mặt — chống ảnh/video giả mạo.
-- **YOLO26 Training**: Script huấn luyện mô hình phát hiện khuôn mặt với YOLO26 (MuSGD optimizer, NMS-free inference).
+- **YOLO11 Training**: Script huấn luyện mô hình phát hiện khuôn mặt với YOLO11 (MuSGD optimizer, NMS-free inference).
 - **AI Chatbot**: Trợ lý AI thông minh tích hợp ChromaDB, hỗ trợ truy vấn thông tin sinh viên và thống kê điểm danh.
 
 ### 🖥️ Web Admin Dashboard
@@ -105,7 +105,7 @@ NDKHM_DDSV_MTU/
 ├── tools/                  # Công cụ hỗ trợ
 │   ├── convert_onnx_to_tflite.py  # Chuyển đổi model cho mobile
 │   └── download_models.py        # Tải model AI
-├── train_yolo26.py         # Script huấn luyện YOLO26
+├── train_yolo11.py         # Script huấn luyện YOLO11
 ├── requirements.txt        # Thư viện Python dependencies
 ├── Dockerfile              # Docker image cho backend
 ├── docker-compose.yml      # Docker Compose (backend + MySQL)
