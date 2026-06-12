@@ -17,17 +17,17 @@
 
 ### 🤖 AI & Nhận Diện
 - **Đa engine AI**: Chuyển đổi nóng giữa InsightFace, YOLO + ResNet — không cần restart server.
-- **Nhận diện khuôn mặt theo thời gian thực**: Phát hiện và nhận dạng khuôn mặt qua webcam với độ trễ thấp (<100ms).
+- **Nhận diện khuôn mặt theo thời gian thực**: Phát hiện và nhận dạng khuôn mặt qua webcam/Camera IP RTSP (Imou) với độ trễ thấp.
 - **Liveness Detection**: Phát hiện gian lận bằng phân tích blur, glare, kích thước khuôn mặt — chống ảnh/video giả mạo.
 - **YOLO26 Training**: Script huấn luyện mô hình phát hiện khuôn mặt với YOLO26 (MuSGD optimizer, NMS-free inference).
 - **AI Chatbot**: Trợ lý AI thông minh tích hợp ChromaDB, hỗ trợ truy vấn thông tin sinh viên và thống kê điểm danh.
 
 ### 🖥️ Web Admin Dashboard
 - **Giao diện Glassmorphism**: Thiết kế hiện đại, dark theme, hiệu ứng kính mờ cao cấp trên toàn bộ hệ thống.
-- **Kiosk HUD thông minh**: Giao diện check-in chuyên nghiệp (Auto / In / Out mode) với camera tracking và feedback trực quan.
+- **Kiosk HUD thông minh**: Giao diện check-in chuyên nghiệp với Audio Feedback (phản hồi giọng nói) và camera tracking.
 - **Self-Check công khai**: Trang điểm danh tự phục vụ cho sinh viên, không cần đăng nhập.
-- **Quản lý lớp học & lịch học**: Tạo, sửa, xóa lớp học và quản lý lịch học theo tuần.
-- **Kết xuất báo cáo**: Xuất dữ liệu điểm danh ra file Excel/PDF.
+- **Đa phiên điểm danh**: Hỗ trợ ghi nhận điểm danh theo nhiều ca (sáng/chiều) trong cùng một ngày.
+- **Kết xuất báo cáo**: Xuất dữ liệu điểm danh ra file Excel/PDF với format chuẩn.
 
 ### 📱 Mobile App (Flutter)
 - **Offline-first**: Dữ liệu lưu trữ cục bộ (SQLite), đồng bộ với server khi có mạng.
@@ -52,7 +52,8 @@ NDKHM_DDSV_MTU/
 │   ├── embedder_resnet.py  # Face embedder (ResNet)
 │   ├── matcher.py          # So khớp vector khuôn mặt
 │   ├── trainer.py          # Huấn luyện & đăng ký khuôn mặt
-│   └── camera.py           # Quản lý camera/webcam
+│   ├── camera.py           # Quản lý camera (Webcam/IP Camera)
+│   └── anti_spoofing.py    # Module chống giả mạo khuôn mặt
 ├── db/                     # Database schemas (MySQL), migrations
 │   ├── connection.py       # Connection pool MySQL
 │   ├── schema.sql          # Schema chính
@@ -61,6 +62,7 @@ NDKHM_DDSV_MTU/
 │   ├── api_mobile.py       # RESTful API cho Flutter App
 │   ├── attendance.py       # Điểm danh (live, history)
 │   ├── auth.py             # Đăng nhập / Xác thực
+│   ├── camera_mgmt.py      # Quản lý cấu hình camera IP/Webcam
 │   ├── chatbot.py          # AI Chatbot endpoint
 │   ├── classes.py          # Quản lý lớp học
 │   ├── dashboard.py        # Trang chủ Admin
@@ -68,15 +70,18 @@ NDKHM_DDSV_MTU/
 │   ├── fraud.py            # Cảnh báo gian lận
 │   ├── public.py           # Trang công khai (selfcheck, tra cứu)
 │   ├── students.py         # Quản lý sinh viên
+│   ├── support.py          # Yêu cầu hỗ trợ (Ticket)
 │   └── training.py         # Huấn luyện mô hình AI
 ├── services/               # Business logic layer
 │   ├── recognition_thread.py   # Luồng nhận diện realtime
-│   ├── attendance_service.py   # Nghiệp vụ điểm danh
+│   ├── attendance_service.py   # Nghiệp vụ điểm danh (đa phiên)
 │   ├── student_service.py      # Nghiệp vụ sinh viên
+│   ├── class_service.py        # Nghiệp vụ quản lý lớp học
 │   ├── ai_chatbot.py           # AI Chatbot (ChromaDB)
 │   ├── knowledge_builder.py    # Xây dựng knowledge base
-│   ├── export_service.py       # Xuất báo cáo
-│   └── telegram_alert.py      # Gửi cảnh báo Telegram
+│   ├── export_service.py       # Xuất báo cáo nâng cao
+│   ├── fcm_service.py          # Dịch vụ Firebase Cloud Messaging
+│   └── telegram_alert.py      # Gửi cảnh báo Telegram/Zalo
 ├── mobile_flutter/         # Source code Flutter Mobile App
 ├── static/                 # Assets tĩnh
 │   ├── css/
