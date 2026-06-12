@@ -5,19 +5,35 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Dịch vụ xuất báo cáo Excel cho Mobile.
-/// Đã loại bỏ dart:html để có thể build APK Android thành công.
+/// Hỗ trợ cả Map<String, dynamic> và Model objects.
 class ExportService {
-  static Future<void> exportAttendanceToExcel(List<dynamic> history) async {
-    if (kIsWeb) {
-      // Trên Web, tính năng này tạm thời bị vô hiệu hóa để ưu tiên build APK.
-      return;
+
+  /// Helper: Lấy giá trị từ record (hỗ trợ cả Map và Model)
+  static String _getField(dynamic record, String mapKey) {
+    if (record is Map) {
+      return (record[mapKey] ?? '').toString();
     }
+    try {
+      switch (mapKey) {
+        case 'mssv': return record.mssv?.toString() ?? '';
+        case 'ho_ten': return record.hoTen?.toString() ?? '';
+        case 'ma_lop': return record.maLop?.toString() ?? '';
+        case 'thoi_gian': return record.thoiGian?.toString() ?? '';
+        case 'trang_thai': return record.trangThai?.toString() ?? '';
+        default: return '';
+      }
+    } catch (_) {
+      return '';
+    }
+  }
+
+  static Future<void> exportAttendanceToExcel(List<dynamic> history) async {
+    if (kIsWeb || history.isEmpty) return;
 
     var excel = Excel.createExcel();
     Sheet sheetObject = excel['Báo cáo điểm danh'];
     excel.delete('Sheet1');
 
-    // Header style
     CellStyle headerStyle = CellStyle(
       backgroundColorHex: ExcelColor.fromHexString('#1B3A5C'),
       fontColorHex: ExcelColor.fromHexString('#FFFFFF'),
@@ -25,7 +41,6 @@ class ExportService {
       horizontalAlign: HorizontalAlign.Center,
     );
 
-    // Thêm Tiêu đề cột
     List<String> headers = ["STT", "MSSV", "Họ và Tên", "Lớp", "Thời gian", "Trạng thái"];
     for (var i = 0; i < headers.length; i++) {
         var cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
@@ -33,20 +48,18 @@ class ExportService {
         cell.cellStyle = headerStyle;
     }
 
-    // Thêm Dữ liệu
     for (int i = 0; i < history.length; i++) {
       final record = history[i];
       int row = i + 1;
       
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row)).value = IntCellValue(i + 1);
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row)).value = TextCellValue(record.mssv);
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row)).value = TextCellValue(record.hoTen);
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row)).value = TextCellValue(record.maLop);
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row)).value = TextCellValue(record.thoiGian);
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: row)).value = TextCellValue("Hợp lệ");
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row)).value = TextCellValue(_getField(record, 'mssv'));
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row)).value = TextCellValue(_getField(record, 'ho_ten'));
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row)).value = TextCellValue(_getField(record, 'ma_lop'));
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row)).value = TextCellValue(_getField(record, 'thoi_gian'));
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: row)).value = TextCellValue(_getField(record, 'trang_thai'));
     }
 
-    // Lưu và Chia sẻ file (Chỉ Mobile)
     var fileBytes = excel.save();
     if (fileBytes == null) return;
 
@@ -58,12 +71,11 @@ class ExportService {
     await file.create(recursive: true);
     await file.writeAsBytes(fileBytes);
 
-    // Mở hộp thoại chia sẻ file trên điện thoại
     await Share.shareXFiles([XFile(filePath)], text: 'Báo cáo điểm danh MTUFace');
   }
 
   static Future<void> exportSessionToExcel(List<dynamic> students, String tenLop) async {
-    if (kIsWeb) return;
+    if (kIsWeb || students.isEmpty) return;
 
     var excel = Excel.createExcel();
     Sheet sheetObject = excel['Báo cáo điểm danh'];

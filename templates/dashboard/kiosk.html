@@ -15,7 +15,8 @@
 <body>
     <div id="video-container">
         <video id="webcam" autoplay playsinline></video>
-        <canvas id="canvas-capture"></canvas>
+        <img id="rtspVideo" style="display:none; width:100%; height:100%; object-fit:cover; transform:scaleX(1);">
+        <canvas id="canvas-capture" style="display:none;"></canvas>
     </div>
     <!-- Overlay Dot Matrix / Grid -->
     <div class="overlay"></div>
@@ -39,12 +40,17 @@
         </div>
         <div class="hud-stats d-none d-md-flex align-items-center">
             <div class="hs-item me-3">
+                <select id="selectCamSource" class="form-select bg-dark text-info border-info me-2" style="font-size: 0.9rem; min-width: 150px;">
+                    <option value="webcam">Webcam Nội bộ</option>
+                    <option value="rtsp">Camera IMOU (LAN)</option>
+                </select>
                 <select id="kiosk-lop-id" class="form-select bg-dark text-info border-info" style="font-size: 0.9rem; min-width: 200px;">
                     <option value="">-- Chọn lớp học --</option>
                     {% for c in classes %}
                     <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
                     {% endfor %}
                 </select>
+                <input type="time" id="kiosk-start-time" class="form-control bg-dark text-info border-info ms-2" style="font-size: 0.9rem; max-width: 110px;" value="07:00" title="Giờ bắt đầu lớp học">
             </div>
             <div class="hs-divider"></div>
             <div class="hs-item">
@@ -72,12 +78,13 @@
     <!-- Result -->
     <div id="result-panel">
         <div class="d-flex align-items-center gap-3 position-relative" style="z-index:1">
-            <img id="res-avatar" src="" class="res-avatar" onerror="this.src='/static/img/truong-xay-dung-mien-tay.jpg'">
+            <img id="res-avatar" src="" class="res-avatar" onerror="this.onerror=null; this.src='/static/img/logo_MTU.jpg'">
             <div class="flex-grow-1">
                 <div id="res-status" class="res-badge res-badge-ok"><i class="fas fa-shield-check"></i> Access Granted</div>
                 <div id="res-name" class="res-name">—</div>
                 <div id="res-mssv" class="res-mssv">MSSV: —</div>
-                <div id="res-msg" class="res-msg">—</div>
+                <div id="res-time" class="res-time" style="font-size: 0.95rem; color: #94a3b8; margin-top: 4px; font-weight: 500;"><i class="fas fa-clock"></i> Thời gian: <span id="res-time-val">—</span></div>
+                <div id="res-msg" class="res-msg" style="margin-top: 4px;">—</div>
             </div>
         </div>
     </div>

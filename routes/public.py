@@ -301,11 +301,37 @@ def api_recognize():
     from services import attendance_service
     
     data = request.json
-    if not data or 'image' not in data:
+    if not data:
+        return jsonify({"success": False, "msg": "Không có dữ liệu"})
+        
+    rtsp_url = data.get('rtsp_url')
+    if rtsp_url:
+        from core.camera import get_camera_manager
+        import cv2
+        import base64
+        
+        manager = get_camera_manager()
+        cam_id = f"kiosk_{rtsp_url}"
+        frame = manager.get_frame(cam_id)
+        
+        if frame is None:
+            return jsonify({"success": False, "msg": "Không lấy được khung hình từ Camera IP"})
+            
+        ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        if not ret:
+            return jsonify({"success": False, "msg": "Lỗi xử lý ảnh"})
+            
+        data['image'] = "data:image/jpeg;base64," + base64.b64encode(buffer).decode('utf-8')
+    elif 'image' not in data:
         return jsonify({"success": False, "msg": "Không có ảnh"})
     
     lop_id = data.get('lop_id')
+    start_time = data.get('start_time', '07:00')
     
+    # [NEW] Kiểm tra bắt buộc chọn lớp
+    if not lop_id:
+        return jsonify({"success": False, "msg": "Vui lòng chọn lớp học trước khi điểm danh!"})
+
     # Sử dụng hàm nhận diện chung
     recognize_result = _do_recognize(data['image'])
     
@@ -316,9 +342,19 @@ def api_recognize():
     sim = recognize_result['similarity']
     sv = recognize_result['student']
     
-    # Ghi điểm danh nếu có chọn lớp (hoặc dùng lớp mặc định của SV)
+    # [NEW] Kiểm tra sinh viên có thuộc lớp được chọn không
     sv_db = execute_one("SELECT lop_id FROM sinh_vien WHERE mssv = %s", (mssv,))
-    check_lop_id = lop_id if lop_id else (sv_db.get('lop_id') if sv_db else None)
+    if not sv_db or str(sv_db.get('lop_id')) != str(lop_id):
+        return jsonify({
+            "success": False, 
+            "msg": "Sinh viên không thuộc lớp này!",
+            "student": sv,
+            "similarity": round(sim, 2),
+            "bbox": recognize_result.get('bbox'),
+            "image": data['image']
+        })
+        
+    check_lop_id = lop_id
     attendance_info = None
     
     # [NEW] Lưu ảnh bằng chứng để chống gian lận (audit trail)
@@ -355,7 +391,8 @@ def api_recognize():
             lop_id=check_lop_id, 
             do_chinh_xac=sim, 
             camera_id=0,
-            ghi_chu=evidence_path
+            ghi_chu=evidence_path,
+            class_start_time=start_time
         )
         if log_result and isinstance(log_result, dict):
             status_msg = "Điểm danh thành công!"
@@ -385,7 +422,8 @@ def api_recognize():
         "bbox": recognize_result.get('bbox'),
         "student": sv,
         "attendance": attendance_info,
-        "today_records": today_records
+        "today_records": today_records,
+        "image": data['image']
     })
 
 @public_bp.route('/api/support', methods=['POST'])
@@ -411,4 +449,48 @@ def api_support():
         print(f"Lỗi gửi yêu cầu hỗ trợ: {e}")
         return jsonify({"success": False, "msg": "Lỗi hệ thống"})
 
+@public_bp.route('/api/stream_kiosk')
+def stream_kiosk():
+    """
+    API phát luồng MJPEG từ Camera IMOU (RTSP) xuống Kiosk
+    """
+    from flask import Response
+    from core.camera import get_camera_manager
+    import cv2
+    
+    url = request.args.get('url')
+    if not url:
+        return "Missing URL", 400
+        
+    manager = get_camera_manager()
+    cam_id = f"kiosk_{url}"
+    
+    if not manager.is_connected(cam_id):
+        success = manager.connect(cam_id, url)
+        if not success:
+            return "Cannot connect to camera", 500
+            
+    def generate():
+        import time
+        while True:
+            frame = manager.get_frame(cam_id)
+            if frame is None:
+                time.sleep(0.03)
+                continue
+            
+            h, w = frame.shape[:2]
+            if w > 640:
+                scale = 640 / w
+                frame = cv2.resize(frame, (640, int(h * scale)))
+
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+            if not ret:
+                time.sleep(0.03)
+                continue
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
+            time.sleep(0.06) # Giới hạn ~16 FPS để tránh nhồi nhét băng thông gây lag
+                   
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 

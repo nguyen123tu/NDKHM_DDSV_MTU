@@ -21,7 +21,7 @@ class ApiService {
   // 4. Triển khai lên VPS/Cloud (Production):
   //    static const String baseUrl = 'https://your-domain.com';
   // ============================================================
-  static const String baseUrl = 'http://192.168.1.22:5000';
+  static const String baseUrl = 'http://172.16.4.159:5000';
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
@@ -44,28 +44,36 @@ class ApiService {
 
   Future<Map<String, dynamic>> login(String username, String password) async {
     final deviceId = await _getDeviceId();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': username,
-        'password': password,
-        'device_id': deviceId,
-      }),
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+          'password': password,
+          'device_id': deviceId,
+        }),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> getDashboardStats() async {
     final headers = await _getHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/mobile/stats'),
-      headers: headers,
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/stats'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
     }
-    throw Exception('Failed to load stats');
   }
 
   Future<Map<String, dynamic>> getHistory(
@@ -77,14 +85,18 @@ class ApiService {
     if (month != null) url += '&month=$month';
     if (year != null) url += '&year=$year';
 
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
     }
-    throw Exception('Failed to load history');
   }
 
   Future<Map<String, dynamic>> recognizeFace(String base64Image,
@@ -109,14 +121,18 @@ class ApiService {
   }
 
   Future<List<dynamic>> getClasses() async {
-    final response = await http.get(Uri.parse('$baseUrl/api/mobile/classes'));
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success'] == true) {
-        return data['data'];
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/classes'),
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return data['data'];
+        }
       }
-    }
-    throw Exception('Failed to load classes');
+    } catch (_) {}
+    return [];
   }
 
   Future<Map<String, dynamic>> registerFace(
@@ -143,73 +159,107 @@ class ApiService {
 
   Future<Map<String, dynamic>> getProfile() async {
     final headers = await _getHeaders();
-    final response = await http.get(Uri.parse('$baseUrl/api/mobile/profile'),
-        headers: headers);
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/api/mobile/profile'),
+          headers: headers).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> changePassword(
       String oldPassword, String newPassword) async {
     final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/change-password'),
-      headers: headers,
-      body: jsonEncode(
-          {'old_password': oldPassword, 'new_password': newPassword}),
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/change-password'),
+        headers: headers,
+        body: jsonEncode(
+            {'old_password': oldPassword, 'new_password': newPassword}),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> getSchedule() async {
     final headers = await _getHeaders();
-    final response = await http.get(Uri.parse('$baseUrl/api/mobile/schedule'),
-        headers: headers);
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/api/mobile/schedule'),
+          headers: headers).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> updateAvatar(String base64Image) async {
     final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/update-avatar'),
-      headers: headers,
-      body: jsonEncode({'image': base64Image}),
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/update-avatar'),
+        headers: headers,
+        body: jsonEncode({'image': base64Image}),
+      ).timeout(const Duration(seconds: 15));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
     final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/update-profile'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/update-profile'),
+        headers: headers,
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> getFaceGallery({String? mssv}) async {
     final headers = await _getHeaders();
     String url = '$baseUrl/api/mobile/face-gallery';
     if (mssv != null) url += '?mssv=$mssv';
-    final response = await http.get(Uri.parse(url), headers: headers);
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> getPendingFaces() async {
     final headers = await _getHeaders();
-    final response = await http
-        .get(Uri.parse('$baseUrl/api/mobile/pending-faces'), headers: headers);
-    return jsonDecode(response.body);
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/mobile/pending-faces'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> approveFace(int svId, int status) async {
     final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/approve-face'),
-      headers: headers,
-      body: jsonEncode({'id': svId, 'status': status}),
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/approve-face'),
+        headers: headers,
+        body: jsonEncode({'id': svId, 'status': status}),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   // ================================================================
@@ -219,11 +269,15 @@ class ApiService {
   /// Lấy danh sách phiên điểm danh đang mở
   Future<Map<String, dynamic>> getActiveSessions() async {
     final headers = await _getHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/mobile/sessions/active'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/sessions/active'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   /// Admin tạo phiên điểm danh mới
@@ -233,28 +287,36 @@ class ApiService {
       double? lat,
       double? lng}) async {
     final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/sessions/create'),
-      headers: headers,
-      body: jsonEncode({
-        'lop_id': lopId,
-        'mo_ta': moTa,
-        'duration_minutes': durationMinutes,
-        'vi_do': lat,
-        'kinh_do': lng,
-      }),
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/sessions/create'),
+        headers: headers,
+        body: jsonEncode({
+          'lop_id': lopId,
+          'mo_ta': moTa,
+          'duration_minutes': durationMinutes,
+          'vi_do': lat,
+          'kinh_do': lng,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   /// Admin đóng phiên điểm danh
   Future<Map<String, dynamic>> stopSession(int sessionId) async {
     final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/sessions/$sessionId/stop'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/sessions/$sessionId/stop'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   /// Sinh viên tự điểm danh bằng khuôn mặt
@@ -284,51 +346,69 @@ class ApiService {
   /// Admin lấy chi tiết phiên điểm danh (danh sách SV)
   Future<Map<String, dynamic>> getSessionDetails(int sessionId) async {
     final headers = await _getHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/mobile/sessions/$sessionId/details'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/sessions/$sessionId/details'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   /// Admin lấy lịch sử phiên đã đóng
   Future<Map<String, dynamic>> getSessionHistory() async {
     final headers = await _getHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/mobile/sessions/history'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/sessions/history'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
-  /// Admin xóa phiên điểm danh
   Future<Map<String, dynamic>> deleteSession(int sessionId) async {
     final headers = await _getHeaders();
-    final response = await http.delete(
-      Uri.parse('$baseUrl/api/mobile/sessions/$sessionId'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/mobile/sessions/$sessionId'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
-  /// Admin xóa 1 bản ghi điểm danh
   Future<Map<String, dynamic>> deleteAttendanceRecord(int recordId) async {
     final headers = await _getHeaders();
-    final response = await http.delete(
-      Uri.parse('$baseUrl/api/mobile/attendance/$recordId'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/mobile/attendance/$recordId'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   /// Admin xóa toàn bộ lịch sử điểm danh
   Future<Map<String, dynamic>> clearAttendanceHistory() async {
     final headers = await _getHeaders();
-    final response = await http.delete(
-      Uri.parse('$baseUrl/api/mobile/attendance/clear'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/mobile/attendance/clear'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   // ================================================================
@@ -337,29 +417,41 @@ class ApiService {
 
   Future<Map<String, dynamic>> getStatsClasses() async {
     final headers = await _getHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/mobile/stats/classes'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/stats/classes'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> getStatsAbsentRisk() async {
     final headers = await _getHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/mobile/stats/absent-risk'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/stats/absent-risk'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> getStatsDailyTrend() async {
     final headers = await _getHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/mobile/stats/daily-trend'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/stats/daily-trend'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   // ================================================================
@@ -368,30 +460,42 @@ class ApiService {
 
   Future<Map<String, dynamic>> getNotifications() async {
     final headers = await _getHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/mobile/notifications'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/notifications'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> markNotificationRead(int id) async {
     final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/notifications/$id/read'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/notifications/$id/read'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> updateFcmToken(String fcmToken) async {
     final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/fcm-token'),
-      headers: headers,
-      body: jsonEncode({'fcm_token': fcmToken}),
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/fcm-token'),
+        headers: headers,
+        body: jsonEncode({'fcm_token': fcmToken}),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 
   // ================================================================
@@ -439,10 +543,14 @@ class ApiService {
   /// Xóa lịch sử chat AI
   Future<Map<String, dynamic>> clearChatHistory() async {
     final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/mobile/chatbot/clear'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/chatbot/clear'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
   }
 }

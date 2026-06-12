@@ -34,6 +34,10 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div class="ctrl-group" id="customRtspGroup" style="display: none; flex-grow: 1;">
+                    <label><i class="fas fa-link"></i> Link RTSP / Camera IP</label>
+                    <input type="text" id="inputCustomRtsp" placeholder="Ví dụ: rtsp://admin:123456@192.168.1.10:554/cam/realmonitor..." class="form-control" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                </div>
                 <div class="ctrl-group">
                     <label><i class="fas fa-graduation-cap"></i> Lớp học</label>
                     <select id="selectLopId">
@@ -43,6 +47,11 @@
                         </option>
                         {% endfor %}
                     </select>
+                </div>
+                
+                <div class="ctrl-group" style="max-width:120px">
+                    <label><i class="fas fa-clock"></i> Giờ vào lớp</label>
+                    <input type="time" id="inputStartTime" value="07:00">
                 </div>
 
                 <div class="ctrl-group" style="max-width:100px">

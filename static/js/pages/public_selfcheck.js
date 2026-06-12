@@ -22,17 +22,88 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastMSSV = '';
     let lastTime = 0;
 
-    // Start Camera
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } })
-    .then(stream => {
-        video.srcObject = stream;
-        document.getElementById('cameraBadge').style.display = 'flex';
-        document.getElementById('camStatusText').innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Sẵn sàng';
-        setInterval(processFrame, 1500);
-    })
-    .catch(() => {
-        document.getElementById('camStatusText').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> Không truy cập được camera';
-    });
+    const rtspImg = document.getElementById('rtspVideo');
+    const selectCamSource = document.getElementById('selectCamSource');
+    let currentStream = null;
+    let rtspUrl = localStorage.getItem('kiosk_rtsp_url') || "rtsp://admin:L2F0C994@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0";
+
+    function startWebcam() {
+        video.style.display = 'block';
+        rtspImg.style.display = 'none';
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } })
+        .then(stream => {
+            currentStream = stream;
+            video.srcObject = stream;
+            document.getElementById('cameraBadge').style.display = 'flex';
+            document.getElementById('camStatusText').innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Sẵn sàng';
+        })
+        .catch(() => {
+            document.getElementById('camStatusText').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> Không truy cập được camera';
+        });
+    }
+
+    function stopWebcam() {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+    }
+
+    function initCamSource() {
+        if (selectCamSource) {
+            const savedSource = localStorage.getItem('kiosk_cam_source');
+            if (savedSource) {
+                selectCamSource.value = savedSource;
+            }
+
+            selectCamSource.addEventListener('change', (e) => {
+                localStorage.setItem('kiosk_cam_source', e.target.value);
+                if (e.target.value === 'rtsp') {
+                    stopWebcam();
+                    let userRtsp = prompt("Vui lòng nhập Link RTSP của Camera IMOU:", rtspUrl);
+                    if (userRtsp) {
+                        rtspUrl = userRtsp;
+                        localStorage.setItem('kiosk_rtsp_url', rtspUrl);
+                        video.style.display = 'none';
+                        rtspImg.style.display = 'block';
+                        rtspImg.src = '/public/api/stream_kiosk?url=' + encodeURIComponent(rtspUrl);
+                        document.getElementById('camStatusText').innerHTML = '<i class="fas fa-network-wired text-info me-1"></i> Đang tải luồng RTSP...';
+                        
+                        rtspImg.onload = () => {
+                            document.getElementById('cameraBadge').style.display = 'flex';
+                            document.getElementById('camStatusText').innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Sẵn sàng (RTSP)';
+                        };
+                    } else {
+                        selectCamSource.value = 'webcam';
+                        localStorage.setItem('kiosk_cam_source', 'webcam');
+                        startWebcam();
+                    }
+                } else {
+                    rtspImg.src = '';
+                    startWebcam();
+                }
+            });
+
+            if (selectCamSource.value === 'rtsp') {
+                video.style.display = 'none';
+                rtspImg.style.display = 'block';
+                rtspImg.src = '/public/api/stream_kiosk?url=' + encodeURIComponent(rtspUrl);
+                document.getElementById('camStatusText').innerHTML = '<i class="fas fa-network-wired text-info me-1"></i> Đang tải luồng RTSP...';
+                rtspImg.onload = () => {
+                    document.getElementById('cameraBadge').style.display = 'flex';
+                    document.getElementById('camStatusText').innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Sẵn sàng (RTSP)';
+                };
+            } else {
+                startWebcam();
+            }
+        } else {
+            startWebcam();
+        }
+    }
+
+    // Khởi động mặc định
+    initCamSource();
+    setInterval(processFrame, 1500);
 
     async function processFrame() {
         if (isProcessing) return;
@@ -48,18 +119,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isProcessing = true;
 
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+        const isRtsp = selectCamSource && selectCamSource.value === 'rtsp';
+        const sourceElement = isRtsp ? rtspImg : video;
+
+        if (!isRtsp && (!video.videoWidth || !video.videoHeight)) {
+            isProcessing = false;
+            return;
+        }
+        if (isRtsp && (!rtspImg.complete || rtspImg.naturalWidth === 0)) {
+            isProcessing = false;
+            return;
+        }
+
+        let reqBody = { lop_id: parseInt(lopId) };
+        let imageData = "";
+
+        if (isRtsp) {
+            reqBody.rtsp_url = rtspUrl;
+        } else {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            try {
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            } catch (e) {
+                isProcessing = false; return;
+            }
+            
+            imageData = canvas.toDataURL('image/jpeg', 0.8);
+            reqBody.image = imageData;
+        }
 
         try {
             const res = await fetch('/public/api/recognize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: imageData, lop_id: parseInt(lopId) })
+                body: JSON.stringify(reqBody)
             });
             const data = await res.json();
+            const finalImage = data.image || imageData; // Dùng ảnh từ backend nếu có
 
             if (data.success && data.student) {
                 // Luôn cập nhật bounding box để user biết camera vẫn bắt được mặt
@@ -71,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.student.mssv !== lastMSSV || (now - lastTime) >= 5000) {
                         lastMSSV = data.student.mssv;
                         lastTime = now;
-                        showResult(data.student, imageData, data.bbox);
+                        showResult(data.student, finalImage, data.bbox);
                     }
                 }
             } else {
@@ -175,8 +273,12 @@ document.addEventListener('DOMContentLoaded', () => {
         scanBox.style.display = 'block';
         scanNameTag.innerText = name;
 
-        const vW = video.videoWidth, vH = video.videoHeight;
-        const cW = video.offsetWidth, cH = video.offsetHeight;
+        const isRtsp = selectCamSource && selectCamSource.value === 'rtsp';
+        const srcElem = isRtsp ? rtspImg : video;
+
+        const vW = isRtsp ? srcElem.naturalWidth : srcElem.videoWidth;
+        const vH = isRtsp ? srcElem.naturalHeight : srcElem.videoHeight;
+        const cW = srcElem.offsetWidth, cH = srcElem.offsetHeight;
         if (!vW || !vH) return;
 
         const vR = vW / vH, cR = cW / cH;

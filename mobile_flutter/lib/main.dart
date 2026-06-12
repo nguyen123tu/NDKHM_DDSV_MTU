@@ -11,21 +11,27 @@ import 'services/firebase_messaging_service.dart'; // Thêm import FCM
 import 'theme/app_theme.dart'; // Thêm import theme
 import 'package:firebase_core/firebase_core.dart'; // Thêm import Firebase Core
 
+/// Firebase init chạy ngầm, không block UI
+Future<void> _initFirebase() async {
+  try {
+    await Firebase.initializeApp().timeout(const Duration(seconds: 5));
+    await FirebaseMessagingService().init().timeout(const Duration(seconds: 5));
+    debugPrint("Firebase initialized successfully");
+  } catch (e) {
+    debugPrint("Firebase init failed (non-blocking): $e");
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Bật bộ lắng nghe mạng để đồng bộ Offline-First
-  SyncManager.instance.initializeNetworkListener();
-  // Kích hoạt đồng bộ ngay khi vừa mở app
-  SyncManager.instance.syncAll();
+  // Kích hoạt đồng bộ ngầm khi mở app (non-blocking, fire-and-forget)
+  SyncManager.instance.syncAll().catchError((e) {
+    debugPrint("SyncAll background error: $e");
+  });
   
-  // Khởi tạo Firebase Cloud Messaging (FCM)
-  try {
-    await Firebase.initializeApp();
-    await FirebaseMessagingService().init();
-  } catch(e) {
-    debugPrint("Firebase init failed: \$e");
-  }
+  // Khởi tạo Firebase Cloud Messaging (FCM) - non-blocking với timeout
+  _initFirebase(); // fire-and-forget, không await
 
   runApp(
     MultiProvider(

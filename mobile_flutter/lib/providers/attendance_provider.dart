@@ -25,16 +25,19 @@ class AttendanceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      bool hasConnection = await _checkConnectivity();
+      // ★ LUÔN load cache trước (hiển thị ngay, không chờ mạng)
+      await _fetchOffline();
+      _isLoading = false;
+      notifyListeners();
 
+      // Sau đó thử fetch online để cập nhật data mới nhất
+      bool hasConnection = await _checkConnectivity();
       if (hasConnection) {
         await _fetchOnline();
-      } else {
-        await _fetchOffline();
+        notifyListeners();
       }
     } catch (e) {
       debugPrint("Error fetching dashboard: $e");
-      await _fetchOffline();
     } finally {
       _isLoading = false;
       notifyListeners();

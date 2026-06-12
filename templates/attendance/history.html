@@ -62,10 +62,11 @@
         <!-- Header Row -->
         <div class="history-header d-none d-md-flex">
             <div class="col-stt">STT</div>
-            <div class="col-time">Thời gian</div>
             <div class="col-info">Sinh viên</div>
+            <div class="col-time">Giờ vào lớp</div>
+            <div class="col-time">Giờ điểm danh</div>
+            <div class="col-status" style="text-align: left;">Đi trễ</div>
             <div class="col-evidence">Bằng chứng</div>
-            <div class="col-status">Trạng thái</div>
         </div>
 
         {% for item in history %}
@@ -74,8 +75,23 @@
                 <span class="stt-badge">{{ loop.index + ((pagination.current - 1) * 50) }}</span>
             </div>
             
+            <div class="col-info">
+                <div class="student-info">
+                    <div class="si-name">{{ item.ho_ten }}</div>
+                    <div class="si-mssv">{{ item.mssv }}</div>
+                </div>
+            </div>
+
             <div class="col-time">
-                <span class="d-md-none fw-bold text-secondary me-2">Thời gian:</span>
+                <span class="d-md-none fw-bold text-secondary me-2">Giờ vào lớp:</span>
+                <div class="time-badge text-muted">
+                    <i class="fas fa-clock me-1"></i>
+                    {{ item.gio_vao_lop }}
+                </div>
+            </div>
+
+            <div class="col-time">
+                <span class="d-md-none fw-bold text-secondary me-2">Giờ điểm danh:</span>
                 <div class="time-badge time-in">
                     <i class="fas fa-clock me-1"></i>
                     {{ item.thoi_gian.strftime('%H:%M:%S') if item.thoi_gian else '--:--' }}
@@ -83,11 +99,13 @@
                 </div>
             </div>
 
-            <div class="col-info">
-                <div class="student-info">
-                    <div class="si-name">{{ item.ho_ten }}</div>
-                    <div class="si-mssv">{{ item.mssv }}</div>
-                </div>
+            <div class="col-status" style="text-align: left;">
+                <span class="d-md-none fw-bold text-secondary me-2">Đi trễ:</span>
+                {% if item.di_tre_phut > 0 %}
+                <span class="status-pill status-warn"><i class="fas fa-exclamation-triangle"></i> {{ item.di_tre_phut }} phút</span>
+                {% else %}
+                <span class="status-pill status-ok"><i class="fas fa-check-circle"></i> Đúng giờ</span>
+                {% endif %}
             </div>
 
             <div class="col-evidence">
@@ -98,16 +116,6 @@
                     </a>
                 {% else %}
                     <span class="no-evidence">—</span>
-                {% endif %}
-            </div>
-
-            <div class="col-status">
-                {% if item.trang_thai == 'Co mat' %}
-                <span class="status-pill status-ok"><i class="fas fa-check-circle"></i> Đã điểm danh</span>
-                {% elif item.trang_thai == 'Tre' %}
-                <span class="status-pill status-warn"><i class="fas fa-clock"></i> Đi trễ</span>
-                {% else %}
-                <span class="status-pill status-err"><i class="fas fa-times-circle"></i> {{ item.trang_thai|upper }}</span>
                 {% endif %}
             </div>
         </div>

@@ -27,7 +27,9 @@ def live():
     cameras = [
         {'id': 0, 'name': 'USB Camera Default'},
         {'id': 'http://192.168.1.158:81/stream', 'name': 'ESP32 Cam (Luồng video :81)'},
-        {'id': 'http://192.168.1.158', 'name': 'ESP32 Cam (Luồng video :80)'}
+        {'id': 'http://192.168.1.158', 'name': 'ESP32 Cam (Luồng video :80)'},
+        {'id': 'rtsp://admin:L2F0C994@192.168.1.108/cam/realmonitor?channel=1&subtype=1', 'name': '📹 Camera IMOU (Cắm dây LAN)'},
+        {'id': 'custom', 'name': '🌐 Camera IP / RTSP tuỳ chỉnh (Khác)'}
     ]
     
     active = get_active_session()
@@ -55,12 +57,13 @@ def start():
     data = request.json or {}
     lop_id = data.get('lop_id')
     camera_id = data.get('camera_id', 0)
+    start_time = data.get('start_time', '07:00')
     
     if not lop_id:
         return jsonify({"success": False, "msg": "Thiếu thông tin lớp"}), 400
         
     socketio = current_app.extensions['socketio']
-    if start_session(lop_id, camera_id, socketio):
+    if start_session(lop_id, camera_id, socketio, start_time):
         return jsonify({"success": True})
     return jsonify({"success": False, "msg": "Không thể khởi động camera"}), 500
 

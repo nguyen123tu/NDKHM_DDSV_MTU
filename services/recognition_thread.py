@@ -36,16 +36,18 @@ class RecognitionSession:
     4. FPS giới hạn 15fps
     """
 
-    def __init__(self, lop_id, camera_id, socketio):
+    def __init__(self, lop_id, camera_id, socketio, start_time="07:00"):
         """
         Args:
             lop_id: ID lớp đang điểm danh
             camera_id: ID camera sử dụng
             socketio: Flask-SocketIO instance để emit events
+            start_time: Giờ quy định bắt đầu tiết học (VD: "07:00")
         """
         self.lop_id = lop_id
         self.camera_id = camera_id
         self.socketio = socketio
+        self.start_time = start_time
         self._thread = None
         self._running = False
         self._lock = threading.Lock()
@@ -310,16 +312,24 @@ class RecognitionSession:
                             if mssv in self._attended_students:
                                 pass  # Chỉ hiển thị bbox, không ghi attendance
                             else:
-                                log_result = attendance_service.log(
-                                    mssv=mssv,
-                                    lop_id=self.lop_id,
-                                    do_chinh_xac=sim,
-                                    camera_id=self.camera_id
-                                )
-                                
-                                # Nếu ghi thành công → đánh dấu đã điểm danh
-                                if isinstance(log_result, dict) and log_result.get('success'):
-                                    self._attended_students.add(mssv)
+                                from db.connection import execute_one
+                                sv_db = execute_one("SELECT lop_id FROM sinh_vien WHERE mssv = %s", (mssv,))
+                                if sv_db and str(sv_db.get('lop_id')) == str(self.lop_id):
+                                    log_result = attendance_service.log(
+                                        mssv=mssv,
+                                        lop_id=self.lop_id,
+                                        do_chinh_xac=sim,
+                                        camera_id=self.camera_id,
+                                        session_start_time=self.start_time
+                                    )
+                                    
+                                    # Nếu ghi thành công → đánh dấu đã điểm danh
+                                    if isinstance(log_result, dict) and log_result.get('success'):
+                                        self._attended_students.add(mssv)
+                                else:
+                                    # Cảnh báo sinh viên khác lớp
+                                    log_result = {"success": False, "msg": "Khác lớp", "action": "wrong_class"}
+                                    self._attended_students.add(mssv) # Đánh dấu đã nhận diện để khỏi spam log liên tục
                             
                             # Emit thông tin lên frontend (cooldown 60s tránh spam)
                             emit_key = mssv
@@ -328,7 +338,10 @@ class RecognitionSession:
                             
                             if now - last_emit > 60:
                                 self._emit_cooldowns[emit_key] = now
+                                
                                 action = log_result.get('action', 'checkin') if isinstance(log_result, dict) else 'checkin'
+                                if isinstance(log_result, dict) and log_result.get('trang_thai') == 'Tre':
+                                    action = 'late'
                                 
                                 avatar_path = student_service.get_avatar_path(mssv)
                                 
@@ -337,13 +350,23 @@ class RecognitionSession:
                                     'ho_ten': ho_ten,
                                     'similarity': round(sim, 2),
                                     'thoi_gian': time.strftime("%H:%M:%S"),
-                                    'trang_thai': 'Co mat',
+                                    'trang_thai': log_result.get('trang_thai', 'Co mat') if isinstance(log_result, dict) else 'Co mat',
                                     'action': action,
                                     'avatar': avatar_path
                                 })
                         else:
-                            # Đồ án nhận diện 1 chiều: Bỏ qua người lạ, không gửi cảnh báo SocketIO hay Telegram
-                            pass
+                            # Cảnh báo người lạ (người chưa đăng ký) trên Dashboard
+                            now = time.time()
+                            last_unknown_alert = self._emit_cooldowns.get('__unknown__', 0)
+                            
+                            # Cảnh báo tối đa 1 lần mỗi 5 giây để tránh spam
+                            if now - last_unknown_alert > 5:
+                                self._emit_cooldowns['__unknown__'] = now
+                                self.socketio.emit('alert', {
+                                    'message': '⚠️ Phát hiện Người lạ (chưa đăng ký)',
+                                    'type': 'warning',
+                                    'thoi_gian': time.strftime("%H:%M:%S")
+                                })
 
                     # Reset/Giảm số đếm cho những MSSV không có trong frame này
                     for m in list(self._match_history.keys()):
@@ -415,7 +438,7 @@ def get_active_session():
     return _active_session
 
 
-def start_session(lop_id, camera_id, socketio):
+def start_session(lop_id, camera_id, socketio, start_time="07:00"):
     """
     Bắt đầu phiên điểm danh mới.
     Nếu đang có phiên cũ → dừng trước.
@@ -424,7 +447,7 @@ def start_session(lop_id, camera_id, socketio):
     if _active_session and _active_session.is_running:
         _active_session.stop()
 
-    _active_session = RecognitionSession(lop_id, camera_id, socketio)
+    _active_session = RecognitionSession(lop_id, camera_id, socketio, start_time)
     _active_session.start()
     return True
 

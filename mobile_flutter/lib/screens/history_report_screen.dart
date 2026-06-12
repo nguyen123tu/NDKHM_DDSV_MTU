@@ -56,13 +56,24 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
       
       if (response['success'] == true) {
         setState(() {
-          _history = response['data'];
+          _history = response['data'] ?? [];
           _isLoading = false;
         });
+      } else {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response['message'] ?? 'Không thể tải dữ liệu'), backgroundColor: Colors.orange),
+          );
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Mất kết nối server. Vui lòng thử lại."), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

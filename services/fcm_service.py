@@ -37,12 +37,17 @@ def send_push_notification(fcm_token, title, body, data=None):
         print(f"[FCM] Lỗi gửi thông báo: {e}")
         return False
 
-def notify_student_attendance(mssv, time_str, camera_name, image_url=None):
+def notify_student_attendance(mssv, time_str, camera_name, image_url=None, trang_thai='Co mat', di_tre_phut=0):
     """Lấy fcm_token của sinh viên và gửi thông báo"""
     sv = execute_one("SELECT fcm_token FROM sinh_vien WHERE mssv = %s", (mssv,))
     if sv and sv.get('fcm_token'):
-        title = "Điểm danh thành công"
-        body = f"Hệ thống ghi nhận bạn đã điểm danh lúc {time_str} tại {camera_name}."
+        if trang_thai == 'Tre':
+            title = "Cảnh báo đi trễ!"
+            body = f"Hệ thống ghi nhận bạn đã điểm danh lúc {time_str} tại {camera_name}. Bạn đã đi trễ {di_tre_phut} phút."
+        else:
+            title = "Điểm danh thành công"
+            body = f"Hệ thống ghi nhận bạn đã điểm danh đúng giờ lúc {time_str} tại {camera_name}."
+            
         data = {}
         if image_url:
             data['image_url'] = image_url

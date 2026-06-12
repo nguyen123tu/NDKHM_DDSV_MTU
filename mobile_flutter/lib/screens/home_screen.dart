@@ -62,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppTheme.background,
       body: Stack(
         children: [
-          // Ambient Background Glows
+          // Ambient Background Glows (Static - no animation loop)
           Positioned(
             top: -100,
             left: -100,
@@ -71,11 +71,9 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(0.2),
-                backgroundBlendMode: BlendMode.screen,
+                color: AppTheme.primary.withOpacity(0.15),
               ),
-            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-             .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 4.seconds),
+            ),
           ),
           Positioned(
             bottom: -50,
@@ -85,11 +83,9 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.secondary.withOpacity(0.15),
-                backgroundBlendMode: BlendMode.screen,
+                color: AppTheme.secondary.withOpacity(0.1),
               ),
-            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-             .scale(begin: const Offset(1, 1), end: const Offset(1.3, 1.3), duration: 5.seconds),
+            ),
           ),
 
           // Main Content
@@ -131,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: 2),
                                   ),
                                 ],
-                              ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2, end: 0),
+                              ).animate().fadeIn(duration: 200.ms),
                               Row(
                                 children: [
                                   if (isAdmin)
@@ -165,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ],
-                              ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.2, end: 0),
+                              ).animate().fadeIn(duration: 200.ms),
                             ],
                           ),
                         ),
@@ -183,14 +179,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1,
                                 ),
-                              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+                              ).animate().fadeIn(delay: 100.ms),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
                                   Text(
                                     userName,
                                     style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 32),
-                                  ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
+                                  ).animate().fadeIn(delay: 150.ms),
                                   if (auth.isOfflineMode)
                                     Padding(
                                       padding: const EdgeInsets.only(left: 12),
@@ -216,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         // ====== STATS CARDS ======
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: _buildStatsGrid(attendance).animate().fadeIn(delay: 400.ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1)),
+                          child: _buildStatsGrid(attendance).animate().fadeIn(delay: 150.ms),
                         ),
 
                         const SizedBox(height: 32),
@@ -224,13 +220,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         // ====== MAIN ACTIONS ======
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: _buildMainActions(isAdmin, auth.isOfflineMode).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0),
+                          child: _buildMainActions(isAdmin, auth.isOfflineMode).animate().fadeIn(delay: 200.ms),
                         ),
 
                         const SizedBox(height: 32),
 
                         // ====== RECENT HISTORY ======
-                        _buildRecentHistorySection(attendance, isAdmin).animate().fadeIn(delay: 600.ms).slideY(begin: 0.1, end: 0),
+                        _buildRecentHistorySection(attendance, isAdmin).animate().fadeIn(delay: 250.ms),
 
                         const SizedBox(height: 100), // padding bottom
                       ],
@@ -389,13 +385,21 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               flex: 3,
-              child: _buildActionCard(
-                title: "Scan Face",
-                subtitle: isOffline ? "Offline Mode" : "AI Recognition",
-                icon: Icons.center_focus_strong,
-                gradient: const [AppTheme.secondary, AppTheme.primary],
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const scan_screen.ScanScreen())),
-              ),
+              child: isAdmin
+                  ? _buildActionCard(
+                      title: "Scan Face",
+                      subtitle: isOffline ? "Offline Mode" : "AI Recognition",
+                      icon: Icons.center_focus_strong,
+                      gradient: const [AppTheme.secondary, AppTheme.primary],
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const scan_screen.ScanScreen())),
+                    )
+                  : _buildActionCard(
+                      title: "Quét QR",
+                      subtitle: "Điểm danh nhanh",
+                      icon: Icons.qr_code_scanner,
+                      gradient: const [AppTheme.secondary, AppTheme.primary],
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentQRScannerScreen())),
+                    ),
             ),
             const SizedBox(width: 12),
             if (isAdmin)
@@ -427,11 +431,17 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             children: [
               Expanded(
-                child: _buildSecondaryAction(
-                  title: "QR Scan",
-                  icon: Icons.qr_code_scanner,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentQRScannerScreen())),
-                ),
+                child: isAdmin
+                    ? _buildSecondaryAction(
+                        title: "QR Scan",
+                        icon: Icons.qr_code_scanner,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentQRScannerScreen())),
+                      )
+                    : _buildSecondaryAction(
+                        title: "Phiên Đ.Danh",
+                        icon: Icons.how_to_reg,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentAttendanceScreen())),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -624,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    ).animate().fadeIn(delay: Duration(milliseconds: 600 + (index * 100))).slideX(begin: 0.1, end: 0);
+    ).animate().fadeIn(delay: Duration(milliseconds: 50 * index));
   }
 
   String _formatTimeFromISO(String? isoString) {

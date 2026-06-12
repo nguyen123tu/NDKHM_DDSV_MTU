@@ -12,7 +12,7 @@ from config import Config
 _last_log_times = {}  # {mssv: timestamp}
 
 
-def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', ghi_chu=None, session_start_time=None):
+def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', ghi_chu=None, session_start_time=None, class_start_time="07:00:00"):
     """
     Ghi nhận điểm danh (1 chiều).
     
@@ -39,6 +39,11 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
     if not sinh_vien_id:
         return False
 
+    # Parse class_start_time (usually "HH:MM")
+    # Ensure it has seconds
+    if len(class_start_time.split(':')) == 2:
+        class_start_time += ":00"
+
     # Kiểm tra: hôm nay đã có bản ghi điểm danh chưa?
     if session_start_time:
         existing = execute_one("""
@@ -55,17 +60,31 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
             FROM diem_danh 
             WHERE sinh_vien_id = %s AND lop_id = %s 
               AND DATE(thoi_gian) = CURDATE()
+              AND gio_vao_lop = %s
             ORDER BY thoi_gian DESC
             LIMIT 1
-        """, (sinh_vien_id, lop_id))
+        """, (sinh_vien_id, lop_id, class_start_time))
 
     if existing is None:
+        from datetime import datetime
+        now_time = datetime.now().time()
+            
+        start_time_obj = datetime.strptime(class_start_time, "%H:%M:%S").time()
+        di_tre_phut = 0
+        if now_time > start_time_obj and trang_thai == 'Co mat':
+            trang_thai = 'Tre'
+            from datetime import date
+            target_dt = datetime.combine(date.today(), start_time_obj)
+            now_dt = datetime.now()
+            diff = now_dt - target_dt
+            di_tre_phut = int(diff.total_seconds() / 60)
+
         # CHECK-IN
         sql = """
-            INSERT INTO diem_danh (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO diem_danh (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu, gio_vao_lop)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        result = execute_update(sql, (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu))
+        result = execute_update(sql, (sinh_vien_id, lop_id, trang_thai, do_chinh_xac, camera_id, ghi_chu, class_start_time))
         if result > 0:
             _last_log_times[cache_key] = current_time
             
@@ -86,9 +105,16 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai='Co mat', g
                 if evidence_rel_path.startswith("evidence/"):
                     image_url = f"{base_url}/{evidence_rel_path}"
                     
-            notify_student_attendance(mssv, time_str, f"Camera {camera_id}", image_url=image_url)
+            notify_student_attendance(
+                mssv=mssv, 
+                time_str=time_str, 
+                camera_name=f"Camera {camera_id}", 
+                image_url=image_url, 
+                trang_thai=trang_thai, 
+                di_tre_phut=di_tre_phut
+            )
             
-            return {'action': 'checkin', 'success': True}
+            return {'action': 'checkin', 'success': True, 'trang_thai': trang_thai}
     
     return False
 
@@ -170,6 +196,34 @@ def get_history(lop_id=None, date=None, mssv=None, page=1, per_page=50):
     """
     params.extend([per_page, offset])
     items = execute_query(data_sql, tuple(params))
+    
+    from datetime import datetime
+    for item in items:
+        # Get gio_vao_lop from item, or fallback
+        # gio_vao_lop is a timedelta in Python when queried from MySQL TIME column
+        gio_vao_lop_td = item.get('gio_vao_lop')
+        
+        if gio_vao_lop_td is not None:
+            # Convert timedelta to time string
+            total_seconds = int(gio_vao_lop_td.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            gio_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            item['gio_vao_lop'] = gio_str
+            start_time_obj = datetime.strptime(gio_str, "%H:%M:%S").time()
+        else:
+            item['gio_vao_lop'] = "07:00:00"
+            from datetime import time as datetime_time
+            start_time_obj = datetime_time(7, 0, 0)
+            
+        item['di_tre_phut'] = 0
+        if item.get('thoi_gian'):
+            t = item['thoi_gian']
+            target_dt = datetime.combine(t.date(), start_time_obj)
+            if t > target_dt:
+                diff = t - target_dt
+                item['di_tre_phut'] = int(diff.total_seconds() / 60)
 
     return {
         "items": items,

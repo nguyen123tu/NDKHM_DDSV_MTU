@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppTheme.background,
       body: Stack(
         children: [
-          // Ambient Background Glows
+          // Ambient Background Glows (Static)
           Positioned(
             top: -100,
             left: -100,
@@ -53,11 +53,9 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(0.2),
-                backgroundBlendMode: BlendMode.screen,
+                color: AppTheme.primary.withOpacity(0.15),
               ),
-            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-             .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 4.seconds),
+            ),
           ),
           Positioned(
             bottom: -50,
@@ -67,11 +65,9 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.secondary.withOpacity(0.15),
-                backgroundBlendMode: BlendMode.screen,
+                color: AppTheme.secondary.withOpacity(0.1),
               ),
-            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-             .scale(begin: const Offset(1, 1), end: const Offset(1.3, 1.3), duration: 5.seconds),
+            ),
           ),
 
           SafeArea(
@@ -119,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                          ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1)),
+                          ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1)),
                           const SizedBox(height: 24),
                           
                           Text(
@@ -128,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontSize: 28,
                               letterSpacing: 2,
                             ),
-                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+                          ).animate().fadeIn(delay: 100.ms),
                           const SizedBox(height: 8),
                           Text(
                             "HỆ THỐNG ĐIỂM DANH THÔNG MINH",
@@ -139,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: AppTheme.secondary,
                               letterSpacing: 1,
                             ),
-                          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
+                          ).animate().fadeIn(delay: 150.ms),
                           
                           const SizedBox(height: 40),
 
@@ -148,14 +144,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _usernameController,
                             label: "Tài khoản / MSSV",
                             icon: Icons.person_outline,
-                          ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1, end: 0),
+                          ).animate().fadeIn(delay: 200.ms),
                           const SizedBox(height: 20),
                           _buildTextField(
                             controller: _passwordController,
                             label: "Mật khẩu",
                             icon: Icons.lock_outline,
                             isPassword: true,
-                          ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.1, end: 0),
+                          ).animate().fadeIn(delay: 250.ms),
                           
                           const SizedBox(height: 12),
                           Align(
@@ -185,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                               ),
                             ),
-                          ).animate().fadeIn(delay: 600.ms),
+                          ).animate().fadeIn(delay: 300.ms),
 
                           const SizedBox(height: 12),
                           
@@ -199,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ? const CircularProgressIndicator(color: AppTheme.textPrimary)
                                   : const Text("ĐĂNG NHẬP"),
                             ),
-                          ).animate().fadeIn(delay: 700.ms).scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1)),
+                          ).animate().fadeIn(delay: 350.ms),
 
                           const SizedBox(height: 24),
 
@@ -229,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ],
-                          ).animate().fadeIn(delay: 800.ms),
+                          ).animate().fadeIn(delay: 400.ms),
                         ],
                       ),
                     ),
@@ -238,12 +234,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       "Đại học Xây dựng Miền Tây",
                       style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.w500, letterSpacing: 0.5),
-                    ).animate().fadeIn(delay: 900.ms),
+                    ).animate().fadeIn(delay: 400.ms),
                     const SizedBox(height: 4),
                     Text(
                       "MTU Face Attendance System v2.0",
                       style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                    ).animate().fadeIn(delay: 900.ms),
+                    ).animate().fadeIn(delay: 400.ms),
                   ],
                 ),
               ),

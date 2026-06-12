@@ -22,6 +22,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isRunning = false;
 
+    const selectCamId = document.getElementById('selectCamId');
+    const customRtspGroup = document.getElementById('customRtspGroup');
+    const inputCustomRtsp = document.getElementById('inputCustomRtsp');
+
+    if (selectCamId && customRtspGroup) {
+        selectCamId.addEventListener('change', (e) => {
+            if (e.target.value === 'custom') {
+                customRtspGroup.style.display = 'block';
+            } else {
+                customRtspGroup.style.display = 'none';
+            }
+        });
+    }
+
     // Cooldown phía client: tránh spam log panel mỗi frame
     const logCooldowns = {};  // {mssv: timestamp}
     const LOG_COOLDOWN_MS = 5000;  // 5 giây giữa mỗi lần hiển thị cùng 1 MSSV
@@ -58,14 +72,26 @@ document.addEventListener('DOMContentLoaded', () => {
             statusText.innerText = "Đang khởi động Camera...";
 
             let camVal = document.getElementById('selectCamId').value;
-            let finalCamId = isNaN(camVal) ? camVal : parseInt(camVal);
+            let finalCamId;
+            if (camVal === 'custom') {
+                finalCamId = document.getElementById('inputCustomRtsp').value.trim();
+                if (!finalCamId) {
+                    alert('Vui lòng nhập Link RTSP / Camera IP!');
+                    startBtn.disabled = false;
+                    statusText.innerText = "Chưa khởi động";
+                    return;
+                }
+            } else {
+                finalCamId = isNaN(camVal) ? camVal : parseInt(camVal);
+            }
 
             const res = await fetch('/attendance/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     lop_id: document.getElementById('selectLopId').value,
-                    camera_id: finalCamId
+                    camera_id: finalCamId,
+                    start_time: document.getElementById('inputStartTime') ? document.getElementById('inputStartTime').value : "07:00"
                 })
             });
             const data = await res.json();
@@ -155,16 +181,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // === TOAST NOTIFICATION ===
         const isCheckout = (action === 'checkout');
-        if (isCheckout) {
+        const isLate = (action === 'late');
+        const isWrongClass = (action === 'wrong_class');
+        
+        if (isWrongClass) {
+            showToast(`${name} — Khác Lớp!`, `MSSV: ${mssv} không thuộc lớp này`, 'danger');
+        } else if (isCheckout) {
             showToast(`${name} — Giờ ra`, `MSSV: ${mssv} • ${timeStr}`, 'warning');
+        } else if (isLate) {
+            showToast(`${name} — Đi trễ`, `MSSV: ${mssv} • ${timeStr}`, 'danger');
         } else {
             showToast(`${name} — Điểm danh thành công!`, `MSSV: ${mssv} • ${timeStr}`, 'success');
         }
 
-        // Cập nhật banner success timeout
+        // Cập nhật banner success timeout (Chỉ hiện nếu không phải wrong_class)
         const successBanner = document.getElementById('successBanner');
         const bannerName = document.getElementById('bannerName');
-        if (successBanner && bannerName) {
+        if (!isWrongClass && successBanner && bannerName) {
             bannerName.innerText = name;
             successBanner.style.display = 'block';
             setTimeout(() => {
@@ -172,8 +205,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 3000);
         }
 
-        const badgeClass = isCheckout ? 'bg-warning text-dark' : 'bg-success';
-        const badgeText = isCheckout ? 'Ra' : 'Vào';
+        let badgeClass = 'bg-success';
+        let badgeText = 'Vào';
+        if (isWrongClass) {
+            badgeClass = 'bg-danger';
+            badgeText = 'Khác lớp';
+        } else if (isCheckout) {
+            badgeClass = 'bg-warning text-dark';
+            badgeText = 'Ra';
+        } else if (isLate) {
+            badgeClass = 'bg-danger';
+            badgeText = 'Trễ';
+        }
 
         const tr = document.createElement('tr');
         tr.className = "slide-in";

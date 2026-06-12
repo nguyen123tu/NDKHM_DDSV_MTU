@@ -7,6 +7,10 @@ import cv2
 import threading
 import numpy as np
 import urllib.request
+import os
+
+# Ép OpenCV sử dụng giao thức TCP cho RTSP và tối ưu buffer để giảm lag tối đa
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|analyzeduration;0|probesize;32|stimeout;5000000"
 
 
 class IPCamera:
@@ -64,6 +68,70 @@ class IPCamera:
         self.is_opened = False
 
 
+class ThreadedCamera:
+    """Đọc luồng Camera (USB/RTSP) bằng Thread riêng biệt để tránh lag do buffer của OpenCV"""
+    def __init__(self, source):
+        # Dùng eventlet.tpool để chạy các hàm C chặn luồng (blocking) trong OS thread thực sự
+        try:
+            from eventlet import tpool
+            self.cap = tpool.execute(cv2.VideoCapture, source)
+            self._use_tpool = True
+        except ImportError:
+            self.cap = cv2.VideoCapture(source)
+            self._use_tpool = False
+            
+        # Tắt buffer nếu có thể
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        self.is_opened = self.cap.isOpened()
+        self.frame = None
+        self.lock = threading.Lock()
+        self.running = False
+        self.thread = None
+        if self.is_opened:
+            self.running = True
+            self.thread = threading.Thread(target=self._update, daemon=True)
+            self.thread.start()
+
+    def _update(self):
+        while self.running:
+            try:
+                if self._use_tpool:
+                    from eventlet import tpool
+                    ret, frame = tpool.execute(self.cap.read)
+                else:
+                    ret, frame = self.cap.read()
+                    
+                if ret:
+                    # Giảm kích thước ảnh xuống max 1280px để tiết kiệm RAM và CPU tránh lag mạng
+                    h, w = frame.shape[:2]
+                    if w > 1280:
+                        scale = 1280 / w
+                        frame = cv2.resize(frame, (1280, int(h * scale)))
+                    with self.lock:
+                        self.frame = frame
+                else:
+                    # Nếu rớt mạng, tạm dừng 0.1s tránh tốn CPU rồi thử lại
+                    import time
+                    time.sleep(0.1)
+            except:
+                break
+
+    def isOpened(self):
+        return self.is_opened
+
+    def read(self):
+        with self.lock:
+            if self.frame is not None:
+                return True, self.frame.copy()
+            return False, None
+
+    def release(self):
+        self.running = False
+        if self.cap:
+            self.cap.release()
+        self.is_opened = False
+
+
 class CameraManager:
     """
     Quản lý nhiều camera cùng lúc.
@@ -104,8 +172,11 @@ class CameraManager:
                 if isinstance(source, str) and source.startswith("http"):
                     print(f"[CAMERA] Dùng bộ đọc thủ công (IPCamera) cho luồng HTTP: {source}")
                     cap = IPCamera(source)
+                elif isinstance(source, str) and source.startswith("rtsp"):
+                    print(f"[CAMERA] Dùng ThreadedCamera cho luồng RTSP: {source}")
+                    cap = ThreadedCamera(source)
                 else:
-                    cap = cv2.VideoCapture(source)
+                    cap = ThreadedCamera(source)
                     
                 if cap.isOpened():
                     self._cameras[camera_id] = cap
