@@ -30,12 +30,8 @@ class SyncManager {
     // Kiểm tra kết nối mạng
     var connectivityResult = await (Connectivity().checkConnectivity());
     bool hasConnection = true;
-    if (connectivityResult is List) {
-      hasConnection = !connectivityResult.contains(ConnectivityResult.none);
-    } else {
-      hasConnection = connectivityResult.toString() != 'ConnectivityResult.none';
-    }
-
+    hasConnection = !connectivityResult.contains(ConnectivityResult.none);
+  
     if (!hasConnection) {
       print('[SYNC] Không có mạng. Bỏ qua đồng bộ.');
       return;
@@ -274,12 +270,8 @@ class SyncManager {
   void initializeNetworkListener() {
     Connectivity().onConnectivityChanged.listen((result) {
       bool hasConnection = true;
-      if (result is List) {
-        hasConnection = !result.contains(ConnectivityResult.none);
-      } else {
-        hasConnection = result.toString() != 'ConnectivityResult.none';
-      }
-
+      hasConnection = !result.contains(ConnectivityResult.none);
+    
       if (hasConnection) {
         print('[NETWORK] Đã kết nối Internet. Kích hoạt Sync ngầm...');
         syncAll();

@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             startBtn.disabled = true;
-            statusText.innerText = "Đang khởi động Camera...";
+            statusText.innerText = "Đang kiểm tra thời gian...";
 
             let camVal = document.getElementById('selectCamId').value;
             let finalCamId;
@@ -85,34 +85,70 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalCamId = isNaN(camVal) ? camVal : parseInt(camVal);
             }
 
-            const res = await fetch('/attendance/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    lop_id: document.getElementById('selectLopId').value,
-                    camera_id: finalCamId,
-                    start_time: document.getElementById('inputStartTime') ? document.getElementById('inputStartTime').value : "07:00"
-                })
-            });
-            const data = await res.json();
+            const startTimeStr = document.getElementById('inputStartTime') ? document.getElementById('inputStartTime').value : "07:00";
+            const [startH, startM] = startTimeStr.split(':').map(Number);
 
-            if (data.success) {
-                isRunning = true;
+            const doStart = async () => {
+                statusText.innerText = "Đang khởi động Camera...";
+                const res = await fetch('/attendance/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lop_id: document.getElementById('selectLopId').value,
+                        camera_id: finalCamId,
+                        start_time: startTimeStr
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    isRunning = true;
+                    startBtn.classList.add('d-none');
+                    stopBtn.classList.remove('d-none');
+                    statusText.innerText = "Hệ thống đang hoạt động";
+
+                    const indicatorBadge = document.getElementById('statusIndicatorBadge');
+                    if (indicatorBadge) indicatorBadge.classList.replace('bg-secondary', 'bg-success');
+
+                    showToast('Hệ thống đã sẵn sàng', 'Camera đang hoạt động, bắt đầu điểm danh...', 'success');
+
+                    videoFeed.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%231e293b'/%3E%3Ctext x='320' y='240' font-family='Arial' font-size='20' fill='%2394a3b8' text-anchor='middle'%3E%C4%90ang tr%E1%BB%A3c camera...%3C/text%3E%3C/svg%3E";
+                } else {
+                    alert('Lỗi: ' + data.msg);
+                    startBtn.disabled = false;
+                    startBtn.classList.remove('d-none');
+                    stopBtn.classList.add('d-none');
+                    statusText.innerText = "Khởi động thất bại";
+                }
+            };
+
+            const checkAndStart = () => {
+                const now = new Date();
+                const currentH = now.getHours();
+                const currentM = now.getMinutes();
+                if (currentH > startH || (currentH === startH && currentM >= startM)) {
+                    return true;
+                }
+                return false;
+            };
+
+            if (checkAndStart()) {
+                await doStart();
+            } else {
                 startBtn.classList.add('d-none');
                 stopBtn.classList.remove('d-none');
-                statusText.innerText = "Hệ thống đang hoạt động";
+                statusText.innerText = `Đang đợi đến giờ (${startTimeStr})...`;
+                
+                videoFeed.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%231e293b'/%3E%3Ctext x='320' y='240' font-family='Arial' font-size='20' fill='%23eab308' text-anchor='middle'%3E%C4%90ang ch%E1%BB%9D %C4%91%E1%BA%BFn gi%E1%BB%9D %C4%91i%E1%BB%83m danh...%3C/text%3E%3C/svg%3E";
 
-                const indicatorBadge = document.getElementById('statusIndicatorBadge');
-                if (indicatorBadge) indicatorBadge.classList.replace('bg-secondary', 'bg-success');
-
-                showToast('Hệ thống đã sẵn sàng', 'Camera đang hoạt động, bắt đầu điểm danh...', 'success');
-
-                videoFeed.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%231e293b'/%3E%3Ctext x='320' y='240' font-family='Arial' font-size='20' fill='%2394a3b8' text-anchor='middle'%3E%C4%90ang tr%E1%BB%A3c camera...%3C/text%3E%3C/svg%3E";
-            } else {
-                alert('Lỗi: ' + data.msg);
-                startBtn.disabled = false;
-                statusText.innerText = "Khởi động thất bại";
+                window.waitStartInterval = setInterval(async () => {
+                    if (checkAndStart()) {
+                        clearInterval(window.waitStartInterval);
+                        await doStart();
+                    }
+                }, 1000);
             }
+
         } catch (err) {
             console.error(err);
             alert('Lỗi kết nối Server');
@@ -123,6 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dừng điểm danh
     stopBtn.addEventListener('click', async () => {
         try {
+            if (window.waitStartInterval) clearInterval(window.waitStartInterval);
+            
             stopBtn.disabled = true;
             statusText.innerText = "Đang dừng Camera...";
 

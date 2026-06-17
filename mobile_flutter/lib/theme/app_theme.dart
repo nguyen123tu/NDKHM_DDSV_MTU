@@ -31,7 +31,6 @@ class AppTheme {
         primary: primary,
         secondary: secondary,
         surface: surface,
-        background: background,
         error: error,
       ),
       textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).copyWith(

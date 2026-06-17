@@ -3,6 +3,8 @@ Route Quản lý Sinh viên (CRUD)
 """
 
 import os
+import cv2
+import numpy as np
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.utils import secure_filename
 from . import students_bp
@@ -136,6 +138,7 @@ def api_add():
         return jsonify({'success': False, 'msg': 'MSSV đã tồn tại hoặc lỗi CSDL'})
         
     # Save images to folder
+    valid_count = 0
     if images:
         student_dir = os.path.join(Config.DATABASE_DIR, mssv)
         os.makedirs(student_dir, exist_ok=True)
@@ -145,9 +148,27 @@ def api_add():
                 if ',' in base64_str:
                     base64_str = base64_str.split(',')[1]
                 img_data = base64.b64decode(base64_str)
-                with open(os.path.join(student_dir, f"{idx}.jpg"), 'wb') as f:
+                
+                # Decode image with OpenCV to check blurriness
+                nparr = np.frombuffer(img_data, np.uint8)
+                img_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                
+                if img_cv is not None:
+                    # Calculate variance of Laplacian to get blur score
+                    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+                    blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
+                    
+                    # Threshold: Images with score < 100 are considered blurry
+                    if blur_score < 100:
+                        print(f"Skipping blurry image {idx} (Score: {blur_score:.2f})")
+                        continue # Bỏ qua ảnh này, không lưu
+                
+                # Save valid image
+                with open(os.path.join(student_dir, f"{valid_count}.jpg"), 'wb') as f:
                     f.write(img_data)
+                valid_count += 1
             except Exception as e:
+                print(f"Error processing image {idx}: {e}")
                 pass
                 
     return jsonify({'success': True, 'msg': 'Thêm sinh viên và ảnh thành công'})

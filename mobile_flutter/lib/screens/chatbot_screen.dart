@@ -131,13 +131,12 @@ class _ChatbotScreenState extends State<ChatbotScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy',
-                style: TextStyle(color: AppTheme.textMuted)),
+            child:
+                const Text('Hủy', style: TextStyle(color: AppTheme.textMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child:
-                const Text('Xóa', style: TextStyle(color: AppTheme.accent)),
+            child: const Text('Xóa', style: TextStyle(color: AppTheme.accent)),
           ),
         ],
       ),
@@ -259,10 +258,10 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                     spreadRadius: 0),
               ],
             ),
-            child: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+            child:
+                const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
           )
-              .animate(
-                  onPlay: (controller) => controller.repeat(reverse: true))
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
               .scale(
                   begin: const Offset(1, 1),
                   end: const Offset(1.08, 1.08),
@@ -293,8 +292,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                     const SizedBox(width: 4),
                     const Text(
                       'Online • RAG + AI',
-                      style: TextStyle(
-                          color: AppTheme.textMuted, fontSize: 11),
+                      style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
                     ),
                   ],
                 ),
@@ -339,8 +337,8 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                   AppTheme.primary.withOpacity(0.2),
                 ],
               ),
-              border:
-                  Border.all(color: AppTheme.secondary.withOpacity(0.3), width: 2),
+              border: Border.all(
+                  color: AppTheme.secondary.withOpacity(0.3), width: 2),
             ),
             child: const Icon(Icons.smart_toy_outlined,
                 color: AppTheme.secondary, size: 48),
@@ -360,7 +358,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
           ).animate().fadeIn(delay: 400.ms),
 
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Tôi là trợ lý AI của hệ thống MTUFace.\nHãy hỏi bất cứ điều gì về hệ thống điểm danh!',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -473,11 +471,11 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(20),
-                        topRight: const Radius.circular(20),
-                        bottomLeft: const Radius.circular(20),
-                        bottomRight: const Radius.circular(4),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(4),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -489,11 +487,11 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                     )
                   : BoxDecoration(
                       color: Colors.white.withOpacity(0.06),
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(4),
-                        topRight: const Radius.circular(20),
-                        bottomLeft: const Radius.circular(20),
-                        bottomRight: const Radius.circular(20),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(20),
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
                       ),
                       border: Border.all(
                           color: Colors.white.withOpacity(0.08), width: 1),
@@ -536,8 +534,8 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                         codeblockDecoration: BoxDecoration(
                           color: const Color(0xFF0D1117),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: Colors.white.withOpacity(0.1)),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.1)),
                         ),
                         codeblockPadding: const EdgeInsets.all(12),
                         listBullet: const TextStyle(
@@ -551,9 +549,9 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                         blockquoteDecoration: BoxDecoration(
                           color: AppTheme.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
-                          border: Border(
-                            left: BorderSide(
-                                color: AppTheme.secondary, width: 3),
+                          border: const Border(
+                            left:
+                                BorderSide(color: AppTheme.secondary, width: 3),
                           ),
                         ),
                         tableBorder: TableBorder.all(

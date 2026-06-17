@@ -533,13 +533,14 @@ class HudScanFramePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Color frameColor;
-    if (isSuccess == true) frameColor = AppTheme.success;
-    else if (isSuccess == false) frameColor = AppTheme.error;
+    if (isSuccess == true) {
+      frameColor = AppTheme.success;
+    } else if (isSuccess == false) frameColor = AppTheme.error;
     else if (isScanning) frameColor = AppTheme.primary;
     else frameColor = AppTheme.secondary;
 
     final cornerLength = size.width * 0.15;
-    final radius = 24.0; // Bo tròn hơn HUD cũ
+    const radius = 24.0; // Bo tròn hơn HUD cũ
 
     final paint = Paint()
       ..color = frameColor.withOpacity(pulseValue)
@@ -578,7 +579,7 @@ class HudScanLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final y = size.height * progress;
-    final color = AppTheme.secondary;
+    const color = AppTheme.secondary;
 
     // Đường tia laser
     canvas.drawRect(

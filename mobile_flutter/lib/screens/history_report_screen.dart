@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/export_service.dart';
@@ -13,13 +12,13 @@ class HistoryReportScreen extends StatefulWidget {
 
 class _HistoryReportScreenState extends State<HistoryReportScreen> {
   final ApiService _apiService = ApiService();
-  
+
   List<dynamic> _classes = [];
   int? _selectedLopId;
   DateTime? _selectedDate;
   int? _selectedMonth;
-  int _selectedYear = DateTime.now().year;
-  
+  final int _selectedYear = DateTime.now().year;
+
   List<dynamic> _history = [];
   bool _isLoading = false;
 
@@ -43,9 +42,10 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
     try {
       String? dateStr;
       if (_selectedDate != null) {
-        dateStr = "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}";
+        dateStr =
+            "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}";
       }
-      
+
       final response = await _apiService.getHistory(
         limit: 500,
         lopId: _selectedLopId,
@@ -53,7 +53,7 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
         month: _selectedMonth,
         year: _selectedYear,
       );
-      
+
       if (response['success'] == true) {
         setState(() {
           _history = response['data'] ?? [];
@@ -63,7 +63,9 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
         setState(() => _isLoading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Không thể tải dữ liệu'), backgroundColor: Colors.orange),
+            SnackBar(
+                content: Text(response['message'] ?? 'Không thể tải dữ liệu'),
+                backgroundColor: Colors.orange),
           );
         }
       }
@@ -71,7 +73,9 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Mất kết nối server. Vui lòng thử lại."), backgroundColor: Colors.red),
+          const SnackBar(
+              content: Text("Mất kết nối server. Vui lòng thử lại."),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -82,14 +86,16 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text("Báo cáo điểm danh", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Báo cáo điểm danh",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
         actions: [
           if (_history.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.file_download_outlined, color: Color(0xFF10B981)),
+              icon: const Icon(Icons.file_download_outlined,
+                  color: Color(0xFF10B981)),
               onPressed: () => ExportService.exportAttendanceToExcel(_history),
             )
         ],
@@ -106,13 +112,17 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<int>(
-                        decoration: const InputDecoration(labelText: "Lớp học", border: OutlineInputBorder()),
-                        value: _selectedLopId,
+                        decoration: const InputDecoration(
+                            labelText: "Lớp học", border: OutlineInputBorder()),
+                        initialValue: _selectedLopId,
                         items: [
-                          const DropdownMenuItem(value: null, child: Text("Tất cả lớp")),
-                          ..._classes.map((c) => DropdownMenuItem(value: c['id'], child: Text(c['ten_lop'])))
+                          const DropdownMenuItem(
+                              value: null, child: Text("Tất cả lớp")),
+                          ..._classes.map((c) => DropdownMenuItem(
+                              value: c['id'], child: Text(c['ten_lop'])))
                         ],
-                        onChanged: (val) => setState(() => _selectedLopId = val),
+                        onChanged: (val) =>
+                            setState(() => _selectedLopId = val),
                       ),
                     ),
                   ],
@@ -123,7 +133,9 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.calendar_today, size: 16),
-                        label: Text(_selectedDate == null ? "Chọn ngày" : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"),
+                        label: Text(_selectedDate == null
+                            ? "Chọn ngày"
+                            : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"),
                         onPressed: () async {
                           final date = await showDatePicker(
                             context: context,
@@ -131,20 +143,32 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                             firstDate: DateTime(2020),
                             lastDate: DateTime.now(),
                           );
-                          if (date != null) setState(() { _selectedDate = date; _selectedMonth = null; });
+                          if (date != null)
+                            setState(() {
+                              _selectedDate = date;
+                              _selectedMonth = null;
+                            });
                         },
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: DropdownButtonFormField<int>(
-                        decoration: const InputDecoration(labelText: "Tháng", border: OutlineInputBorder()),
-                        value: _selectedMonth,
+                        decoration: const InputDecoration(
+                            labelText: "Tháng", border: OutlineInputBorder()),
+                        initialValue: _selectedMonth,
                         items: [
-                          const DropdownMenuItem(value: null, child: Text("Chọn tháng")),
-                          ...List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text("Tháng ${i + 1}")))
+                          const DropdownMenuItem(
+                              value: null, child: Text("Chọn tháng")),
+                          ...List.generate(
+                              12,
+                              (i) => DropdownMenuItem(
+                                  value: i + 1, child: Text("Tháng ${i + 1}")))
                         ],
-                        onChanged: (val) => setState(() { _selectedMonth = val; if(val != null) _selectedDate = null; }),
+                        onChanged: (val) => setState(() {
+                          _selectedMonth = val;
+                          if (val != null) _selectedDate = null;
+                        }),
                       ),
                     ),
                   ],
@@ -155,43 +179,61 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                   height: 45,
                   child: ElevatedButton(
                     onPressed: _fetchHistory,
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E293B)),
-                    child: const Text("LỌC DỮ LIỆU", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E293B)),
+                    child: const Text("LỌC DỮ LIỆU",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // List Section
           Expanded(
-            child: _isLoading 
-              ? const Center(child: CircularProgressIndicator())
-              : _history.isEmpty 
-                ? const Center(child: Text("Không có dữ liệu khớp bộ lọc"))
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _history.length,
-                    itemBuilder: (context, index) {
-                      final item = _history[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: const CircleAvatar(backgroundColor: Color(0xFFEDF2F9), child: Icon(Icons.person, color: Color(0xFF1E293B))),
-                          title: Text(item['ho_ten'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text("${item['mssv']} • ${item['ma_lop']}"),
-                          trailing: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(item['thoi_gian'].toString().split(' ')[0], style: const TextStyle(fontSize: 12)),
-                              Text(item['thoi_gian'].toString().split(' ')[1], style: const TextStyle(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _history.isEmpty
+                    ? const Center(child: Text("Không có dữ liệu khớp bộ lọc"))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: _history.length,
+                        itemBuilder: (context, index) {
+                          final item = _history[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: ListTile(
+                              leading: const CircleAvatar(
+                                  backgroundColor: Color(0xFFEDF2F9),
+                                  child: Icon(Icons.person,
+                                      color: Color(0xFF1E293B))),
+                              title: Text(item['ho_ten'],
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                              subtitle:
+                                  Text("${item['mssv']} • ${item['ma_lop']}"),
+                              trailing: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                      item['thoi_gian']
+                                          .toString()
+                                          .split(' ')[0],
+                                      style: const TextStyle(fontSize: 12)),
+                                  Text(
+                                      item['thoi_gian']
+                                          .toString()
+                                          .split(' ')[1],
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           )
         ],
       ),

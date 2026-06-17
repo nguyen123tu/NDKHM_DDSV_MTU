@@ -20,7 +20,11 @@ async function setupCamera() {
     } catch (err) {
         console.error("Cam Error:", err);
         if (err.name === 'NotAllowedError') {
-            alert("Cần cấp quyền Camera cho trình duyệt!");
+            alert("⚠️ Cần cấp quyền Camera cho trình duyệt!\n\nVào Cài đặt trình duyệt → Quyền riêng tư → Cho phép Camera.");
+        } else if (err.name === 'NotFoundError') {
+            alert("❌ Không tìm thấy Camera trên thiết bị này!\n\nHãy kiểm tra:\n- Thiết bị có webcam không?\n- Camera có đang bị ứng dụng khác chiếm?");
+        } else if (err.name === 'NotReadableError') {
+            alert("❌ Camera đang bị ứng dụng khác sử dụng!\n\nĐóng các app đang dùng camera (Zoom, Teams...) rồi thử lại.");
         } else {
             console.log("Thử lại với cấu hình Camera mặc định...");
             try {
@@ -29,6 +33,7 @@ async function setupCamera() {
                 video.srcObject = fallbackStream;
             } catch (fallbackErr) {
                 console.error("Fallback Cam Error:", fallbackErr);
+                alert("❌ Không thể mở Camera!\n\nLỗi: " + fallbackErr.message + "\n\nThử mở bằng Chrome hoặc Edge.");
             }
         }
     }
@@ -40,65 +45,22 @@ function stopCamera() {
         currentStream = null;
     }
 }
-
-function initCamSelection() {
-    if (selectCamSource) {
-        const savedSource = localStorage.getItem('kiosk_cam_source');
-        if (savedSource) {
-            selectCamSource.value = savedSource;
-        }
-
-        selectCamSource.addEventListener('change', (e) => {
-            localStorage.setItem('kiosk_cam_source', e.target.value);
-            if (e.target.value === 'rtsp') {
-                stopCamera();
-                let userRtsp = prompt("Nhập Link RTSP Camera IMOU:", rtspUrl);
-                if (userRtsp) {
-                    rtspUrl = userRtsp;
-                    localStorage.setItem('kiosk_rtsp_url', rtspUrl);
-                    video.style.display = 'none';
-                    rtspImg.style.display = 'block';
-                    rtspImg.src = '/public/api/stream_kiosk?url=' + encodeURIComponent(rtspUrl);
-                } else {
-                    selectCamSource.value = 'webcam';
-                    localStorage.setItem('kiosk_cam_source', 'webcam');
-                    setupCamera();
-                }
-            } else {
-                rtspImg.src = '';
-                setupCamera();
-            }
-        });
-
-        if (selectCamSource.value === 'rtsp') {
-            video.style.display = 'none';
-            rtspImg.style.display = 'block';
-            rtspImg.src = '/public/api/stream_kiosk?url=' + encodeURIComponent(rtspUrl);
-        } else {
-            setupCamera();
-        }
-    } else {
-        setupCamera();
-    }
-}
-
 let isProcessing = false, lastMssv = null, lastTime = 0;
 async function captureAndRecognize() {
-    const isRtsp = selectCamSource && selectCamSource.value === 'rtsp';
+    const source = localStorage.getItem('kiosk_cam_source') || 'webcam';
+    const isRtsp = source.startsWith('rtsp');
     const srcElem = isRtsp ? rtspImg : video;
 
     if (isProcessing) return;
     if (!isRtsp && video.videoWidth === 0) return;
     if (isRtsp && rtspImg.naturalWidth === 0) return;
 
-    const lopSelect = document.getElementById('kiosk-lop-id');
-    const lopId = lopSelect ? lopSelect.value : '';
-    const startTimeInput = document.getElementById('kiosk-start-time');
-    const startTime = startTimeInput ? startTimeInput.value : '07:00';
+    const lopId = localStorage.getItem('kiosk_lop_id');
+    const startTime = localStorage.getItem('kiosk_start_time') || '07:00';
 
-    let reqBody = {};
-    if (lopId) reqBody.lop_id = parseInt(lopId);
-    reqBody.start_time = startTime;
+    if (!lopId) return;
+
+    let reqBody = { lop_id: parseInt(lopId), start_time: startTime };
 
     if (isRtsp) {
         reqBody.rtsp_url = rtspUrl;
@@ -124,7 +86,7 @@ async function captureAndRecognize() {
 
     isProcessing = true;
     try {
-        const res = await fetch('/public/api/recognize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqBody) });
+        const res = await fetch('/public/api/recognize', { method: 'POST', headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' }, body: JSON.stringify(reqBody) });
         if (!res.ok) throw new Error("Server error");
         const d = await res.json();
         if (d.success) {
@@ -222,5 +184,190 @@ function addLog(s) {
     sc.innerText = parseInt(sc.innerText) + 1;
 }
 
-initCamSelection();
-setInterval(captureAndRecognize, 2000);
+// ===== Pre-Livestream Setup Flow =====
+let processInterval = null;
+let previewStream = null;
+
+const setupScreen = document.getElementById('setupScreen');
+const btnGoLive = document.getElementById('btnGoLive');
+const btnShowConfig = document.getElementById('btnShowConfig');
+
+const setupCamSource = document.getElementById('setupCamSource');
+const setupLopId = document.getElementById('setupLopId');
+const setupStartTime = document.getElementById('setupStartTime');
+
+const previewWebcam = document.getElementById('previewWebcam');
+const previewRtsp = document.getElementById('previewRtsp');
+const previewPlaceholder = document.getElementById('previewPlaceholder');
+const previewStatus = document.getElementById('previewStatus');
+const previewLoading = document.getElementById('previewLoading');
+const previewIcon = document.getElementById('previewIcon');
+const previewText = document.getElementById('previewText');
+
+function stopPreview() {
+    if (previewStream) {
+        previewStream.getTracks().forEach(t => t.stop());
+        previewStream = null;
+    }
+    if (previewWebcam) {
+        previewWebcam.style.display = 'none';
+        previewWebcam.srcObject = null;
+    }
+    if (previewRtsp) {
+        previewRtsp.style.display = 'none';
+        previewRtsp.src = '';
+    }
+}
+
+function startPreview() {
+    stopPreview();
+    if (!previewPlaceholder) return;
+    previewPlaceholder.classList.remove('d-none');
+    previewIcon.classList.add('d-none');
+    previewLoading.classList.remove('d-none');
+    previewText.innerText = 'Đang kết nối...';
+    previewStatus.className = 'badge bg-warning text-dark';
+    previewStatus.innerText = 'Đang tải...';
+
+    const source = setupCamSource ? setupCamSource.value : 'webcam';
+    if (source === 'webcam') {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            previewLoading.classList.add('d-none');
+            previewIcon.classList.remove('d-none');
+            previewIcon.className = 'fas fa-shield-alt mb-3 text-warning';
+            previewText.innerHTML = '<span class="text-warning">Trình duyệt chặn Camera (Cần dùng HTTPS/Localhost)</span>';
+            previewStatus.className = 'badge bg-danger';
+            previewStatus.innerText = 'Lỗi Bảo Mật';
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
+            .then(stream => {
+                previewStream = stream;
+                previewWebcam.srcObject = stream;
+                previewWebcam.style.display = 'block';
+                previewPlaceholder.classList.add('d-none');
+                previewStatus.className = 'badge bg-success';
+                previewStatus.innerText = 'Sẵn sàng (Webcam)';
+            })
+            .catch(err => {
+                previewLoading.classList.add('d-none');
+                previewIcon.classList.remove('d-none');
+                previewIcon.className = 'fas fa-exclamation-triangle mb-3 text-danger';
+                previewText.innerHTML = '<span class="text-danger">Không thể truy cập Webcam</span>';
+                previewStatus.className = 'badge bg-danger';
+                previewStatus.innerText = 'Lỗi Webcam';
+            });
+    } else if (source.startsWith('rtsp')) {
+        let currentUrl = rtspUrl;
+        if (source === 'rtsp_lan') currentUrl = 'rtsp://admin:L2F0C994@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0';
+        else if (source === 'rtsp_wan') currentUrl = 'rtsp://admin:L2F0C994@192.168.1.80:554/cam/realmonitor?channel=1&subtype=0';
+        
+        previewRtsp.src = '/public/api/stream_kiosk?url=' + encodeURIComponent(currentUrl);
+        previewRtsp.style.display = 'block';
+        previewRtsp.onload = () => {
+            previewPlaceholder.classList.add('d-none');
+            previewStatus.className = 'badge bg-success';
+            previewStatus.innerText = 'Sẵn sàng (RTSP)';
+        };
+        previewRtsp.onerror = () => {
+            previewRtsp.style.display = 'none';
+            previewLoading.classList.add('d-none');
+            previewIcon.classList.remove('d-none');
+            previewIcon.className = 'fas fa-network-wired mb-3 text-danger';
+            previewText.innerHTML = '<span class="text-danger">Không thể kết nối luồng RTSP</span>';
+            previewStatus.className = 'badge bg-danger';
+            previewStatus.innerText = 'Lỗi Mạng';
+        };
+    }
+}
+
+if (setupCamSource) {
+    const savedSource = localStorage.getItem('kiosk_cam_source');
+    if (savedSource) setupCamSource.value = savedSource;
+    
+    setupCamSource.addEventListener('change', (e) => {
+        localStorage.setItem('kiosk_cam_source', e.target.value);
+        if (e.target.value === 'rtsp_custom') {
+            let userRtsp = prompt("Vui lòng nhập Link RTSP của Camera IMOU:", rtspUrl);
+            if (userRtsp) {
+                rtspUrl = userRtsp;
+                localStorage.setItem('kiosk_rtsp_url', rtspUrl);
+            } else {
+                setupCamSource.value = 'webcam';
+                localStorage.setItem('kiosk_cam_source', 'webcam');
+            }
+        }
+        startPreview();
+    });
+}
+
+if (setupLopId) {
+    const savedLopId = localStorage.getItem('kiosk_lop_id');
+    if (savedLopId) setupLopId.value = savedLopId;
+}
+
+if (setupStartTime) {
+    const savedTime = localStorage.getItem('kiosk_start_time');
+    if (savedTime) setupStartTime.value = savedTime;
+}
+
+if (setupScreen && setupScreen.style.display !== 'none') {
+    startPreview();
+}
+
+if (btnGoLive) {
+    btnGoLive.addEventListener('click', () => {
+        if (setupLopId && !setupLopId.value) {
+            alert('Vui lòng chọn lớp điểm danh!');
+            return;
+        }
+        
+        if (setupLopId) localStorage.setItem('kiosk_lop_id', setupLopId.value);
+        if (setupStartTime) localStorage.setItem('kiosk_start_time', setupStartTime.value);
+        
+        stopPreview();
+        
+        setupScreen.classList.remove('d-flex');
+        setupScreen.style.display = 'none';
+        
+        // Bắt đầu Camera chính
+        if (setupCamSource && setupCamSource.value.startsWith('rtsp')) {
+            video.style.display = 'none';
+            rtspImg.style.display = 'block';
+            let currentUrl = rtspUrl;
+            if (setupCamSource.value === 'rtsp_lan') currentUrl = 'rtsp://admin:L2F0C994@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0';
+            else if (setupCamSource.value === 'rtsp_wan') currentUrl = 'rtsp://admin:L2F0C994@192.168.1.80:554/cam/realmonitor?channel=1&subtype=0';
+            
+            rtspUrl = currentUrl; // Update global for captureAndRecognize
+            rtspImg.src = '/public/api/stream_kiosk?url=' + encodeURIComponent(currentUrl);
+        } else {
+            rtspImg.src = '';
+            setupCamera();
+        }
+        
+        if (!processInterval) {
+            processInterval = setInterval(captureAndRecognize, 2000);
+        }
+        
+        if (ttsAudio) ttsAudio.play().catch(e => {}); 
+    });
+}
+
+if (btnShowConfig) {
+    btnShowConfig.addEventListener('click', () => {
+        if (processInterval) {
+            clearInterval(processInterval);
+            processInterval = null;
+        }
+        
+        stopCamera();
+        if (rtspImg) {
+            rtspImg.src = '';
+            rtspImg.style.display = 'none';
+        }
+        
+        setupScreen.style.display = 'flex';
+        setupScreen.classList.add('d-flex');
+        startPreview();
+    });
+}

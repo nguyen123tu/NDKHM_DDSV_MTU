@@ -1,219 +1,157 @@
-# 🎓 MTUFace - Hệ Thống Điểm Danh Bằng Nhận Diện Khuôn Mặt 
+# 🎓 MTUFace - Hệ Thống Điểm Danh Bằng Nhận Diện Khuôn Mặt Thông Minh
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B.svg)](https://flutter.dev/)
 [![Flask](https://img.shields.io/badge/Flask-Web%20Backend-black.svg)](https://flask.palletsprojects.com/)
-[![MySQL](https://img.shields.io/badge/MySQL-Database-orange.svg)](https://www.mysql.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-orange.svg)](https://www.mysql.com/)
+[![Docker](https://img.shields.io/badge/Docker-Supported-blue.svg)](https://www.docker.com/)
 
-**MTUFace** là hệ thống quản lý điểm danh thông minh sử dụng công nghệ nhận diện khuôn mặt Deep Learning, hỗ trợ đa engine AI (InsightFace, YOLO + ResNet). Hệ thống bao gồm 3 thành phần chính:
-
-1. **Web Admin Dashboard** (Flask + SocketIO): Giao diện quản lý cho quản trị viên với thiết kế Glassmorphism hiện đại, giám sát theo thời gian thực (Kiosk HUD), AI Chatbot hỗ trợ, và hệ thống cảnh báo gian lận.
-2. **AI Core Engine**: Pipeline nhận diện khuôn mặt đa engine — hỗ trợ chuyển đổi nóng giữa InsightFace và YOLO + ResNet. Tích hợp Liveness Detection chống giả mạo.
-3. **Mobile App** (Flutter): Ứng dụng di động "Offline-first" dành cho sinh viên để tra cứu lịch sử điểm danh, xem thông tin cá nhân và đăng ký khuôn mặt tự động, hỗ trợ đồng bộ dữ liệu.
-
----
+**MTUFace** là hệ thống quản lý điểm danh toàn diện, kết hợp Web Admin Dashboard và Mobile App "Offline-first", sử dụng các công nghệ trí tuệ nhân tạo (Deep Learning) hàng đầu hiện nay. Hệ thống được thiết kế để chống gian lận, tốc độ nhận diện cao và dễ dàng triển khai.
 
 ## 🌟 Tính Năng Nổi Bật
 
-### 🤖 AI & Nhận Diện
-- **Đa engine AI**: Chuyển đổi nóng giữa InsightFace, YOLO + ResNet — không cần restart server.
-- **Nhận diện khuôn mặt theo thời gian thực**: Phát hiện và nhận dạng khuôn mặt qua webcam/Camera IP RTSP (Imou) với độ trễ thấp.
-- **Liveness Detection**: Phát hiện gian lận bằng phân tích blur, glare, kích thước khuôn mặt — chống ảnh/video giả mạo.
-- **YOLO11 Training**: Script huấn luyện mô hình phát hiện khuôn mặt với YOLO11 (MuSGD optimizer, NMS-free inference).
-- **AI Chatbot**: Trợ lý AI thông minh tích hợp ChromaDB, hỗ trợ truy vấn thông tin sinh viên và thống kê điểm danh.
+### 🤖 Lõi AI Đa Nền Tảng (Multi-Engine AI Core)
+- **Kiến trúc Factory linh hoạt**: Hỗ trợ chuyển đổi "nóng" giữa 3 nền tảng AI mạnh mẽ thông qua file `.env` hoặc Web Admin:
+  1. **InsightFace** (`buffalo_l` / `buffalo_sc`): Tốc độ siêu nhanh, độ chính xác nhận diện (Face Verification) chuẩn công nghiệp.
+  2. **YOLO11 + ResNet50**: Nhận diện tuỳ chỉnh với YOLO11 (MuSGD optimizer) và Embedding bằng ResNet50.
+  3. **DeepFace**: Hỗ trợ đa dạng models (ArcFace, Facenet512, GhostFaceNet, v.v.).
+- **Chống Giả Mạo & Liveness Detection (Anti-Spoofing)**:
+  - Tích hợp mô hình `MiniFASNetV2` phát hiện ảnh in trên giấy, video qua màn hình điện thoại/máy tính.
+  - Heuristic rules: Phát hiện ảnh quá mờ (Laplacian variance), phản chiếu ánh sáng màn hình (Glare detection), kích thước khuôn mặt nhỏ.
+- **Phân Tích Thuộc Tính (Face Analysis)**: Tích hợp dự đoán Tuổi, Giới tính, và Cảm xúc qua DeepFace.
+- **Tối Ưu Xử Lý Cấp Thấp**: Sử dụng Eventlet cho Socket.IO, Threading riêng biệt cho luồng nhận diện, và Background Subtractor (MOG2) để bỏ qua các frame không có chuyển động (Motion Detection).
 
-### 🖥️ Web Admin Dashboard
-- **Giao diện Glassmorphism**: Thiết kế hiện đại, dark theme, hiệu ứng kính mờ cao cấp trên toàn bộ hệ thống.
-- **Kiosk HUD thông minh**: Giao diện check-in chuyên nghiệp với Audio Feedback (phản hồi giọng nói) và camera tracking.
-- **Self-Check công khai**: Trang điểm danh tự phục vụ cho sinh viên, không cần đăng nhập.
-- **Đa phiên điểm danh**: Hỗ trợ ghi nhận điểm danh theo nhiều ca (sáng/chiều) trong cùng một ngày.
-- **Kết xuất báo cáo**: Xuất dữ liệu điểm danh ra file Excel/PDF với format chuẩn.
+### 🖥️ Web Admin Dashboard & Kiosk Mode
+- **Giao diện Glassmorphism**: Thiết kế thẻ kính mờ (frosted-glass) hiện đại, hỗ trợ hiệu ứng động bắt mắt.
+- **Kiosk HUD Realtime**: Điểm danh với luồng video thời gian thực, hiển thị Bounding Box và tỉ lệ chính xác (% Similarity) thông qua Socket.IO. Cảnh báo gian lận bằng giọng nói và Popup ngay lập tức.
+- **Quản Lý Phiên Điểm Danh**: Tạo phiên điểm danh theo lớp, thời gian (ca học), với khả năng khóa tự động khi hết hạn.
+- **Trợ Lý AI Thông Minh (RAG Chatbot)**: Chatbot tích hợp LLM (Gemini/Ollama) kết hợp cơ sở dữ liệu vector (ChromaDB) để tự động trả lời các thông tin liên quan đến sinh viên, thống kê điểm danh, lịch học, v.v.
+- **Báo Cáo Nâng Cao**: Xuất dữ liệu đa định dạng (Excel, PDF) phục vụ thống kê đào tạo.
 
-### 📱 Mobile App (Flutter)
-- **Offline-first**: Dữ liệu lưu trữ cục bộ (SQLite), đồng bộ với server khi có mạng.
-- **Xem lịch sử điểm danh**: Tra cứu chi tiết từng buổi học.
-- **Quản lý phiên điểm danh**: Admin có thể tạo và giám sát phiên điểm danh từ mobile.
-- **QR Scanner**: Quét mã QR cho điểm danh nhanh.
-- **Thông báo push**: Nhận thông báo khi điểm danh thành công.
+### 📱 Flutter Mobile App (Sinh viên & Giảng viên)
+- **Kiến Trúc Offline-first**: Đồng bộ dữ liệu cục bộ qua SQLite. Sinh viên có thể xem lịch sử, Giảng viên có thể mở/đóng phiên điểm danh ngay cả khi rớt mạng (hệ thống sẽ tự động đồng bộ (Sync Manager) khi có kết nối trở lại).
+- **Face Authentication / Biometrics**: Đăng nhập nhanh bằng Sinh trắc học (Fingerprint/Face ID).
+- **Quản Lý Phiên Từ Xa**: Admin/Giảng viên (định vị qua GPS) có quyền mở phiên điểm danh ngay trên thiết bị di động.
+- **Quét Mã QR & Firebase Cloud Messaging (FCM)**: Bổ trợ điểm danh QR, nhận Push Notifications (thông báo có phiên điểm danh mới, cảnh báo gian lận).
 
 ---
 
-## 📂 Cấu Trúc Dự Án (Project Architecture)
+## 📂 Cấu Trúc Thư Mục Hệ Thống
 
 ```text
 NDKHM_DDSV_MTU/
-├── app.py                  # Flask application factory & entry point
-├── config.py               # Cấu hình hệ thống (đọc từ .env)
-├── core/                   # AI Core Engine
-│   ├── engine.py           # Engine chính (InsightFace / YOLO+ResNet)
-│   ├── detector.py         # Face detector (InsightFace)
-│   ├── detector_yolo.py    # Face detector (YOLO)
-│   ├── embedder.py         # Face embedder (InsightFace)
-│   ├── embedder_resnet.py  # Face embedder (ResNet)
-│   ├── matcher.py          # So khớp vector khuôn mặt
-│   ├── trainer.py          # Huấn luyện & đăng ký khuôn mặt
-│   ├── camera.py           # Quản lý camera (Webcam/IP Camera)
-│   └── anti_spoofing.py    # Module chống giả mạo khuôn mặt
-├── db/                     # Database schemas (MySQL), migrations
-│   ├── connection.py       # Connection pool MySQL
-│   ├── schema.sql          # Schema chính
-│   └── migrations/         # Các file migration SQL
-├── routes/                 # Controllers — Web routes & Mobile APIs
-│   ├── api_mobile.py       # RESTful API cho Flutter App
-│   ├── attendance.py       # Điểm danh (live, history)
-│   ├── auth.py             # Đăng nhập / Xác thực
-│   ├── camera_mgmt.py      # Quản lý cấu hình camera IP/Webcam
-│   ├── chatbot.py          # AI Chatbot endpoint
-│   ├── classes.py          # Quản lý lớp học
-│   ├── dashboard.py        # Trang chủ Admin
-│   ├── export.py           # Xuất báo cáo Excel/PDF
-│   ├── fraud.py            # Cảnh báo gian lận
-│   ├── public.py           # Trang công khai (selfcheck, tra cứu)
-│   ├── students.py         # Quản lý sinh viên
-│   ├── support.py          # Yêu cầu hỗ trợ (Ticket)
-│   └── training.py         # Huấn luyện mô hình AI
-├── services/               # Business logic layer
-│   ├── recognition_thread.py   # Luồng nhận diện realtime
-│   ├── attendance_service.py   # Nghiệp vụ điểm danh (đa phiên)
-│   ├── student_service.py      # Nghiệp vụ sinh viên
-│   ├── class_service.py        # Nghiệp vụ quản lý lớp học
-│   ├── ai_chatbot.py           # AI Chatbot (ChromaDB)
-│   ├── knowledge_builder.py    # Xây dựng knowledge base
-│   ├── export_service.py       # Xuất báo cáo nâng cao
-│   ├── fcm_service.py          # Dịch vụ Firebase Cloud Messaging
-│   └── telegram_alert.py      # Gửi cảnh báo Telegram/Zalo
-├── mobile_flutter/         # Source code Flutter Mobile App
-├── static/                 # Assets tĩnh
-│   ├── css/
-│   │   ├── main.css        # CSS chung (design system)
-│   │   ├── components/     # CSS components (ai_assistant...)
-│   │   └── pages/          # CSS riêng từng trang
-│   ├── js/
-│   │   ├── components/     # JS components (ai_assistant...)
-│   │   └── pages/          # JS riêng từng trang
-│   └── img/                # Hình ảnh, logo, favicon
-├── templates/              # Giao diện Jinja2 cho Web Admin
-│   ├── base.html           # Layout chính
-│   ├── dashboard/          # Trang chủ, kiosk, fraud alerts
-│   ├── attendance/         # Live & History
-│   ├── students/           # CRUD sinh viên
-│   ├── classes/            # Quản lý lớp, lịch học
-│   ├── chatbot/            # Giao diện AI Chatbot
-│   ├── training/           # Huấn luyện mô hình
-│   ├── public/             # Selfcheck, tra cứu công khai
-│   └── export/             # Xuất báo cáo
-├── tools/                  # Công cụ hỗ trợ
-│   ├── convert_onnx_to_tflite.py  # Chuyển đổi model cho mobile
-│   └── download_models.py        # Tải model AI
-├── train_yolo11.py         # Script huấn luyện YOLO11
-├── requirements.txt        # Thư viện Python dependencies
-├── Dockerfile              # Docker image cho backend
-├── docker-compose.yml      # Docker Compose (backend + MySQL)
-└── .env.example            # File cấu hình biến môi trường mẫu
+├── app.py                  # Entry point Flask, khởi tạo Socket.IO & RAG
+├── config.py               # Quản lý cấu hình toàn cục (AI Engine, Database...)
+├── core/                   # Cốt lõi AI Engines
+│   ├── engine.py           # Factory sinh ra các AI Model
+│   ├── anti_spoofing.py    # Liveness detection (MiniFASNetV2)
+│   ├── detector_yolo.py    # YOLO Face Detector
+│   ├── embedder_resnet.py  # ResNet Face Embedder
+│   └── camera.py           # Quản lý Webcam/IP Camera
+├── db/                     # Cấu trúc CSDL (MySQL)
+│   ├── schema.sql          # Bảng (sinh_vien, diem_danh, gian_lan_log, phien_diem_danh...)
+│   └── migrations/         # Các script cập nhật CSDL
+├── routes/                 # Routing / Controllers
+│   ├── api_mobile.py       # REST API cho Flutter (bảo mật bằng JWT)
+│   ├── chatbot.py          # LLM Chatbot
+│   └── ...                 # Auth, Dashboard, Attendance, Classes, Export
+├── services/               # Bussiness Logic Layer
+│   ├── recognition_thread.py # Xử lý Realtime Face Recognition chạy ngầm
+│   ├── ai_chatbot.py         # Logic giao tiếp LLM & Vector DB
+│   └── fcm_service.py        # Push notification service
+├── mobile_flutter/         # App di động đa nền tảng
+│   ├── lib/                  # Dart code (screens, models, services, providers)
+│   └── pubspec.yaml          # Dependencies
+├── static/ & templates/    # Giao diện Web Admin (HTML/CSS/JS Glassmorphism)
+├── docker-compose.yml      # Cấu hình triển khai container (App + MySQL)
+├── scripts/                # Script tự động (auto_swagger.py...)
+└── train_*.py              # Scripts huấn luyện AI (ResNet, YOLO11)
 ```
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt (Setup Guide)
+## 🚀 Hướng Dẫn Cài Đặt (Local Development)
 
-### 1. Yêu Cầu Hệ Thống (Prerequisites)
-- **Python**: Phiên bản 3.10 trở lên.
-- **Cơ sở dữ liệu**: MySQL 8.x (Có thể dùng XAMPP để dễ dàng quản lý cục bộ).
-- **Flutter SDK**: Để build và chạy ứng dụng mobile (tuỳ chọn).
-- **Webcam**: Camera USB hoặc webcam tích hợp cho nhận diện khuôn mặt.
+### 1. Yêu Cầu Hệ Thống
+- **Python**: 3.10 - 3.11.
+- **Database**: MySQL 8.0+.
+- **Flutter SDK**: Phiên bản 3.x (Nếu cần build Mobile App).
 
-### 2. Thiết Lập Môi Trường Backend (Flask & AI)
+### 2. Thiết Lập Môi Trường Backend
 
-**Bước 1:** Clone dự án và tạo Virtual Environment
+**Bước 1:** Clone repo và thiết lập môi trường ảo
 ```bash
 git clone https://github.com/nguyen123tu/NDKHM_DDSV_MTU.git
 cd NDKHM_DDSV_MTU
 python -m venv .venv
 
-# Kích hoạt trên Windows:
+# Windows:
 .venv\Scripts\activate
-# Kích hoạt trên Linux/macOS:
+# Linux/macOS:
 source .venv/bin/activate
 ```
 
-**Bước 2:** Cài đặt thư viện Python
+**Bước 2:** Cài đặt các gói phụ thuộc
 ```bash
 pip install -r requirements.txt
 ```
 
-**Bước 3:** Cấu hình biến môi trường
-- Sao chép file `.env.example` thành `.env`
-- Cập nhật các thông số Database (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`).
-- Lựa chọn engine AI:
-  - `AI_ENGINE=insightface` — InsightFace (mặc định, nhanh, chính xác cao)
-  - `AI_ENGINE=yolo_resnet` — YOLO + ResNet
-- Thêm Telegram Bot Token nếu muốn nhận thông báo realtime.
+**Bước 3:** Cấu hình hệ thống `.env`
+- Copy `.env.example` thành `.env`.
+- Cấu hình thông số DB: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
+- Lựa chọn engine (`AI_ENGINE=insightface` hoặc `yolo_resnet` hoặc `deepface`).
 
-**Bước 4:** Khởi tạo Cơ sở dữ liệu
-- Import file `db/schema.sql` vào MySQL:
+**Bước 4:** Khởi tạo CSDL MySQL
 ```bash
+mysql -u root -p -e "CREATE DATABASE face_attendance_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -u root -p face_attendance_db < db/schema.sql
 ```
-- Nếu cần thêm bảng phiên điểm danh:
-```bash
-mysql -u root -p face_attendance_db < db/migrations/add_phien_diem_danh.sql
-```
 
-### 3. Chạy Hệ Thống Backend
-Khởi động Web server và Engine AI:
+**Bước 5:** Khởi chạy Backend Server
 ```bash
 python app.py
 ```
-> 🌐 Truy cập Web Admin Dashboard tại: `http://localhost:5000`
+> Truy cập Web Admin Dashboard: `http://localhost:5000`
 
----
-
-## 📱 Khởi Động Mobile App (Flutter)
-
-Mobile app được đặt trong thư mục `mobile_flutter/`. Bạn cần cắm thiết bị thật hoặc mở máy ảo Simulator/Emulator.
+### 3. Thiết Lập Flutter Mobile App
 
 ```bash
 cd mobile_flutter
 flutter pub get
 flutter run
 ```
-> **Lưu ý**: Đảm bảo thiết bị di động cùng mạng (LAN) với máy chủ và cấu hình đúng địa chỉ IP máy chủ API trong `mobile_flutter/lib/services/api_service.dart`. Nếu gặp lỗi Firewall Windows, vui lòng mở port 5000 ở Inbound Rules.
+*Lưu ý:* Hãy trỏ địa chỉ `baseUrl` trong file `lib/services/api_service.dart` về IP máy tính của bạn trong mạng LAN (vd: `http://192.168.1.xxx:5000/`). Nếu sử dụng Emulator, có thể dùng `10.0.2.2`.
 
 ---
 
-## 🔧 Chuyển Đổi Engine AI
+## 🐳 Triển Khai Bằng Docker (Production)
 
-Hệ thống hỗ trợ chuyển đổi nóng giữa các engine AI ngay trên giao diện web (trang **Huấn luyện**), hoặc cấu hình trong file `.env`:
+Bạn có thể chạy toàn bộ hệ thống (Web App + MySQL) chỉ bằng một lệnh duy nhất, rất thuận tiện cho quá trình deploy lên VPS/Server.
 
-| Engine | Model | Detector | Ưu điểm |
-|--------|-------|----------|----------|
-| `insightface` | buffalo_l | InsightFace | Nhanh, chính xác cao, ổn định |
-| `yolo_resnet` | YOLOv11 + ResNet | YOLO | Tuỳ chỉnh linh hoạt, train được trên dataset riêng |
+```bash
+# Đảm bảo đã cập nhật đúng mật khẩu DB trong file docker-compose.yml và .env
+docker-compose up --build -d
+```
+
+> Hệ thống sẽ tự động khởi tạo database thông qua `schema.sql` nếu là lần chạy đầu tiên. Thư mục `database/` và `models/` được map dưới dạng Docker volumes để tránh mất mát dữ liệu hình ảnh cũng như não bộ AI.
+
+---
+
+## 📚 API Documentation (Swagger)
+
+Hệ thống có sẵn tài liệu mô tả RESTful API sử dụng Swagger UI (Flasgger), phục vụ tích hợp Mobile App hoặc các hệ thống bên thứ 3.
+
+- **Truy cập**: Khởi chạy server và truy cập `http://localhost:5000/apidocs`
+- **Tự động sinh tài liệu**: Có thể chạy script `python scripts/auto_swagger.py` để tự động parse docstring trong thư mục `routes/` thành Swagger YAML format.
 
 ---
 
 ## 🔒 Bảo Mật & Lưu Ý Quan Trọng
-- **KHÔNG** commit file `.env` chứa token thật, cấu hình mật khẩu database lên public repository.
-- Các mô hình AI (`.pth`, `.onnx`, `.pt`) và thư mục dữ liệu cá nhân (`database/`, `dataset/`) có dung lượng lớn và đã được cấu hình trong `.gitignore`.
-- Nếu Telegram bot token bị lộ, hãy vào `@BotFather` để revoke/thay đổi ngay lập tức.
-- Đối với Production, hãy cân nhắc sử dụng Nginx/Gunicorn và thiết lập HTTPS.
+- File `.env` chứa các thông tin nhạy cảm (JWT Secret, API Keys, Database Password), **tuyệt đối không** push lên Git.
+- Nên thiết lập SSL/HTTPS thông qua Nginx khi public ra Internet (đặc biệt bắt buộc nếu muốn sử dụng API Camera (`getUserMedia`) trên các trình duyệt hiện đại qua đường dẫn ngoài `localhost`).
+- Tính năng Chatbot RAG sử dụng tài nguyên CPU/GPU đáng kể để tạo embeddings, cân nhắc sử dụng API Gemini/NVIDIA để giảm tải xử lý local.
+- Anti-Spoofing MiniFASNetV2 có thể yêu cầu hiệu năng nhất định. Nếu Kiosk bị giật lag (Drop FPS), hãy tắt thông qua biến môi trường hoặc chạy ở máy chủ cấu hình mạnh hơn.
 
 ---
 
-## 🐳 Docker Deployment (Tuỳ chọn)
-
-Hệ thống hỗ trợ chạy bằng Docker để đồng bộ hoá môi trường trên Server Production:
-
-```bash
-docker-compose up --build -d
-```
-
-> **Lưu ý**: Khi chạy Docker, `DB_HOST` sẽ được override thành `db` (tên service MySQL trong docker-compose). Hãy cập nhật `DB_PASSWORD` trong file `.env` cho phù hợp.
-
----
-
-## 📄 Giấy Phép (License)
-
-Dự án được phát triển phục vụ đồ án tốt nghiệp tại **NeoTune**.
-
-© 2024-2026 MTUFace Tune
+**© 2024-2026 MTUFace System.** Phát triển dành cho Đồ án Tốt nghiệp.

@@ -11,9 +11,7 @@ class StudentRepository {
       {
         'mssv': student['student_id'] ?? student['mssv'],
         'name': student['name'] ?? student['ho_ten'],
-        'face_vector': student['face_vector'] != null 
-            ? student['face_vector'].toString() // Chuyển List sang String
-            : null,
+        'face_vector': student['face_vector']?.toString(),
         'updated_at': student['updated_at'],
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -23,31 +21,27 @@ class StudentRepository {
   Future<void> insertMultipleStudents(List<dynamic> students) async {
     final db = await _appDatabase.database;
     final batch = db.batch();
-    
+
     for (var student in students) {
       // Nếu server đánh dấu đã xóa, ta xóa ở local
       if (student['is_deleted'] == true || student['trang_thai'] == 0) {
-        batch.delete(
-          'local_students', 
-          where: 'mssv = ?', 
-          whereArgs: [student['student_id'] ?? student['mssv']]
-        );
+        batch.delete('local_students',
+            where: 'mssv = ?',
+            whereArgs: [student['student_id'] ?? student['mssv']]);
       } else {
         batch.insert(
           'local_students',
           {
             'mssv': student['student_id'] ?? student['mssv'],
             'name': student['name'] ?? student['ho_ten'],
-            'face_vector': student['face_vector'] != null 
-                ? student['face_vector'].toString() 
-                : null,
+            'face_vector': student['face_vector']?.toString(),
             'updated_at': student['updated_at'],
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
     }
-    
+
     await batch.commit(noResult: true);
   }
 

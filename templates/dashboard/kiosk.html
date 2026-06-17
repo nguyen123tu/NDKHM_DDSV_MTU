@@ -40,17 +40,9 @@
         </div>
         <div class="hud-stats d-none d-md-flex align-items-center">
             <div class="hs-item me-3">
-                <select id="selectCamSource" class="form-select bg-dark text-info border-info me-2" style="font-size: 0.9rem; min-width: 150px;">
-                    <option value="webcam">Webcam Nội bộ</option>
-                    <option value="rtsp">Camera IMOU (LAN)</option>
-                </select>
-                <select id="kiosk-lop-id" class="form-select bg-dark text-info border-info" style="font-size: 0.9rem; min-width: 200px;">
-                    <option value="">-- Chọn lớp học --</option>
-                    {% for c in classes %}
-                    <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
-                    {% endfor %}
-                </select>
-                <input type="time" id="kiosk-start-time" class="form-control bg-dark text-info border-info ms-2" style="font-size: 0.9rem; max-width: 110px;" value="07:00" title="Giờ bắt đầu lớp học">
+                <button id="btnShowConfig" class="btn btn-outline-info rounded-pill" style="font-size: 0.8rem;">
+                    <i class="fas fa-cog"></i> Setup Kiosk
+                </button>
             </div>
             <div class="hs-divider"></div>
             <div class="hs-item">
@@ -104,7 +96,84 @@
 
     <div class="hud-footer">MTUFACE · "Trí tuệ xây dựng — Công nghệ tương lai"</div>
 
-    
+<!-- ===== Pre-Livestream Setup Screen ===== -->
+<div id="setupScreen" class="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column" style="z-index: 9999; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); overflow-y: auto;">
+    <div class="container flex-grow-1 d-flex flex-column justify-content-center py-5">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold text-info mb-2" style="font-family: 'Orbitron', sans-serif;"><i class="fas fa-satellite-dish me-3"></i>MTUFace Dashboard Kiosk</h1>
+            <p class="text-white-50 fs-5">Kiểm tra kết nối và cấu hình phiên điểm danh (Dành cho Giảng Viên / Admin)</p>
+        </div>
+
+        <div class="row g-5 align-items-center">
+            <!-- Left: Preview -->
+            <div class="col-lg-7">
+                <div class="card bg-dark border-info shadow-lg rounded-4 overflow-hidden" style="border-width: 2px;">
+                    <div class="card-header border-info bg-black d-flex justify-content-between align-items-center py-3">
+                        <h6 class="mb-0 text-info" style="font-family: 'Orbitron', sans-serif;"><i class="fas fa-video me-2"></i>Camera Preview</h6>
+                        <span class="badge bg-secondary" id="previewStatus">Chưa kết nối</span>
+                    </div>
+                    <div class="card-body p-0 position-relative bg-black" style="aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;">
+                        <video id="previewWebcam" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
+                        <img id="previewRtsp" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <div id="previewPlaceholder" class="text-center text-white-50">
+                            <div class="spinner-border text-info mb-3 d-none" id="previewLoading" role="status"></div>
+                            <i class="fas fa-camera-slash mb-3" id="previewIcon" style="font-size: 3rem;"></i>
+                            <p id="previewText">Chọn nguồn camera để xem trước</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Config -->
+            <div class="col-lg-5">
+                <div class="card bg-black border-info shadow-lg rounded-4 p-4 p-md-5" style="border-width: 2px;">
+                    <h4 class="text-info mb-4 border-bottom border-info pb-3" style="font-family: 'Orbitron', sans-serif;">System Setup</h4>
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-info fw-semibold"><i class="fas fa-video me-2"></i>Nguồn Camera</label>
+                        <select id="setupCamSource" class="form-select bg-dark text-light border-secondary form-select-lg">
+                            <option value="webcam">Webcam Nội Bộ</option>
+                            <option value="rtsp_lan">Camera IMOU (Cắm dây LAN - 1.108)</option>
+                            <option value="rtsp_wan">Camera IMOU (Không dây WAN - 1.80)</option>
+                            <option value="rtsp_custom">RTSP Tùy Chỉnh Khác</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-info fw-semibold"><i class="fas fa-chalkboard-teacher me-2"></i>Lớp Điểm Danh</label>
+                        <select id="setupLopId" class="form-select bg-dark text-light border-secondary form-select-lg">
+                            <option value="">-- Chọn lớp học --</option>
+                            {% for c in classes %}
+                            <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-info fw-semibold"><i class="fas fa-clock me-2"></i>Giờ Bắt Đầu Lớp Học</label>
+                        <input type="time" id="setupStartTime" class="form-control bg-dark text-light border-secondary form-control-lg" value="07:00">
+                    </div>
+
+                    <button id="btnGoLive" class="btn btn-info btn-lg w-100 fw-bold rounded-pill mt-3 shadow" style="font-family: 'Orbitron', sans-serif;">
+                        <i class="fas fa-power-off me-2"></i> INITIALIZE SYSTEM
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Global: Bypass ngrok warning cho tất cả fetch request -->
+<script>
+(function() {
+    const _f = window.fetch;
+    window.fetch = function(u, o) {
+        o = o || {}; o.headers = o.headers || {};
+        if (o.headers instanceof Headers) { const h = {}; o.headers.forEach((v,k) => h[k]=v); h['ngrok-skip-browser-warning']='1'; o.headers=h; }
+        else { o.headers['ngrok-skip-browser-warning'] = '1'; }
+        return _f.call(this, u, o);
+    };
+})();
+</script>
 </body>
 </html>
 

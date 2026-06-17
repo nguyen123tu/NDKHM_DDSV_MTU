@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 import os
 
-def train_yolo26():
+def train_yolo11():
     # 1. Đường dẫn tới file cấu hình dataset (data.yaml)
     # File data.yaml cần định nghĩa đường dẫn train, val, nc (số class), và names (tên class)
     dataset_yaml = "NDKHM_DDSV_MTU/dataset/data.yaml" # Thay đổi thành đường dẫn thực tế của bạn
@@ -12,11 +12,11 @@ def train_yolo26():
         
         return
 
-    print("Bắt đầu khởi tạo model YOLO26...")
+    print("Bắt đầu khởi tạo model YOLO11...")
     
-    # 2. Khởi tạo model YOLO26
-    # Tải pretrained model YOLO26n (nano) cho nhẹ và nhanh, có thể đổi thành yolo26s.pt, yolo26m.pt...
-    model = YOLO("yolo26n.pt")
+    # 2. Khởi tạo model YOLO11
+    # Tải pretrained model YOLO11n (nano) cho nhẹ và nhanh, có thể đổi thành yolo11s.pt, yolo11m.pt...
+    model = YOLO("yolo11n.pt")
 
     # 3. Tiến hành training
     print("Bắt đầu quá trình training...")
@@ -27,7 +27,7 @@ def train_yolo26():
         batch=16,               # Kích thước batch
         device=0,               # Chỉ định GPU id (vd: 0), dùng 'cpu' nếu không có GPU
         project="runs/detect",  # Thư mục lưu kết quả
-        name="yolo26_custom",   # Tên run
+        name="yolo11_custom",   # Tên run
         pretrained=True,        # Sử dụng pretrained weights
         optimizer='auto',       # YOLO26 sẽ tự động ưu tiên các optimizer tối ưu như MuSGD
         patience=50,            # Early stopping patience
@@ -43,4 +43,4 @@ def train_yolo26():
     print(f"mAP50: {metrics.box.map50}")     # mAP tại IoU 0.50
 
 if __name__ == "__main__":
-    train_yolo26()
+    train_yolo11()

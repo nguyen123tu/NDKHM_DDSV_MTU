@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -25,11 +26,20 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
   Map<String, dynamic>? _sessionData;
   List<dynamic> _students = [];
   String? _error;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadDetails();
+    // Auto-refresh mỗi 10 giây để cập nhật khi SV điểm danh trên Kiosk
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) => _silentRefresh());
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadDetails() async {
@@ -37,6 +47,15 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
       _isLoading = true;
       _error = null;
     });
+    await _fetchData();
+  }
+
+  /// Làm mới ngầm (không hiển thị loading spinner)
+  Future<void> _silentRefresh() async {
+    await _fetchData();
+  }
+
+  Future<void> _fetchData() async {
     try {
       final result = await _api.getSessionDetails(widget.sessionId);
       if (mounted) {

@@ -4,10 +4,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/session_model.dart';
 import '../services/api_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/attendance_provider.dart';
+import '../theme/app_theme.dart';
 
 /// Màn hình điểm danh cho sinh viên
 /// Flow: Xem phiên đang mở → Chọn phiên → Quét mặt → Server xác minh
@@ -62,39 +64,76 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text('Điểm Danh', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E293B),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: () { setState(() => _isLoading = true); _loadSessions(); }),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.secondary),
+            onPressed: () { setState(() => _isLoading = true); _loadSessions(); },
+          ),
         ],
       ),
-      body: _isLoading
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
-        : _errorMessage != null
-          ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.wifi_off, size: 48, color: Colors.grey),
-              const SizedBox(height: 12),
-              Text(_errorMessage!, style: const TextStyle(color: Colors.grey)),
-              const SizedBox(height: 12),
-              ElevatedButton(onPressed: _loadSessions, child: const Text('Thử lại')),
-            ]))
-          : _sessions.isEmpty
-            ? _buildEmptyState()
-            : RefreshIndicator(
-                onRefresh: _loadSessions,
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _sessions.length + 1,
-                  itemBuilder: (ctx, i) {
-                    if (i == 0) return _buildHeader();
-                    return _buildSessionCard(_sessions[i - 1]);
-                  },
-                ),
+      body: Stack(
+        children: [
+          // Ambient Background Glows
+          Positioned(
+            top: -100,
+            left: -100,
+            child: Container(
+              width: 300, height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primary.withOpacity(0.15),
               ),
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            right: -50,
+            child: Container(
+              width: 250, height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.secondary.withOpacity(0.1),
+              ),
+            ),
+          ),
+
+          _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.secondary))
+            : _errorMessage != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.wifi_off, size: 48, color: AppTheme.textMuted),
+                  const SizedBox(height: 12),
+                  Text(_errorMessage!, style: const TextStyle(color: AppTheme.textSecondary), textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _loadSessions,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Thử lại'),
+                  ),
+                ]))
+              : _sessions.isEmpty
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: _loadSessions,
+                    color: AppTheme.secondary,
+                    backgroundColor: AppTheme.surface,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _sessions.length + 1,
+                      itemBuilder: (ctx, i) {
+                        if (i == 0) return _buildHeader();
+                        return _buildSessionCard(_sessions[i - 1], i - 1);
+                      },
+                    ),
+                  ),
+        ],
+      ),
     );
   }
 
@@ -104,14 +143,21 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
-          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            colors: [AppTheme.primary, Color(0xFF7C3AED)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8)),
+          ],
         ),
         child: Row(children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
+            child: const Icon(Icons.how_to_reg, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -120,15 +166,15 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
           ])),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-            child: Text('${_sessions.length}', style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 16)),
+            decoration: BoxDecoration(color: AppTheme.success.withOpacity(0.25), borderRadius: BorderRadius.circular(20)),
+            child: Text('${_sessions.length}', style: const TextStyle(color: AppTheme.success, fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         ]),
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, end: 0);
   }
 
-  Widget _buildSessionCard(AttendanceSession session) {
+  Widget _buildSessionCard(AttendanceSession session, int index) {
     final remaining = session.thoiGianConLai;
     final remainingStr = remaining != null ? '${remaining.inMinutes} phút' : 'Không giới hạn';
     final isExpired = session.isExpired;
@@ -138,42 +184,47 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: session.daDiemDanhChua ? Border.all(color: const Color(0xFF10B981), width: 2) : null,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        decoration: AppTheme.glassDecoration(
+          borderRadius: 20,
+          opacity: session.daDiemDanhChua ? 0.08 : 0.05,
+        ).copyWith(
+          border: Border.all(
+            color: session.daDiemDanhChua 
+              ? AppTheme.success.withOpacity(0.4)
+              : Colors.white.withOpacity(0.1),
+            width: session.daDiemDanhChua ? 1.5 : 1,
+          ),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (session.daDiemDanhChua ? const Color(0xFF10B981) : const Color(0xFF2E96EB)).withOpacity(0.1),
+                color: (session.daDiemDanhChua ? AppTheme.success : AppTheme.secondary).withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 session.daDiemDanhChua ? Icons.check_circle : Icons.class_,
-                color: session.daDiemDanhChua ? const Color(0xFF10B981) : const Color(0xFF2E96EB), size: 24,
+                color: session.daDiemDanhChua ? AppTheme.success : AppTheme.secondary, size: 24,
               ),
             ),
             const SizedBox(width: 14),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(session.tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
+              Text(session.tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textPrimary)),
               const SizedBox(height: 4),
-              Text(session.maLop, style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 13)),
+              Text(session.maLop, style: const TextStyle(color: AppTheme.textMuted, fontSize: 13)),
             ])),
             if (session.daDiemDanhChua)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                child: const Text('Đã điểm danh ✓', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 11)),
+                decoration: BoxDecoration(color: AppTheme.success.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+                child: const Text('Đã điểm danh ✓', style: TextStyle(color: AppTheme.success, fontWeight: FontWeight.bold, fontSize: 11)),
               )
             else
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFF2E96EB).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.arrow_forward_ios, color: Color(0xFF2E96EB), size: 16),
+                decoration: BoxDecoration(color: AppTheme.secondary.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.arrow_forward_ios, color: AppTheme.secondary, size: 16),
               ),
           ]),
           const SizedBox(height: 14),
@@ -188,17 +239,17 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
           ]),
         ]),
       ),
-    );
+    ).animate().fadeIn(delay: Duration(milliseconds: 80 * index)).slideX(begin: 0.05, end: 0);
   }
 
   Widget _infoChip(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: const Color(0xFF1E293B).withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.06), borderRadius: BorderRadius.circular(8)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 12, color: const Color(0xFF1E293B).withOpacity(0.5)),
+        Icon(icon, size: 12, color: AppTheme.textMuted),
         const SizedBox(width: 4),
-        Flexible(child: Text(text, style: TextStyle(fontSize: 11, color: const Color(0xFF1E293B).withOpacity(0.6)), overflow: TextOverflow.ellipsis)),
+        Flexible(child: Text(text, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary), overflow: TextOverflow.ellipsis)),
       ]),
     );
   }
@@ -207,22 +258,20 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: const Color(0xFF1E293B).withOpacity(0.06), shape: BoxShape.circle),
-        child: const Icon(Icons.event_busy, color: Color(0xFF1E293B), size: 48),
+        decoration: AppTheme.glassDecoration(shape: BoxShape.circle, opacity: 0.08),
+        child: const Icon(Icons.event_busy, color: AppTheme.textSecondary, size: 48),
       ),
       const SizedBox(height: 20),
-      const Text('Không có phiên điểm danh', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+      const Text('Không có phiên điểm danh', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
       const SizedBox(height: 8),
-      Text('Chờ Admin mở phiên điểm danh cho lớp bạn', style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 14)),
+      const Text('Chờ Admin mở phiên điểm danh cho lớp bạn', style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
       const SizedBox(height: 24),
       ElevatedButton.icon(
         onPressed: () { setState(() => _isLoading = true); _loadSessions(); },
         icon: const Icon(Icons.refresh),
         label: const Text('Làm mới'),
-        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E293B), foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
       ),
-    ]));
+    ])).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.9, 0.9));
   }
 }
 

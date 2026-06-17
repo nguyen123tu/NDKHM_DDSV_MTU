@@ -89,11 +89,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
+      child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.calendar_today_outlined, size: 80, color: AppTheme.textMuted),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text("Chưa có dữ liệu lịch học", style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
         ],
       ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8)),

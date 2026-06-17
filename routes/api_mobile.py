@@ -2067,6 +2067,27 @@ def mark_notification_read(notif_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+@api_mobile_bp.route('/notifications/read-all', methods=['POST'])
+def mark_all_notifications_read():
+    """
+    Đánh dấu tất cả thông báo đã đọc
+    ---
+    tags:
+      - Mobile App API
+    responses:
+      200:
+        description: Thành công
+    """
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        
+        user_id = payload.get('sub')
+        execute_update("UPDATE thong_bao SET da_doc = 1 WHERE sinh_vien_id = %s", (user_id,))
+        return jsonify({"success": True, "message": "Đã đọc tất cả"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
 
 # ================================================================
 # AI CHATBOT (Hỏi đáp AI trên Mobile)
@@ -2177,5 +2198,113 @@ def mobile_chatbot_clear():
         chatbot = get_chatbot()
         chatbot.clear_history(session_id)
         return jsonify({"success": True, "message": "Đã xóa lịch sử chat"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+# ==============================================================================
+# QUẢN LÝ SINH VIÊN (ADMIN ONLY)
+# ==============================================================================
+
+@api_mobile_bp.route('/admin/students', methods=['GET'])
+def mobile_admin_get_students():
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        if payload.get('role') != 'admin':
+            return jsonify({"success": False, "message": "Access Denied"}), 403
+
+        query = request.args.get('q', '').strip()
+        sql = """
+            SELECT sv.id, sv.ho_ten, sv.mssv, sv.trang_thai, sv.sdt, sv.email, l.ma_lop
+            FROM sinh_vien sv
+            LEFT JOIN lop_hoc l ON sv.lop_id = l.id
+        """
+        params = []
+        if query:
+            sql += " WHERE sv.ho_ten LIKE %s OR sv.mssv LIKE %s"
+            params = [f"%{query}%", f"%{query}%"]
+        sql += " ORDER BY sv.ho_ten ASC LIMIT 100"
+
+        students = execute_query(sql, tuple(params))
+        return jsonify({"success": True, "data": students}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@api_mobile_bp.route('/admin/students/<int:student_id>', methods=['PUT'])
+def mobile_admin_update_student(student_id):
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        if payload.get('role') != 'admin':
+            return jsonify({"success": False, "message": "Access Denied"}), 403
+
+        data = request.get_json() or {}
+        ho_ten = data.get('ho_ten', '').strip()
+        mssv = data.get('mssv', '').strip()
+        ma_lop = data.get('ma_lop', '').strip()
+        email = data.get('email', '').strip()
+        sdt = data.get('sdt', '').strip()
+
+        if not ho_ten or not mssv:
+            return jsonify({"success": False, "message": "Họ tên và MSSV không được để trống"}), 400
+
+        exist = execute_query("SELECT id FROM sinh_vien WHERE mssv = %s AND id != %s", (mssv, student_id))
+        if exist:
+            return jsonify({"success": False, "message": "MSSV đã tồn tại"}), 400
+
+        lop_id = None
+        if ma_lop:
+            lop = execute_query("SELECT id FROM lop_hoc WHERE ma_lop = %s", (ma_lop,))
+            if lop: lop_id = lop[0]['id']
+
+        execute_update("""
+            UPDATE sinh_vien 
+            SET ho_ten=%s, mssv=%s, lop_id=%s, email=%s, sdt=%s 
+            WHERE id=%s
+        """, (ho_ten, mssv, lop_id, email, sdt, student_id))
+
+        return jsonify({"success": True, "message": "Cập nhật thành công"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@api_mobile_bp.route('/admin/students/<int:student_id>', methods=['DELETE'])
+def mobile_admin_delete_student(student_id):
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        if payload.get('role') != 'admin':
+            return jsonify({"success": False, "message": "Access Denied"}), 403
+
+        execute_update("DELETE FROM user_encodings WHERE mssv = (SELECT mssv FROM sinh_vien WHERE id = %s)", (student_id,))
+        execute_update("DELETE FROM sinh_vien WHERE id = %s", (student_id,))
+
+        return jsonify({"success": True, "message": "Đã xóa sinh viên"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@api_mobile_bp.route('/admin/students/<int:student_id>/reset-face', methods=['POST'])
+def mobile_admin_reset_face(student_id):
+    try:
+        payload, auth_error = _require_mobile_auth()
+        if auth_error: return auth_error
+        if payload.get('role') != 'admin':
+            return jsonify({"success": False, "message": "Access Denied"}), 403
+
+        sv = execute_query("SELECT mssv FROM sinh_vien WHERE id=%s", (student_id,))
+        if not sv:
+            return jsonify({"success": False, "message": "Không tìm thấy sinh viên"}), 404
+        
+        mssv = sv[0]['mssv']
+        execute_update("DELETE FROM user_encodings WHERE mssv = %s", (mssv,))
+        execute_update("UPDATE sinh_vien SET trang_thai_khuon_mat=0 WHERE id=%s", (student_id,))
+
+        import os
+        import shutil
+        from flask import current_app
+        dataset_path = os.path.join(current_app.root_path, 'dataset', mssv)
+        if os.path.exists(dataset_path):
+            shutil.rmtree(dataset_path)
+
+        return jsonify({"success": True, "message": "Đã xóa dữ liệu khuôn mặt"}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500

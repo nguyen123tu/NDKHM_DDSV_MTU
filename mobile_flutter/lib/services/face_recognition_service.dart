@@ -8,7 +8,7 @@ class FaceRecognitionService {
   factory FaceRecognitionService() => _instance;
   FaceRecognitionService._internal();
 
-  bool _isModelLoaded = false;
+  final bool _isModelLoaded = false;
 
   /// Trạng thái sẵn sàng của mô hình Offline
   bool get isReady => _isModelLoaded;

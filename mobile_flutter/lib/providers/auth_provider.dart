@@ -29,17 +29,33 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> checkAuthStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    
     _hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
+    final useBiometric = prefs.getBool('use_biometric') ?? true; // Default to true to force login screen
+
     final token = prefs.getString('auth_token');
-    if (token != null) {
+    if (token != null && !useBiometric) {
+      // Auto login only if biometric is NOT enabled
       final username = prefs.getString('auth_username') ?? 'Admin';
       final name = prefs.getString('auth_name') ?? 'Admin';
       final role = prefs.getString('auth_role') ?? 'admin';
       _user = UserModel(id: '0', username: username, role: role, name: name);
     }
     notifyListeners();
+  }
+
+  Future<bool> loginWithCachedToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token != null) {
+      final username = prefs.getString('auth_username') ?? 'Admin';
+      final name = prefs.getString('auth_name') ?? 'Admin';
+      final role = prefs.getString('auth_role') ?? 'admin';
+      _user = UserModel(id: '0', username: username, role: role, name: name);
+      notifyListeners();
+      return true;
+    }
+    return false;
   }
 
   /// Login với hỗ trợ Offline:

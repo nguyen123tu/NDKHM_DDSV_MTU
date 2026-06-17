@@ -18,7 +18,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    // Tự động đánh dấu đã đọc tất cả khi mở màn hình thông báo
+    _markAllRead();
   }
 
   Future<void> _loadNotifications() async {
@@ -43,20 +44,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _loadNotifications();
   }
 
+  Future<void> _markAllRead() async {
+    await _api.markAllNotificationsRead();
+    _loadNotifications();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Thông Báo', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Thông Báo',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppTheme.textSecondary), 
-            onPressed: _loadNotifications
+            icon: const Icon(Icons.done_all, color: AppTheme.secondary),
+            tooltip: "Đánh dấu đọc tất cả",
+            onPressed: _markAllRead,
           ),
+          IconButton(
+              icon: const Icon(Icons.refresh, color: AppTheme.textSecondary),
+              onPressed: _loadNotifications),
         ],
       ),
       body: Stack(
@@ -77,7 +88,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
 
           _isLoading
-              ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppTheme.primary))
               : RefreshIndicator(
                   onRefresh: _loadNotifications,
                   color: AppTheme.primary,
@@ -102,12 +114,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
+      child: const Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.notifications_none, size: 80, color: AppTheme.textMuted),
-          const SizedBox(height: 16),
-          Text('Bạn không có thông báo nào', style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
+          SizedBox(height: 16),
+          Text('Bạn không có thông báo nào',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
         ],
       ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8)),
     );
@@ -117,7 +130,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: AppTheme.glassDecoration(
-        borderRadius: 16, 
+        borderRadius: 16,
         opacity: isRead ? 0.03 : 0.08,
       ).copyWith(
         border: Border.all(
@@ -139,11 +152,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isRead ? AppTheme.surfaceLight : AppTheme.primary.withOpacity(0.15),
+                    color: isRead
+                        ? AppTheme.surfaceLight
+                        : AppTheme.primary.withOpacity(0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    isRead ? Icons.notifications_outlined : Icons.notifications_active,
+                    isRead
+                        ? Icons.notifications_outlined
+                        : Icons.notifications_active,
                     color: isRead ? AppTheme.textMuted : AppTheme.primary,
                     size: 24,
                   ),
@@ -157,24 +174,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       Text(
                         n['tieu_de'] ?? 'Thông báo',
                         style: TextStyle(
-                          fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                          fontWeight:
+                              isRead ? FontWeight.normal : FontWeight.bold,
                           fontSize: 16,
-                          color: isRead ? AppTheme.textSecondary : AppTheme.textPrimary,
+                          color: isRead
+                              ? AppTheme.textSecondary
+                              : AppTheme.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        n['noi_dung'] ?? '', 
+                        n['noi_dung'] ?? '',
                         style: TextStyle(
-                          fontSize: 14, 
-                          color: isRead ? AppTheme.textMuted : AppTheme.textSecondary,
+                          fontSize: 14,
+                          color: isRead
+                              ? AppTheme.textMuted
+                              : AppTheme.textSecondary,
                           height: 1.4,
                         ),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        n['created_at'] ?? '', 
-                        style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                        n['created_at'] ?? '',
+                        style: const TextStyle(
+                            fontSize: 12, color: AppTheme.textMuted),
                       ),
                     ],
                   ),
@@ -189,17 +212,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       color: AppTheme.secondary,
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(color: AppTheme.secondary.withOpacity(0.5), blurRadius: 8, spreadRadius: 2)
+                        BoxShadow(
+                            color: AppTheme.secondary.withOpacity(0.5),
+                            blurRadius: 8,
+                            spreadRadius: 2)
                       ],
                     ),
-                  ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-                   .fade(begin: 0.5, end: 1.0)
-                   .scale(begin: const Offset(0.8, 0.8), end: const Offset(1.2, 1.2)),
+                  )
+                      .animate(
+                          onPlay: (controller) =>
+                              controller.repeat(reverse: true))
+                      .fade(begin: 0.5, end: 1.0)
+                      .scale(
+                          begin: const Offset(0.8, 0.8),
+                          end: const Offset(1.2, 1.2)),
               ],
             ),
           ),
         ),
       ),
-    ).animate().fadeIn(delay: Duration(milliseconds: 100 * index)).slideY(begin: 0.2, end: 0);
+    )
+        .animate()
+        .fadeIn(delay: Duration(milliseconds: 100 * index))
+        .slideY(begin: 0.2, end: 0);
   }
 }

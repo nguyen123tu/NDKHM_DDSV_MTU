@@ -26,16 +26,10 @@
                 <i class="fas fa-volume-up me-1"></i> Bật Loa
             </button>
             <audio id="ttsAudio" style="display:none;"></audio>
-            <select id="selectCamSource" class="form-select bg-dark text-light border-secondary" style="min-width: 150px; font-size: 1.1rem; padding: 0.5rem 1rem;">
-                <option value="webcam">Webcam Nội Bộ</option>
-                <option value="rtsp">Camera IMOU (LAN)</option>
-            </select>
-            <select id="selectLopId" class="form-select bg-dark text-light border-secondary" style="min-width: 250px; font-size: 1.1rem; padding: 0.5rem 1rem;">
-                <option value="">-- Chọn lớp đang mở --</option>
-                {% for c in classes %}
-                <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
-                {% endfor %}
-            </select>
+            
+            <button id="btnShowConfig" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="fas fa-cog me-1"></i> Cấu hình
+            </button>
             <div class="realtime-clock ms-3" id="realtimeClock">--:--:--</div>
         </div>
     </div>
@@ -139,6 +133,89 @@
     </div>
 </div>
 
+<!-- ===== Pre-Livestream Setup Screen ===== -->
+<div id="setupScreen" class="position-fixed top-0 start-0 w-100 h-100 z-3 d-flex flex-column" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); overflow-y: auto;">
+    <div class="container flex-grow-1 d-flex flex-column justify-content-center py-5">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold text-white mb-2"><i class="fas fa-satellite-dish text-info me-3"></i>MTUFace Kiosk Setup</h1>
+            <p class="text-white-50 fs-5">Kiểm tra kết nối và cấu hình phiên điểm danh trước khi bắt đầu</p>
+        </div>
+
+        <div class="row g-5 align-items-center">
+            <!-- Left: Preview -->
+            <div class="col-lg-7">
+                <div class="card bg-dark border-secondary shadow-lg rounded-4 overflow-hidden">
+                    <div class="card-header border-secondary bg-black d-flex justify-content-between align-items-center py-3">
+                        <h6 class="mb-0 text-white"><i class="fas fa-video me-2 text-info"></i>Camera Preview</h6>
+                        <span class="badge bg-secondary" id="previewStatus">Chưa kết nối</span>
+                    </div>
+                    <div class="card-body p-0 position-relative bg-black" style="aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;">
+                        <video id="previewWebcam" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
+                        <img id="previewRtsp" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <div id="previewPlaceholder" class="text-center text-white-50">
+                            <div class="spinner-border text-secondary mb-3 d-none" id="previewLoading" role="status"></div>
+                            <i class="fas fa-camera-slash mb-3" id="previewIcon" style="font-size: 3rem;"></i>
+                            <p id="previewText">Chọn nguồn camera để xem trước</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Config -->
+            <div class="col-lg-5">
+                <div class="card bg-dark border-secondary shadow-lg rounded-4 p-4 p-md-5">
+                    <h4 class="text-white mb-4 border-bottom border-secondary pb-3">Cài Đặt Phiên</h4>
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-white-50 fw-semibold"><i class="fas fa-video me-2"></i>Nguồn Camera</label>
+                        <select id="setupCamSource" class="form-select bg-dark text-light border-secondary form-select-lg">
+                            <option value="webcam">Webcam Nội Bộ</option>
+                            <option value="rtsp_lan">Camera IMOU (Cắm dây LAN - 1.108)</option>
+                            <option value="rtsp_wan">Camera IMOU (Không dây WAN - 1.80)</option>
+                            <option value="rtsp_custom">RTSP Tùy Chỉnh Khác</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-white-50 fw-semibold"><i class="fas fa-chalkboard-teacher me-2"></i>Lớp Điểm Danh</label>
+                        <select id="setupLopId" class="form-select bg-dark text-light border-secondary form-select-lg">
+                            <option value="">-- Chọn lớp đang mở --</option>
+                            {% for c in classes %}
+                            <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-white-50 fw-semibold"><i class="fas fa-clock me-2"></i>Ca / Giờ Điểm Danh</label>
+                        <select id="setupStartTime" class="form-select bg-dark text-light border-secondary form-select-lg">
+                            <option value="07:00">Ca Sáng (07:00 - 11:30)</option>
+                            <option value="13:00">Ca Chiều (13:00 - 17:30)</option>
+                            <option value="18:00">Ca Tối (18:00 - 21:00)</option>
+                        </select>
+                    </div>
+
+                    <button id="btnGoLive" class="btn btn-info btn-lg w-100 fw-bold rounded-pill mt-3 shadow position-relative overflow-hidden group">
+                        <span class="position-relative z-1"><i class="fas fa-broadcast-tower me-2"></i> BẮT ĐẦU KIOSK</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Global: Bypass ngrok warning cho tất cả fetch request -->
+<script>
+(function() {
+    const _f = window.fetch;
+    window.fetch = function(u, o) {
+        o = o || {}; o.headers = o.headers || {};
+        if (o.headers instanceof Headers) { const h = {}; o.headers.forEach((v,k) => h[k]=v); h['ngrok-skip-browser-warning']='1'; o.headers=h; }
+        else { o.headers['ngrok-skip-browser-warning'] = '1'; }
+        return _f.call(this, u, o);
+    };
+})();
+</script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/pages/public_selfcheck.js') }}"></script>
