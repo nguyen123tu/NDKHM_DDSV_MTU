@@ -70,10 +70,10 @@ def get_all(lop_id=None, search=None, page=1, per_page=20):
         FROM sinh_vien sv
         LEFT JOIN lop_hoc lh ON sv.lop_id = lh.id
         WHERE {where_clause}
-        ORDER BY sv.id DESC
-        LIMIT %s OFFSET %s
+        ORDER BY created_at DESC
+        OFFSET %s ROWS FETCH NEXT %s ROWS ONLY
     """
-    params.extend([per_page, offset])
+    params.extend([offset, per_page])
     items = execute_query(data_sql, tuple(params))
 
     return {

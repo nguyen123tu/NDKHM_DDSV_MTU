@@ -10,6 +10,8 @@ import '../services/api_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/attendance_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
+import '../widgets/neu_button.dart';
 
 /// Màn hình điểm danh cho sinh viên
 /// Flow: Xem phiên đang mở → Chọn phiên → Quét mặt → Server xác minh
@@ -64,7 +66,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Điểm Danh', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
@@ -79,29 +81,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
       ),
       body: Stack(
         children: [
-          // Ambient Background Glows
-          Positioned(
-            top: -100,
-            left: -100,
-            child: Container(
-              width: 300, height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(0.15),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            right: -50,
-            child: Container(
-              width: 250, height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.secondary.withOpacity(0.1),
-              ),
-            ),
-          ),
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           _isLoading
             ? const Center(child: CircularProgressIndicator(color: AppTheme.secondary))
@@ -140,33 +120,23 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
+      child: NeuContainer(
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppTheme.primary, Color(0xFF7C3AED)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8)),
-          ],
-        ),
+        borderRadius: 20,
         child: Row(children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
             child: const Icon(Icons.how_to_reg, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Phiên Điểm Danh', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-            Text('Chọn lớp đang mở để quét khuôn mặt', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+            const Text('Phiên Điểm Danh', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Chọn lớp đang mở để quét khuôn mặt', style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
           ])),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: AppTheme.success.withOpacity(0.25), borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(color: AppTheme.success.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(20)),
             child: Text('${_sessions.length}', style: const TextStyle(color: AppTheme.success, fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         ]),
@@ -181,26 +151,17 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
 
     return GestureDetector(
       onTap: isExpired ? null : () => _openScanForSession(session),
-      child: Container(
+      child: NeuContainer(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(18),
-        decoration: AppTheme.glassDecoration(
-          borderRadius: 20,
-          opacity: session.daDiemDanhChua ? 0.08 : 0.05,
-        ).copyWith(
-          border: Border.all(
-            color: session.daDiemDanhChua 
-              ? AppTheme.success.withOpacity(0.4)
-              : Colors.white.withOpacity(0.1),
-            width: session.daDiemDanhChua ? 1.5 : 1,
-          ),
-        ),
+        borderRadius: 20,
+        isPressed: session.daDiemDanhChua,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (session.daDiemDanhChua ? AppTheme.success : AppTheme.secondary).withOpacity(0.15),
+                color: (session.daDiemDanhChua ? AppTheme.success : AppTheme.secondary).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -217,13 +178,13 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
             if (session.daDiemDanhChua)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: AppTheme.success.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: AppTheme.success.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
                 child: const Text('Đã điểm danh ✓', style: TextStyle(color: AppTheme.success, fontWeight: FontWeight.bold, fontSize: 11)),
               )
             else
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppTheme.secondary.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: AppTheme.secondary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
                 child: const Icon(Icons.arrow_forward_ios, color: AppTheme.secondary, size: 16),
               ),
           ]),
@@ -245,7 +206,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
   Widget _infoChip(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.06), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 12, color: AppTheme.textMuted),
         const SizedBox(width: 4),
@@ -256,9 +217,9 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
 
   Widget _buildEmptyState() {
     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Container(
+      NeuContainer(
         padding: const EdgeInsets.all(24),
-        decoration: AppTheme.glassDecoration(shape: BoxShape.circle, opacity: 0.08),
+        shape: BoxShape.circle,
         child: const Icon(Icons.event_busy, color: AppTheme.textSecondary, size: 48),
       ),
       const SizedBox(height: 20),
@@ -330,41 +291,6 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
       
       double? lat;
       double? lng;
-      try {
-        setState(() => _statusMessage = 'Đang kiểm tra quyền vị trí...');
-        
-        // Kiểm tra service và quyền GPS
-        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (!serviceEnabled) {
-          throw Exception('Vui lòng vuốt từ trên xuống và Bật GPS (Vị trí) trên điện thoại!');
-        }
-
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
-          if (permission == LocationPermission.denied) {
-            throw Exception('Bạn cần cấp quyền vị trí để điểm danh');
-          }
-        }
-        
-        if (permission == LocationPermission.deniedForever) {
-          throw Exception('Vui lòng vào Cài đặt máy để cấp quyền vị trí cho MTU Face');
-        }
-
-        setState(() => _statusMessage = 'Đang lấy vị trí GPS...');
-        Position pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 7)),
-        );
-        lat = pos.latitude;
-        lng = pos.longitude;
-      } catch (e) {
-        if (mounted) {
-          setState(() { _success = false; _statusMessage = e.toString().replaceAll('Exception: ', ''); });
-          await Future.delayed(const Duration(seconds: 3));
-        }
-        // Vẫn tiếp tục nếu Backend không yêu cầu GPS khắt khe, 
-        // nhưng nếu Backend yêu cầu, backend sẽ tự trả về lỗi.
-      }
 
       setState(() => _statusMessage = 'Đang gửi lên server xác minh...');
       final bytes = await image.readAsBytes();
@@ -409,7 +335,7 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
           Container(color: const Color(0xFF0F172A), child: const Center(child: CircularProgressIndicator(color: Color(0xFF2E96EB)))),
 
         // Dark overlay
-        Positioned.fill(child: Container(color: Colors.black.withOpacity(0.3))),
+        Positioned.fill(child: Container(color: Colors.black.withValues(alpha: 0.3))),
 
         // Top bar
         Positioned(top: 0, left: 0, right: 0, child: SafeArea(child: Padding(
@@ -420,7 +346,7 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
               child: ClipRRect(borderRadius: BorderRadius.circular(12), child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                  color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18)),
               )),
             ),
@@ -428,10 +354,10 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
             Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(12), child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(widget.session.tenLop, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  Text(widget.session.maLop, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11)),
+                  Text(widget.session.maLop, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11)),
                 ]),
               ),
             ))),
@@ -446,9 +372,9 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: (_success == true ? const Color(0xFF10B981) : _success == false ? Colors.redAccent : Colors.blueAccent).withOpacity(0.25),
+                  color: (_success == true ? const Color(0xFF10B981) : _success == false ? Colors.redAccent : Colors.blueAccent).withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: (_success == true ? const Color(0xFF10B981) : _success == false ? Colors.redAccent : Colors.blueAccent).withOpacity(0.4)),
+                  border: Border.all(color: (_success == true ? const Color(0xFF10B981) : _success == false ? Colors.redAccent : Colors.blueAccent).withValues(alpha: 0.4)),
                 ),
                 child: Row(children: [
                   Icon(_success == true ? Icons.check_circle : _success == false ? Icons.error : Icons.hourglass_empty,
@@ -465,7 +391,7 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text('Đưa khuôn mặt vào khung hình và nhấn nút bên dưới',
-              textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14)),
+              textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14)),
             const SizedBox(height: 20),
             GestureDetector(
               onTap: _isProcessing ? null : _captureAndCheckin,
@@ -474,8 +400,8 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
                   width: 72, height: 72,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.5 + _pulseController.value * 0.5), width: 3),
-                    boxShadow: [BoxShadow(color: const Color(0xFF2E96EB).withOpacity(0.3 * _pulseController.value), blurRadius: 20)],
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.5 + _pulseController.value * 0.5), width: 3),
+                    boxShadow: [BoxShadow(color: const Color(0xFF2E96EB).withValues(alpha: 0.3 * _pulseController.value), blurRadius: 20)],
                   ),
                   child: Container(
                     margin: const EdgeInsets.all(4),

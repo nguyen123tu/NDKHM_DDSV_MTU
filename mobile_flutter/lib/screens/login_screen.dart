@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
+import '../widgets/neu_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -65,11 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
         final auth = Provider.of<AuthProvider>(context, listen: false);
         final success = await auth.loginWithCachedToken();
         if (!success) {
-          if (mounted)
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text(
                     'Vui lòng đăng nhập bằng mật khẩu để kích hoạt sinh trắc học!'),
                 backgroundColor: AppTheme.error));
+          }
         }
       }
     } catch (e) {
@@ -102,34 +105,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Ambient Background Glows (Static)
-          Positioned(
-            top: -100,
-            left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(0.15),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            right: -50,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.secondary.withOpacity(0.1),
-              ),
-            ),
-          ),
+          // Background - Clean Neumorphism
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           SafeArea(
             child: Center(
@@ -138,32 +118,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Glass Card
-                    Container(
+                    // Neumorphic Card
+                    NeuContainer(
                       padding: const EdgeInsets.all(32),
-                      decoration: AppTheme.glassDecoration(
-                        borderRadius: 32,
-                        opacity: 0.05,
-                      ),
+                      borderRadius: 32,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // Logo Section
-                          Container(
+                          NeuContainer(
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
-                                  width: 1),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primary.withOpacity(0.3),
-                                  blurRadius: 20,
-                                )
-                              ],
-                            ),
+                            shape: BoxShape.circle,
                             child: ClipOval(
                               child: Image.asset(
                                 "assets/images/logo_MTU.png",
@@ -268,13 +233,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Sign In Button
                           SizedBox(
                             width: double.infinity,
-                            height: 55,
-                            child: ElevatedButton(
+                            child: NeuButton(
+                              isPrimary: true,
                               onPressed: auth.isLoading ? null : _handleLogin,
-                              child: auth.isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: AppTheme.textPrimary)
-                                  : const Text("ĐĂNG NHẬP"),
+                              child: Center(
+                                child: auth.isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                            color: Colors.white, strokeWidth: 2),
+                                      )
+                                    : const Text("ĐĂNG NHẬP", style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
                             ),
                           ).animate().fadeIn(delay: 350.ms),
 
@@ -284,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (_canCheckBiometrics) ...[
                             SizedBox(
                               width: double.infinity,
-                              child: OutlinedButton.icon(
+                              child: NeuButton(
                                 onPressed: auth.isLoading
                                     ? null
                                     : () {
@@ -299,18 +270,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                           _authenticateWithBiometrics();
                                         }
                                       },
-                                icon: const Icon(Icons.fingerprint, size: 28),
-                                label: const Text(
-                                    "Đăng nhập bằng Vân tay / Face ID"),
-                                style: OutlinedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
-                                  foregroundColor: AppTheme.secondary,
-                                  side: BorderSide(
-                                      color:
-                                          AppTheme.secondary.withOpacity(0.5)),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16)),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.fingerprint, size: 28),
+                                    SizedBox(width: 12),
+                                    Text("Vân tay / Face ID", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ],
                                 ),
                               ),
                             ).animate().fadeIn(delay: 380.ms),
@@ -380,8 +346,9 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     bool isPassword = false,
   }) {
-    return Container(
-      decoration: AppTheme.glassDecoration(opacity: 0.05, borderRadius: 16),
+    return NeuContainer(
+      isPressed: true, // Lõm xuống (Sunken effect) cho input
+      borderRadius: 16,
       child: TextField(
         controller: controller,
         obscureText: isPassword && !_isPasswordVisible,
@@ -412,7 +379,7 @@ class _LoginScreenState extends State<LoginScreen> {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-                color: AppTheme.primary.withOpacity(0.5), width: 1.5),
+                color: AppTheme.primary.withValues(alpha: 0.5), width: 1.5),
           ),
         ),
       ),

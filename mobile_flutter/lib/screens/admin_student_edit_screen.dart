@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
 
 class AdminStudentEditScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -100,10 +101,11 @@ class _AdminStudentEditScreenState extends State<AdminStudentEditScreen> {
                     backgroundColor: AppTheme.success));
                 Navigator.pop(context, true);
               } else {
-                if (mounted)
+                if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text(res['message'] ?? 'Lỗi xóa'),
                       backgroundColor: AppTheme.error));
+                }
               }
             },
             child: const Text('Xóa', style: TextStyle(color: Colors.white)),
@@ -141,10 +143,11 @@ class _AdminStudentEditScreenState extends State<AdminStudentEditScreen> {
                     content: Text('Đã reset Face ID'),
                     backgroundColor: AppTheme.success));
               } else {
-                if (mounted)
+                if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text(res['message'] ?? 'Lỗi reset'),
                       backgroundColor: AppTheme.error));
+                }
               }
             },
             child: const Text('Reset', style: TextStyle(color: Colors.white)),
@@ -157,7 +160,7 @@ class _AdminStudentEditScreenState extends State<AdminStudentEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Sửa Sinh Viên',
             style: TextStyle(fontWeight: FontWeight.bold)),
@@ -199,12 +202,9 @@ class _AdminStudentEditScreenState extends State<AdminStudentEditScreen> {
               const SizedBox(height: 32),
 
               // Dangerous Actions Area
-              Container(
+              NeuContainer(
                 padding: const EdgeInsets.all(16),
-                decoration: AppTheme.glassDecoration(
-                    borderRadius: 16,
-                    opacity: 0.05,
-                    color: AppTheme.error.withOpacity(0.05)),
+                borderRadius: 16,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -233,7 +233,7 @@ class _AdminStudentEditScreenState extends State<AdminStudentEditScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.error.withOpacity(0.8),
+                          backgroundColor: AppTheme.error.withValues(alpha: 0.8),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -266,14 +266,15 @@ class _AdminStudentEditScreenState extends State<AdminStudentEditScreen> {
                 fontSize: 13,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Container(
-          decoration: AppTheme.glassDecoration(borderRadius: 12),
+        NeuContainer(
+          borderRadius: 12,
           child: TextFormField(
             controller: controller,
             style: const TextStyle(color: AppTheme.textPrimary),
             validator: (value) {
-              if (required && (value == null || value.isEmpty))
+              if (required && (value == null || value.isEmpty)) {
                 return 'Vui lòng nhập $label';
+              }
               return null;
             },
             decoration: InputDecoration(

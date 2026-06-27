@@ -382,3 +382,29 @@ def reject_face(id):
     else:
         flash("Có lỗi xảy ra", "danger")
     return redirect(url_for('students.pending_faces'))
+
+@students_bp.route('/api/send-notification', methods=['POST'])
+@login_required
+def api_send_notification():
+    """
+    Gửi thông báo đẩy (Push Notification) cho sinh viên
+    ---
+    tags:
+      - Web API
+    """
+    data = request.json
+    title = data.get('title')
+    body = data.get('body')
+    mssv_list = data.get('mssv_list', [])
+    
+    if not title or not body:
+        return jsonify({'success': False, 'msg': 'Vui lòng nhập đầy đủ Tiêu đề và Nội dung'})
+        
+    from services.fcm_service import send_custom_notification
+    success_count = send_custom_notification(title, body, mssv_list)
+    
+    msg = f'Đã gửi thông báo thành công cho {success_count} thiết bị'
+    if not mssv_list:
+        msg = f'Đã gửi thông báo cho toàn bộ {success_count} sinh viên (có sử dụng App)'
+        
+    return jsonify({'success': True, 'msg': msg, 'count': success_count})

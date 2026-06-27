@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -46,7 +47,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Lịch học MTU"),
         backgroundColor: Colors.transparent,
@@ -55,21 +56,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       ),
       body: Stack(
         children: [
-          // Ambient Glow
-          Positioned(
-            top: -100,
-            right: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.secondary.withOpacity(0.15),
-                backgroundBlendMode: BlendMode.screen,
-              ),
-            ),
-          ),
-          
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
           _isLoading
               ? const Center(child: CircularProgressIndicator(color: AppTheme.secondary))
               : _schedules.isEmpty
@@ -101,18 +88,30 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildScheduleCard(dynamic item, int index) {
-    return Container(
+    return NeuContainer(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: AppTheme.glassDecoration(borderRadius: 16, opacity: 0.05),
+      borderRadius: 16,
       child: IntrinsicHeight(
         child: Row(
           children: [
             // Cột hiển thị Thứ
             Container(
               width: 80,
-              decoration: const BoxDecoration(
-                color: AppTheme.surfaceLight,
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(16), bottomLeft: Radius.circular(16)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), bottomLeft: Radius.circular(16)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    offset: const Offset(-1, -1),
+                    blurRadius: 2,
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    offset: const Offset(1, 1),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

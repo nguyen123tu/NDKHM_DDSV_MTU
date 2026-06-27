@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart' show sha256;
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../services/firebase_messaging_service.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -93,7 +94,7 @@ class AuthProvider with ChangeNotifier {
           try {
             await FirebaseMessagingService().updateDeviceToken();
           } catch(e) {
-            print("Không thể cập nhật FCM token lúc login: $e");
+            debugPrint("Không thể cập nhật FCM token lúc login: $e");
           }
 
           notifyListeners();
@@ -105,7 +106,7 @@ class AuthProvider with ChangeNotifier {
         }
       } catch (e) {
         // API lỗi → thử offline fallback
-        print('[AUTH] Online login failed, trying offline: $e');
+        debugPrint('[AUTH] Online login failed, trying offline: $e');
         return _tryOfflineLogin(username, password);
       }
     } else {

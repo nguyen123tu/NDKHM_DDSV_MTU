@@ -318,7 +318,7 @@ def mobile_checkin():
     elif lop_id:
         # Kiểm tra có phiên đang mở cho lớp này không
         session = execute_one(
-            "SELECT * FROM phien_diem_danh WHERE lop_id = %s AND trang_thai = 1 ORDER BY bat_dau DESC LIMIT 1",
+            "SELECT TOP 1 * FROM phien_diem_danh WHERE lop_id = %s AND trang_thai = 1 ORDER BY bat_dau DESC",
             (lop_id,)
         )
         if not session:
@@ -445,8 +445,8 @@ def mobile_checkout():
         sv = execute_one("SELECT id FROM sinh_vien WHERE mssv = %s", (mssv,))
         if sv:
             execute_update(
-                "UPDATE diem_danh SET ghi_chu = %s WHERE sinh_vien_id = %s AND lop_id = %s AND DATE(thoi_gian) = CURDATE() ORDER BY id DESC LIMIT 1",
-                (f"EVIDENCE:{evidence_path}", sv["id"], lop_id),
+                "WITH cte AS (SELECT TOP 1 * FROM diem_danh WHERE sinh_vien_id = %s AND lop_id = %s AND CAST(thoi_gian AS DATE) = CAST(GETDATE() AS DATE) ORDER BY id DESC) UPDATE cte SET ghi_chu = %s",
+                (sv["id"], lop_id, f"EVIDENCE:{evidence_path}")
             )
 
     return jsonify({
@@ -484,14 +484,14 @@ def get_stats():
             lop_id = lop_row['lop_id'] if lop_row else 0
             
             total_sessions_row = execute_one(
-                "SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s AND DATE(bat_dau) = %s", 
-                (lop_id, today_str)
+                "SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s AND CAST(bat_dau AS DATE) = CAST(GETDATE() AS DATE)", 
+                (lop_id,)
             )
             total_sessions = total_sessions_row['count'] if total_sessions_row else 0
 
             present_row = execute_one(
-                "SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND DATE(thoi_gian) = %s AND trang_thai = 'Co mat'",
-                (user_id, today_str)
+                "SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND CAST(thoi_gian AS DATE) = CAST(GETDATE() AS DATE) AND trang_thai = 'Co mat'",
+                (user_id,)
             )
             present_sv = present_row['count'] if present_row else 0
             absent_sv = total_sessions - present_sv if total_sessions > present_sv else 0
@@ -508,8 +508,7 @@ def get_stats():
 
         total_sv_row = execute_one("SELECT COUNT(*) as count FROM sinh_vien")
         present_sv_row = execute_one(
-            "SELECT COUNT(DISTINCT sinh_vien_id) as count FROM diem_danh WHERE DATE(thoi_gian) = %s AND trang_thai = 'Co mat'",
-            (today_str,),
+            "SELECT COUNT(DISTINCT sinh_vien_id) as count FROM diem_danh WHERE CAST(thoi_gian AS DATE) = CAST(GETDATE() AS DATE) AND trang_thai = 'Co mat'"
         )
         total_sv = total_sv_row['count'] if total_sv_row else 0
         present_sv = present_sv_row['count'] if present_sv_row else 0
@@ -560,22 +559,22 @@ def get_history():
             FROM diem_danh dd
             JOIN sinh_vien sv ON dd.sinh_vien_id = sv.id
             LEFT JOIN lop_hoc l ON dd.lop_id = l.id
-            WHERE (%s IS NULL OR sv.mssv = %s)
-              AND (%s IS NULL OR l.id = %s)
-              AND (%s IS NULL OR DATE(dd.thoi_gian) = %s)
-              AND (%s IS NULL OR MONTH(dd.thoi_gian) = %s)
-              AND (%s IS NULL OR YEAR(dd.thoi_gian) = %s)
+            WHERE (@mssv IS NULL OR sv.mssv = @mssv)
+              AND (@lop_id IS NULL OR l.id = @lop_id)
+              AND (@date IS NULL OR CAST(dd.thoi_gian AS DATE) = @date)
+              AND (@month IS NULL OR MONTH(dd.thoi_gian) = @month)
+              AND (@year IS NULL OR YEAR(dd.thoi_gian) = @year)
             ORDER BY dd.thoi_gian DESC
-            LIMIT %s
+            OFFSET 0 ROWS FETCH NEXT @limit ROWS ONLY
         """
-        params = (
-            mssv_query, mssv_query, 
-            lop_id, lop_id, 
-            date_query, date_query,
-            month_query, month_query,
-            year_query, year_query,
-            limit
-        )
+        params = {
+            "mssv": mssv_query,
+            "lop_id": lop_id,
+            "date": date_query,
+            "month": month_query,
+            "year": year_query,
+            "limit": limit
+        }
         records = execute_query(sql, params)
         
         # Chuyển đổi datetime sang chuỗi để JSON Serializable
@@ -662,6 +661,13 @@ def mobile_register_face():
     mssv = (data.get("mssv") or "").strip()
     ho_ten = (data.get("ho_ten") or "").strip()
     lop_id = data.get("lop_id")
+    email = (data.get("email") or "").strip()
+    sdt = (data.get("sdt") or "").strip()
+    ngay_sinh = data.get("ngay_sinh")
+    gioi_tinh = data.get("gioi_tinh")
+    if ngay_sinh == "": ngay_sinh = None
+    if email == "": email = None
+    if sdt == "": sdt = None
     images = data.get("images", []) # array base64
     
     if not mssv or not ho_ten or not lop_id:
@@ -673,7 +679,7 @@ def mobile_register_face():
     from services import student_service
     
     # Kiểm tra xem sinh viên có tồn tại trong hệ thống không
-    sv = execute_one("SELECT id, ho_ten FROM sinh_vien WHERE mssv = %s", (mssv,))
+    sv = execute_one("SELECT id, ho_ten, password_hash FROM sinh_vien WHERE mssv = %s", (mssv,))
     
     if not sv:
         # TRƯỜNG HỢP 1: Sinh viên chưa có trong hệ thống -> Tự động đăng ký mới
@@ -683,9 +689,9 @@ def mobile_register_face():
             default_password = generate_password_hash("123456", method='pbkdf2:sha256')
             
             new_id = execute_update(
-                """INSERT INTO sinh_vien (mssv, ho_ten, lop_id, avatar, password_hash, trang_thai, trang_thai_face, created_at) 
-                   VALUES (%s, %s, %s, %s, %s, 1, 1, NOW())""",
-                (mssv, ho_ten, lop_id, f"{mssv}/0.jpg", default_password)
+                """INSERT INTO sinh_vien (mssv, ho_ten, lop_id, avatar, password_hash, trang_thai, trang_thai_face, email, sdt, ngay_sinh, gioi_tinh, created_at) 
+                   VALUES (%s, %s, %s, %s, %s, 1, 1, %s, %s, %s, %s, GETDATE())""",
+                (mssv, ho_ten, lop_id, f"{mssv}/0.jpg", default_password, email, sdt, ngay_sinh, gioi_tinh)
             )
             sv_id = new_id
         except Exception as e:
@@ -697,10 +703,20 @@ def mobile_register_face():
         if ho_ten.lower() != sv['ho_ten'].lower():
             return jsonify({"success": False, "message": "Họ tên không khớp với dữ liệu hệ thống của MSSV này"}), 400
         
-        student_service.update(sv_id, {
+        update_data = {
             'avatar': f"{mssv}/0.jpg",
-            'trang_thai_face': 1
-        })
+            'trang_thai_face': 1,
+            'email': email,
+            'sdt': sdt,
+            'ngay_sinh': ngay_sinh,
+            'gioi_tinh': gioi_tinh
+        }
+        
+        # Nếu sinh viên chưa có mật khẩu -> tự đặt mật khẩu mặc định 123456
+        if not sv.get('password_hash'):
+            update_data['password_hash'] = generate_password_hash("123456", method='pbkdf2:sha256')
+        
+        student_service.update(sv_id, update_data)
         
     # Tạo thư mục chứa ảnh
     student_dir = os.path.join(Config.DATABASE_DIR, mssv)
@@ -1202,7 +1218,7 @@ def sync_sessions():
     try:
         # Auto-close expired sessions
         execute_update(
-            "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE trang_thai = 1 AND het_han IS NOT NULL AND het_han < NOW()"
+            "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = GETDATE() WHERE trang_thai = 1 AND het_han IS NOT NULL AND het_han < GETDATE()"
         )
 
         role = payload.get('role', 'admin')
@@ -1315,20 +1331,18 @@ def sync_notifications():
     try:
         if role == 'student':
             sql = """
-                SELECT id, tieu_de, noi_dung, da_doc, created_at 
+                SELECT TOP 50 id, tieu_de, noi_dung, da_doc, created_at 
                 FROM thong_bao 
                 WHERE sinh_vien_id = %s 
-                ORDER BY created_at DESC 
-                LIMIT 50
+                ORDER BY created_at DESC
             """
             notifications = execute_query(sql, (user_id,))
         else:
             # Admin: lấy thông báo hệ thống hoặc tất cả
             sql = """
-                SELECT id, tieu_de, noi_dung, da_doc, created_at 
+                SELECT TOP 50 id, tieu_de, noi_dung, da_doc, created_at 
                 FROM thong_bao 
-                ORDER BY created_at DESC 
-                LIMIT 50
+                ORDER BY created_at DESC
             """
             notifications = execute_query(sql)
 
@@ -1408,7 +1422,7 @@ def create_session():
     
     new_id = execute_update(
         """INSERT INTO phien_diem_danh (lop_id, admin_id, trang_thai, mo_ta, bat_dau, het_han, vi_do, kinh_do)
-           VALUES (%s, %s, 1, %s, NOW(), %s, %s, %s)""",
+           VALUES (%s, %s, 1, %s, GETDATE(), %s, %s, %s)""",
         (lop_id, admin_id, mo_ta, het_han.strftime('%Y-%m-%d %H:%M:%S'), vi_do, kinh_do)
     )
 
@@ -1487,7 +1501,7 @@ def get_active_sessions():
     try:
         # Auto-close các phiên đã hết hạn
         execute_update(
-            "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE trang_thai = 1 AND het_han IS NOT NULL AND het_han < NOW()"
+            "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = GETDATE() WHERE trang_thai = 1 AND het_han IS NOT NULL AND het_han < GETDATE()"
         )
 
         if role == 'student':
@@ -1555,7 +1569,7 @@ def stop_session_api(session_id):
         return jsonify({"success": False, "message": "Phiên đã đóng trước đó"}), 409
 
     execute_update(
-        "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE id = %s",
+        "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = GETDATE() WHERE id = %s",
         (session_id,)
     )
 
@@ -1568,7 +1582,7 @@ def stop_session_api(session_id):
         present_sql = """
             SELECT COUNT(DISTINCT sinh_vien_id) as count 
             FROM diem_danh 
-            WHERE lop_id = %s AND thoi_gian >= %s AND thoi_gian <= NOW()
+            WHERE lop_id = %s AND thoi_gian >= %s AND thoi_gian <= GETDATE()
         """
         present_count = execute_one(present_sql, (lop_id, session['bat_dau']))['count']
         
@@ -1582,7 +1596,7 @@ def stop_session_api(session_id):
             WHERE lop_id = %s AND trang_thai = 1 
             AND id NOT IN (
                 SELECT sinh_vien_id FROM diem_danh 
-                WHERE lop_id = %s AND thoi_gian >= %s AND thoi_gian <= NOW()
+                WHERE lop_id = %s AND thoi_gian >= %s AND thoi_gian <= GETDATE()
             )
         """
         absent_list = execute_query(absent_sv_sql, (lop_id, lop_id, session['bat_dau']))
@@ -1697,7 +1711,7 @@ def get_session_history():
             return jsonify({"success": False, "message": "Chỉ Admin mới được xem"}), 403
 
         sql = """
-            SELECT p.id, p.lop_id, p.mo_ta, p.bat_dau, p.ket_thuc, p.het_han,
+            SELECT TOP 100 p.id, p.lop_id, p.mo_ta, p.bat_dau, p.ket_thuc, p.het_han,
                    l.ma_lop, l.ten_lop, l.giao_vien,
                    (SELECT COUNT(*) FROM diem_danh d 
                     WHERE d.lop_id = p.lop_id AND d.thoi_gian >= p.bat_dau 
@@ -1709,7 +1723,6 @@ def get_session_history():
             JOIN lop_hoc l ON p.lop_id = l.id
             WHERE p.trang_thai = 0
             ORDER BY p.bat_dau DESC
-            LIMIT 100
         """
         sessions = execute_query(sql)
         
@@ -1814,7 +1827,7 @@ def student_self_checkin():
         return jsonify({"success": False, "message": "Phiên điểm danh không tồn tại hoặc đã đóng"}), 403
 
     if session.get('het_han') and datetime.now() > session['het_han']:
-        execute_update("UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE id = %s", (session_id,))
+        execute_update("UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = GETDATE() WHERE id = %s", (session_id,))
         return jsonify({"success": False, "message": "Phiên điểm danh đã hết hạn"}), 403
 
     # KIỂM TRA GPS (Geofencing)
@@ -1886,8 +1899,8 @@ def student_self_checkin():
 
     if evidence_path:
         execute_update(
-            "UPDATE diem_danh SET ghi_chu = %s WHERE sinh_vien_id = %s AND lop_id = %s AND DATE(thoi_gian) = CURDATE() ORDER BY id DESC LIMIT 1",
-            (f"EVIDENCE:{evidence_path}", sv['id'], lop_id),
+            "WITH cte AS (SELECT TOP 1 * FROM diem_danh WHERE sinh_vien_id = %s AND lop_id = %s AND CAST(thoi_gian AS DATE) = CAST(GETDATE() AS DATE) ORDER BY id DESC) UPDATE cte SET ghi_chu = %s",
+            (sv['id'], lop_id, f"EVIDENCE:{evidence_path}")
         )
 
     # Thêm thông báo cá nhân cho sinh viên
@@ -1937,7 +1950,7 @@ def get_class_stats():
             SELECT l.id, l.ma_lop, l.ten_lop,
                    (SELECT COUNT(*) FROM sinh_vien sv WHERE sv.lop_id = l.id AND sv.trang_thai = 1) as tong_sv,
                    (SELECT COUNT(DISTINCT d.sinh_vien_id) FROM diem_danh d 
-                    WHERE d.lop_id = l.id AND DATE(d.thoi_gian) = CURDATE()) as so_co_mat_hom_nay
+                    WHERE d.lop_id = l.id AND CAST(d.thoi_gian AS DATE) = CAST(GETDATE() AS DATE)) as so_co_mat_hom_nay
             FROM lop_hoc l
             WHERE l.trang_thai = 1
         """
@@ -1995,10 +2008,10 @@ def get_daily_trend():
         if auth_error: return auth_error
         
         sql = """
-            SELECT DATE(thoi_gian) as ngay, COUNT(*) as so_luong
+            SELECT CAST(thoi_gian AS DATE) as ngay, COUNT(*) as so_luong
             FROM diem_danh
-            WHERE thoi_gian >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-            GROUP BY DATE(thoi_gian)
+            WHERE thoi_gian >= DATEADD(day, -7, CAST(GETDATE() AS DATE))
+            GROUP BY CAST(thoi_gian AS DATE)
             ORDER BY ngay ASC
         """
         results = execute_query(sql)
@@ -2036,7 +2049,7 @@ def get_notifications():
             return jsonify({"success": True, "data": []}), 200
 
         user_id = payload.get('sub')
-        sql = "SELECT * FROM thong_bao WHERE sinh_vien_id = %s ORDER BY created_at DESC LIMIT 50"
+        sql = "SELECT TOP 50 * FROM thong_bao WHERE sinh_vien_id = %s ORDER BY created_at DESC"
         results = execute_query(sql, (user_id,))
         
         for r in results:
@@ -2223,7 +2236,7 @@ def mobile_admin_get_students():
         if query:
             sql += " WHERE sv.ho_ten LIKE %s OR sv.mssv LIKE %s"
             params = [f"%{query}%", f"%{query}%"]
-        sql += " ORDER BY sv.ho_ten ASC LIMIT 100"
+        sql += " ORDER BY sv.ho_ten ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY"
 
         students = execute_query(sql, tuple(params))
         return jsonify({"success": True, "data": students}), 200
@@ -2308,3 +2321,100 @@ def mobile_admin_reset_face(student_id):
         return jsonify({"success": True, "message": "Đã xóa dữ liệu khuôn mặt"}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
+@api_mobile_bp.route('/leave-request', methods=['POST'])
+def mobile_leave_request():
+    """Sinh viên gửi đơn xin phép"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error: return auth_error
+    if payload.get('role') != 'student':
+        return jsonify({"success": False, "message": "Chỉ sinh viên mới có quyền gửi đơn"}), 403
+
+    sinh_vien_id = payload.get('sub')
+    mssv = payload.get('username')
+    
+    data = request.get_json(silent=True) or {}
+    if request.content_type and "multipart/form-data" in request.content_type:
+        data = request.form.to_dict()
+        
+    lop_id = data.get('lop_id')
+    ly_do = data.get('ly_do')
+    image_base64 = data.get('image_base64')
+    upload_image = request.files.get("image")
+    
+    if not lop_id or not ly_do:
+        return jsonify({"success": False, "message": "Thiếu thông tin lớp hoặc lý do"}), 400
+        
+    minh_chung_url = None
+    if image_base64:
+        minh_chung_url = _save_evidence_image(image_base64, mssv)
+    elif upload_image:
+        minh_chung_url = _save_multipart_image(upload_image, mssv)
+        
+    from services.leave_service import create_leave_request
+    res = create_leave_request(sinh_vien_id, lop_id, ly_do, minh_chung_url)
+    if res > 0:
+        return jsonify({"success": True, "message": "Gửi đơn xin phép thành công"}), 200
+    return jsonify({"success": False, "message": "Gửi đơn thất bại"}), 500
+
+@api_mobile_bp.route('/my-leave-requests', methods=['GET'])
+def mobile_my_leave_requests():
+    """Lấy danh sách đơn xin phép của sinh viên"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error: return auth_error
+    if payload.get('role') != 'student':
+        return jsonify({"success": False, "message": "Chỉ sinh viên mới xem được"}), 403
+
+    sinh_vien_id = payload.get('sub')
+    from services.leave_service import get_student_leave_requests
+    reqs = get_student_leave_requests(sinh_vien_id)
+    
+    for r in reqs:
+        if r.get('thoi_gian_tao'):
+            r['thoi_gian_tao'] = r['thoi_gian_tao'].strftime("%Y-%m-%d %H:%M:%S")
+            
+    return jsonify({"success": True, "data": reqs}), 200
+
+@api_mobile_bp.route('/admin/leave-requests', methods=['GET'])
+def mobile_admin_leave_requests():
+    """Admin lấy danh sách tất cả đơn xin phép"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error: return auth_error
+    if payload.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Chỉ Admin mới có quyền"}), 403
+
+    status = request.args.get('status', type=int)
+    from services.leave_service import get_all_leave_requests
+    reqs = get_all_leave_requests(status)
+    
+    for r in reqs:
+        if r.get('thoi_gian_tao'):
+            r['thoi_gian_tao'] = r['thoi_gian_tao'].strftime("%Y-%m-%d %H:%M:%S")
+            
+    return jsonify({"success": True, "data": reqs}), 200
+
+@api_mobile_bp.route('/admin/approve-leave/<int:request_id>', methods=['POST'])
+def mobile_admin_approve_leave(request_id):
+    """Admin duyệt đơn xin phép"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error: return auth_error
+    if payload.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Chỉ Admin mới có quyền"}), 403
+
+    from services.leave_service import update_leave_status
+    if update_leave_status(request_id, 1) > 0:
+        return jsonify({"success": True, "message": "Đã duyệt đơn"}), 200
+    return jsonify({"success": False, "message": "Lỗi cập nhật"}), 500
+
+@api_mobile_bp.route('/admin/reject-leave/<int:request_id>', methods=['POST'])
+def mobile_admin_reject_leave(request_id):
+    """Admin từ chối đơn xin phép"""
+    payload, auth_error = _require_mobile_auth()
+    if auth_error: return auth_error
+    if payload.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Chỉ Admin mới có quyền"}), 403
+
+    from services.leave_service import update_leave_status
+    if update_leave_status(request_id, 2) > 0:
+        return jsonify({"success": True, "message": "Đã từ chối đơn"}), 200
+    return jsonify({"success": False, "message": "Lỗi cập nhật"}), 500

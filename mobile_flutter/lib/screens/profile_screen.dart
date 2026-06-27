@@ -7,6 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
+import '../widgets/neu_button.dart';
+import 'admin_leave_screen.dart';
+import 'student_leave_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -157,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         labelStyle: const TextStyle(color: AppTheme.textSecondary),
         enabledBorder: UnderlineInputBorder(
             borderSide:
-                BorderSide(color: AppTheme.textSecondary.withOpacity(0.5))),
+                BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.5))),
         focusedBorder: const UnderlineInputBorder(
             borderSide: BorderSide(color: AppTheme.primary)),
       ),
@@ -178,10 +182,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         if (res['success'] == true) {
           await _fetchProfile(); // Refresh data
-          if (mounted)
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text("Đã cập nhật ảnh đại diện"),
                 backgroundColor: AppTheme.success));
+          }
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -302,7 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         labelStyle: const TextStyle(color: AppTheme.textSecondary),
         enabledBorder: UnderlineInputBorder(
             borderSide:
-                BorderSide(color: AppTheme.textSecondary.withOpacity(0.5))),
+                BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.5))),
         focusedBorder: const UnderlineInputBorder(
             borderSide: BorderSide(color: AppTheme.primary)),
       ),
@@ -319,14 +324,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading)
+    if (_isLoading) {
       return const Scaffold(
           backgroundColor: AppTheme.background,
           body: Center(
               child: CircularProgressIndicator(color: AppTheme.secondary)));
+    }
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Thông tin cá nhân"),
         actions: [
@@ -340,20 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: Stack(
         children: [
-          // Ambient Background Glows
-          Positioned(
-            top: -100,
-            right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(0.15),
-                backgroundBlendMode: BlendMode.screen,
-              ),
-            ),
-          ),
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -363,10 +356,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: _pickAndUploadAvatar,
                   child: Stack(
                     children: [
-                      Container(
+                      NeuContainer(
                         padding: const EdgeInsets.all(4),
-                        decoration: AppTheme.glassDecoration(
-                            shape: BoxShape.circle, opacity: 0.2),
+                        shape: BoxShape.circle,
                         child: CircleAvatar(
                           radius: 50,
                           backgroundColor: AppTheme.surfaceLight,
@@ -418,19 +410,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     .animate()
                     .fadeIn(delay: 500.ms)
                     .slideY(begin: 0.1, end: 0),
+                const SizedBox(height: 16),
+                
+                // NÚT XIN PHÉP VẮNG MẶT / QUẢN LÝ ĐƠN TỪ
+                SizedBox(
+                  width: double.infinity,
+                  child: NeuButton(
+                    onPressed: () {
+                      final bool isAdmin = _profileData!['role'] == 'admin' || _profileData!['mssv'] == null;
+                      if (isAdmin) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) {
+                            return const AdminLeaveScreen();
+                          }),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) {
+                            return const StudentLeaveScreen();
+                          }),
+                        );
+                      }
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          (_profileData != null && (_profileData!['role'] == 'admin' || _profileData!['mssv'] == null)) 
+                              ? Icons.assignment 
+                              : Icons.edit_document, 
+                          color: AppTheme.secondary
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          (_profileData != null && (_profileData!['role'] == 'admin' || _profileData!['mssv'] == null)) 
+                              ? "Quản lý Đơn vắng mặt" 
+                              : "Xin phép vắng mặt", 
+                          style: const TextStyle(color: AppTheme.secondary, fontWeight: FontWeight.bold)
+                        ),
+                      ],
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 550.ms).scale(begin: const Offset(0.9, 0.9)),
+                
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
+                  child: NeuButton(
                     onPressed: _showChangePasswordDialog,
-                    icon: const Icon(Icons.lock_reset),
-                    label: const Text("Đổi mật khẩu"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.surfaceLight,
-                      foregroundColor: AppTheme.textPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.lock_reset, color: AppTheme.textPrimary),
+                        SizedBox(width: 8),
+                        Text("Đổi mật khẩu", style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold)),
+                      ],
                     ),
                   ),
                 )
@@ -440,7 +476,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
+                  child: NeuButton(
                     onPressed: () async {
                       final auth =
                           Provider.of<AuthProvider>(context, listen: false);
@@ -450,15 +486,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             .pushNamedAndRemoveUntil('/', (route) => false);
                       }
                     },
-                    icon: const Icon(Icons.logout),
-                    label: const Text("Đăng xuất"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.error.withOpacity(0.1),
-                      foregroundColor: AppTheme.error,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      side: BorderSide(color: AppTheme.error.withOpacity(0.5)),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout, color: AppTheme.error),
+                        SizedBox(width: 8),
+                        Text("Đăng xuất", style: TextStyle(color: AppTheme.error, fontWeight: FontWeight.bold)),
+                      ],
                     ),
                   ),
                 )
@@ -474,15 +508,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInfoCard() {
-    if (_profileData == null)
+    if (_profileData == null) {
       return const Text("Không có dữ liệu",
           style: TextStyle(color: AppTheme.textSecondary));
+    }
 
     final bool isAdmin =
         _profileData!['role'] == 'admin' || _profileData!['mssv'] == null;
 
-    return Container(
-      decoration: AppTheme.glassDecoration(borderRadius: 24, opacity: 0.05),
+    return NeuContainer(
+      borderRadius: 24,
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
@@ -528,10 +563,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildFaceGallery() {
-    return Container(
-      width: double.infinity,
+    return NeuContainer(
+      borderRadius: 24,
       padding: const EdgeInsets.all(20),
-      decoration: AppTheme.glassDecoration(borderRadius: 24, opacity: 0.05),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -551,7 +585,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                      color: AppTheme.success.withOpacity(0.2),
+                      color: AppTheme.success.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8)),
                   child: const Row(
                     children: [
@@ -590,7 +624,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                  color: Colors.white.withOpacity(0.1)),
+                                  color: Colors.white.withValues(alpha: 0.1)),
                               image: DecorationImage(
                                 image: NetworkImage(
                                     "${ApiService.baseUrl}/database/${_faceImages[index]}"),
@@ -598,7 +632,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withOpacity(0.3),
+                                    color: Colors.black.withValues(alpha: 0.3),
                                     blurRadius: 10)
                               ],
                             ),
@@ -613,8 +647,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSettingsCard() {
-    return Container(
-      decoration: AppTheme.glassDecoration(borderRadius: 24, opacity: 0.05),
+    return NeuContainer(
+      borderRadius: 24,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -624,7 +658,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                    color: AppTheme.surfaceLight.withOpacity(0.5),
+                    color: AppTheme.surfaceLight.withValues(alpha: 0.5),
                     shape: BoxShape.circle),
                 child: const Icon(Icons.fingerprint,
                     color: AppTheme.secondary, size: 20),
@@ -662,7 +696,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-              color: AppTheme.surfaceLight.withOpacity(0.5),
+              color: AppTheme.surfaceLight.withValues(alpha: 0.5),
               shape: BoxShape.circle),
           child: Icon(icon, color: AppTheme.secondary, size: 18),
         ),

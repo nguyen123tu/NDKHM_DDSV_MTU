@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:ui';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -140,7 +138,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
         await _recognizeViaApi(imageFile);
       }
     } catch (e) {
-      print('Lỗi camera/ML: $e');
+      debugPrint('Lỗi camera/ML: $e');
     } finally {
       if (mounted) setState(() => _isScanning = false);
     }
@@ -211,9 +209,8 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
 
   Future<void> _recognizeViaApi(XFile image) async {
     try {
-      final position = await _getCurrentLocation();
-      double? lat = position?.latitude;
-      double? lng = position?.longitude;
+      double? lat;
+      double? lng;
 
       final bytes = await image.readAsBytes();
       final base64Image = base64Encode(bytes);
@@ -292,7 +289,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                 ),
 
           // Lớp phủ tối mờ
-          Positioned.fill(child: Container(color: Colors.black.withOpacity(0.4))),
+          Positioned.fill(child: Container(color: Colors.black.withValues(alpha: 0.4))),
 
           // ====== HUD SCANNER (KHUNG QUÉT) ======
           Center(
@@ -353,7 +350,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                             decoration: BoxDecoration(
                               color: _isOffline ? AppTheme.error : AppTheme.success,
                               shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(color: (_isOffline ? AppTheme.error : AppTheme.success).withOpacity(0.6), blurRadius: 8)],
+                              boxShadow: [BoxShadow(color: (_isOffline ? AppTheme.error : AppTheme.success).withValues(alpha: 0.6), blurRadius: 8)],
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -431,7 +428,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                   borderRadius: 24,
                 ).copyWith(
                   border: Border.all(
-                    color: (_resultSuccess == true ? AppTheme.success : AppTheme.error).withOpacity(0.5),
+                    color: (_resultSuccess == true ? AppTheme.success : AppTheme.error).withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -439,7 +436,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -483,14 +480,14 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                      height: 64,
                      decoration: BoxDecoration(
                        shape: BoxShape.circle,
-                       border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                       border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
                      ),
                      child: Container(
                        margin: const EdgeInsets.all(4),
                        decoration: BoxDecoration(
                          shape: BoxShape.circle, 
-                         color: AppTheme.secondary.withOpacity(0.8),
-                         boxShadow: [BoxShadow(color: AppTheme.secondary.withOpacity(0.5), blurRadius: 10)]
+                         color: AppTheme.secondary.withValues(alpha: 0.8),
+                         boxShadow: [BoxShadow(color: AppTheme.secondary.withValues(alpha: 0.5), blurRadius: 10)]
                        ),
                        child: const Icon(Icons.camera, color: Colors.white, size: 28),
                      ),
@@ -543,13 +540,13 @@ class HudScanFramePainter extends CustomPainter {
     const radius = 24.0; // Bo tròn hơn HUD cũ
 
     final paint = Paint()
-      ..color = frameColor.withOpacity(pulseValue)
+      ..color = frameColor.withValues(alpha: pulseValue)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
 
     final glowPaint = Paint()
-      ..color = frameColor.withOpacity(0.3 * pulseValue)
+      ..color = frameColor.withValues(alpha: 0.3 * pulseValue)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 12.0
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
@@ -585,9 +582,9 @@ class HudScanLinePainter extends CustomPainter {
     canvas.drawRect(
       Rect.fromLTWH(0, y - 1, size.width, 2),
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           colors: [Colors.transparent, color, Colors.transparent],
-          stops: const [0.0, 0.5, 1.0],
+          stops: [0.0, 0.5, 1.0],
         ).createShader(Rect.fromLTWH(0, y - 1, size.width, 2)),
     );
 
@@ -598,7 +595,7 @@ class HudScanLinePainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, color.withOpacity(0.2)],
+          colors: [Colors.transparent, color.withValues(alpha: 0.2)],
         ).createShader(Rect.fromLTWH(0, max(0, y - 60), size.width, 60)),
     );
   }

@@ -23,8 +23,11 @@
             <option value="{{ lop.id }}" {% if current_lop_id == lop.id %}selected{% endif %}>{{ lop.ma_lop }}</option>
             {% endfor %}
         </select>
-        <button type="button" class="btn-add-student" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+        <button type="button" class="btn-add-student me-2" data-bs-toggle="modal" data-bs-target="#addStudentModal">
             <i class="fas fa-plus"></i> Thêm sinh viên
+        </button>
+        <button type="button" class="btn btn-warning fw-bold text-white shadow-sm" style="border-radius:10px; display: flex; align-items: center; gap: 8px; padding: 0 16px; font-size: 0.9rem;" data-bs-toggle="modal" data-bs-target="#sendNotificationModal" id="btnOpenNotificationModal">
+            <i class="fas fa-bell"></i> Gửi Thông Báo
         </button>
     </div>
 </form>
@@ -43,7 +46,10 @@
 <!-- Student List -->
 <div class="student-list">
     {% for sv in students %}
-    <div class="student-row">
+    <div class="student-row align-items-center">
+        <div class="form-check ms-3 me-2 mb-0">
+            <input class="form-check-input student-checkbox" type="checkbox" value="{{ sv.mssv }}" style="transform: scale(1.2); cursor: pointer;">
+        </div>
         {% if sv.avatar %}
         <img src="{{ url_for('serve_database_file', filename=sv.avatar) }}" class="student-avatar" alt="Avatar">
         {% else %}
@@ -194,6 +200,45 @@
         <button type="button" class="btn px-4" id="btnEditInfoLink"
                 style="background:var(--gradient-card-2);color:white;border-radius:10px;font-weight:600">
             <i class="fas fa-pen me-1"></i> Sửa thông tin
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Gửi Thông Báo ═══ -->
+<div class="modal fade" id="sendNotificationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0" style="overflow:hidden">
+      <div class="modal-modern-header" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+        <div class="d-flex justify-content-between align-items-center text-white">
+            <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Gửi Thông Báo (Push Notification)</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+      <div class="modal-modern-body">
+          <div class="alert alert-info mb-3" style="border-radius: 8px; font-size: 0.9rem;">
+              <i class="fas fa-info-circle me-1"></i>
+              <span id="notificationTargetText">Bạn đang chọn gửi thông báo cho <strong>TẤT CẢ</strong> sinh viên.</span>
+          </div>
+          <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;">
+                  Tiêu đề <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="notiTitle" placeholder="VD: Thông báo nghỉ học">
+          </div>
+          <div class="mb-3">
+              <label class="form-label" style="font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;">
+                  Nội dung <span class="text-danger">*</span>
+              </label>
+              <textarea class="form-control" id="notiBody" rows="4" placeholder="VD: Lớp Đồ án tháng 9 hôm nay nghỉ do..."></textarea>
+          </div>
+      </div>
+      <div class="modal-modern-footer d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-light px-4" style="border-radius:10px" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn px-4" id="btnSubmitNotification"
+                style="background:var(--gradient-primary);color:white;border-radius:10px;font-weight:600;box-shadow:0 4px 12px rgba(108,92,231,.25)">
+            <i class="fas fa-paper-plane me-1"></i> Gửi Ngay
         </button>
       </div>
     </div>

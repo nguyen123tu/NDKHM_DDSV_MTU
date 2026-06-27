@@ -131,4 +131,74 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         });
+
+        // === Push Notification ===
+        const btnOpenNoti = document.getElementById('btnOpenNotificationModal');
+        if (btnOpenNoti) {
+            btnOpenNoti.addEventListener('click', () => {
+                const checked = document.querySelectorAll('.student-checkbox:checked');
+                const targetText = document.getElementById('notificationTargetText');
+                if (checked.length > 0) {
+                    targetText.innerHTML = `Bạn đang chọn gửi thông báo cho <strong class="text-primary">${checked.length}</strong> sinh viên.`;
+                } else {
+                    targetText.innerHTML = `Bạn đang chọn gửi thông báo cho <strong>TẤT CẢ</strong> sinh viên.`;
+                }
+            });
+        }
+
+        const btnSubmitNoti = document.getElementById('btnSubmitNotification');
+        if (btnSubmitNoti) {
+            btnSubmitNoti.addEventListener('click', async () => {
+                const title = document.getElementById('notiTitle').value.trim();
+                const body = document.getElementById('notiBody').value.trim();
+                
+                if (!title || !body) {
+                    alert('Vui lòng nhập đầy đủ tiêu đề và nội dung thông báo!');
+                    return;
+                }
+
+                const checked = document.querySelectorAll('.student-checkbox:checked');
+                const mssv_list = Array.from(checked).map(cb => cb.value);
+
+                const originalText = btnSubmitNoti.innerHTML;
+                btnSubmitNoti.disabled = true;
+                btnSubmitNoti.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi...';
+
+                try {
+                    const res = await fetch('/students/api/send-notification', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, body, mssv_list })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        // Reset form
+                        document.getElementById('notiTitle').value = '';
+                        document.getElementById('notiBody').value = '';
+                        // Uncheck all
+                        document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = false);
+                        
+                        // Đóng modal
+                        const modalEl = document.getElementById('sendNotificationModal');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                        
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Thành công!', data.msg, 'success');
+                        } else {
+                            alert(data.msg);
+                        }
+                    } else {
+                        alert('Lỗi: ' + data.msg);
+                    }
+                } catch(e) {
+                    console.error(e);
+                    alert('Lỗi kết nối tới Server!');
+                } finally {
+                    btnSubmitNoti.disabled = false;
+                    btnSubmitNoti.innerHTML = originalText;
+                }
+            });
+        }
     });

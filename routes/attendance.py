@@ -133,3 +133,31 @@ def api_today_stats():
     lop_id = request.args.get('lop_id', type=int)
     stats = attendance_service.get_today_summary(lop_id)
     return jsonify(stats)
+
+@attendance_bp.route('/leave-requests')
+@login_required
+def list_leave_requests():
+    """Trang quản lý đơn xin phép của sinh viên"""
+    status = request.args.get('status', type=int)
+    from services.leave_service import get_all_leave_requests
+    reqs = get_all_leave_requests(status)
+    return render_template('attendance/leave_requests.html', requests=reqs, current_status=status)
+
+@attendance_bp.route('/approve-leave/<int:request_id>', methods=['POST'])
+@login_required
+def approve_leave(request_id):
+    """API duyệt đơn xin phép"""
+    from services.leave_service import update_leave_status
+    if update_leave_status(request_id, 1) > 0:
+        return jsonify({"success": True, "message": "Đã duyệt đơn"})
+    return jsonify({"success": False, "message": "Lỗi cập nhật"})
+
+@attendance_bp.route('/reject-leave/<int:request_id>', methods=['POST'])
+@login_required
+def reject_leave(request_id):
+    """API từ chối đơn xin phép"""
+    from services.leave_service import update_leave_status
+    if update_leave_status(request_id, 2) > 0:
+        return jsonify({"success": True, "message": "Đã từ chối đơn"})
+    return jsonify({"success": False, "message": "Lỗi cập nhật"})
+

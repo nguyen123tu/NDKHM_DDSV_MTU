@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-
+import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
+import '../widgets/neu_button.dart';
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -18,19 +20,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       "title": "NHẬN DIỆN KHUÔN MẶT\nTỰ ĐỘNG",
       "subtitle": "Nhận diện khuôn mặt tự động, thông báo kết quả kèm hình ảnh tức thì qua ứng dụng của phụ huynh",
       "icon": Icons.face_retouching_natural,
-      "color": Colors.white,
+      "color": AppTheme.primary,
     },
     {
       "title": "XÁC THỰC\nKHUÔN MẶT",
       "subtitle": "Giảm thiểu tối đa sai sót với độ chính xác lên tới 99,99% cùng với tính năng Liveness Face",
       "icon": Icons.security,
-      "color": Colors.cyanAccent,
+      "color": AppTheme.secondary,
     },
     {
       "title": "THÔNG BÁO ĐIỂM DANH\nTHÀNH CÔNG",
       "subtitle": "Ứng dụng gửi thông báo kết quả ngay khi điểm danh thành công",
       "icon": Icons.mark_email_read,
-      "color": Colors.greenAccent,
+      "color": AppTheme.success,
     },
   ];
 
@@ -44,16 +46,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF4F46E5), // Indigo
-              Color(0xFF7C3AED), // Violet
-            ],
-          ),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
           child: Column(
             children: [
@@ -62,7 +55,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.topRight,
                 child: TextButton(
                   onPressed: _completeOnboarding,
-                  child: const Text("Bỏ qua", style: TextStyle(color: Colors.white70)),
+                  child: const Text("Bỏ qua", style: TextStyle(color: AppTheme.textSecondary)),
                 ),
               ),
 
@@ -83,21 +76,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // Ảnh/Icon minh họa
-                          Container(
-                            height: 250,
-                            width: 250,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.1),
-                              border: Border.all(color: _pages[index]["color"].withOpacity(0.5), width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _pages[index]["color"].withOpacity(0.2),
-                                  blurRadius: 30,
-                                  spreadRadius: 10,
-                                )
-                              ]
-                            ),
+                          NeuContainer(
+                            padding: const EdgeInsets.all(50),
+                            shape: BoxShape.circle,
                             child: Icon(
                               _pages[index]["icon"],
                               size: 120,
@@ -113,7 +94,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppTheme.textPrimary,
                               height: 1.3,
                             ),
                           ),
@@ -125,7 +106,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 15,
-                              color: Colors.white70,
+                              color: AppTheme.textSecondary,
                               height: 1.5,
                             ),
                           ),
@@ -152,14 +133,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 20),
                 child: SizedBox(
                   width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
+                  child: NeuButton(
+                    isPrimary: true,
                     onPressed: () {
                       if (_currentPage == _pages.length - 1) {
                         _completeOnboarding();
@@ -170,12 +145,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         );
                       }
                     },
-                    child: Text(
-                      _currentPage == _pages.length - 1 ? "Bắt Đầu Ngay" : "Tiếp tục",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF4F46E5),
+                    child: Center(
+                      child: Text(
+                        _currentPage == _pages.length - 1 ? "Bắt Đầu Ngay" : "Tiếp tục",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -196,7 +173,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       margin: const EdgeInsets.only(right: 5),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: _currentPage == index ? Colors.white : Colors.white38,
+        color: _currentPage == index ? AppTheme.primary : AppTheme.textMuted.withValues(alpha: 0.3),
       ),
     );
   }

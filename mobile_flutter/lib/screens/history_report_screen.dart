@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/export_service.dart';
-// import '../models/attendance_model.dart'; // Bỏ qua vì dùng dynamic
+import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
+import '../widgets/neu_button.dart';
 
 class HistoryReportScreen extends StatefulWidget {
   const HistoryReportScreen({super.key});
@@ -33,7 +35,7 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
       final classes = await _apiService.getClasses();
       setState(() => _classes = classes);
     } catch (e) {
-      print("Lỗi tải lớp: $e");
+      debugPrint("Lỗi tải lớp: $e");
     }
   }
 
@@ -84,13 +86,13 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Báo cáo điểm danh",
             style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E293B),
-        elevation: 0.5,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
+        elevation: 0.0,
         actions: [
           if (_history.isNotEmpty)
             IconButton(
@@ -103,9 +105,8 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
       body: Column(
         children: [
           // Filter Section
-          Container(
+          NeuContainer(
             padding: const EdgeInsets.all(16),
-            color: Colors.white,
             child: Column(
               children: [
                 Row(
@@ -131,11 +132,7 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.calendar_today, size: 16),
-                        label: Text(_selectedDate == null
-                            ? "Chọn ngày"
-                            : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"),
+                      child: NeuButton(
                         onPressed: () async {
                           final date = await showDatePicker(
                             context: context,
@@ -143,12 +140,23 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                             firstDate: DateTime(2020),
                             lastDate: DateTime.now(),
                           );
-                          if (date != null)
+                          if (date != null) {
                             setState(() {
                               _selectedDate = date;
                               _selectedMonth = null;
                             });
+                          }
                         },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.calendar_today, size: 16),
+                            const SizedBox(width: 8),
+                            Text(_selectedDate == null
+                                ? "Chọn ngày"
+                                : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -176,14 +184,14 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  height: 45,
-                  child: ElevatedButton(
+                  child: NeuButton(
+                    isPrimary: true,
                     onPressed: _fetchHistory,
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E293B)),
-                    child: const Text("LỌC DỮ LIỆU",
+                    child: const Center(
+                      child: Text("LỌC DỮ LIỆU",
                         style: TextStyle(
                             color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
                   ),
                 ),
               ],
@@ -201,13 +209,14 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                         itemCount: _history.length,
                         itemBuilder: (context, index) {
                           final item = _history[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
+                          return NeuContainer(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            borderRadius: 12,
                             child: ListTile(
                               leading: const CircleAvatar(
-                                  backgroundColor: Color(0xFFEDF2F9),
+                                  backgroundColor: AppTheme.secondary,
                                   child: Icon(Icons.person,
-                                      color: Color(0xFF1E293B))),
+                                      color: Colors.white)),
                               title: Text(item['ho_ten'],
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),

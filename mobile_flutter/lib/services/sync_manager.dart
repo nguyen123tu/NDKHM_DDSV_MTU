@@ -11,6 +11,7 @@ import '../data/repositories/notification_repository.dart';
 import '../data/local/app_database.dart';
 import 'api_service.dart';
 import 'offline_queue_service.dart';
+import 'package:flutter/foundation.dart';
 
 class SyncManager {
   static final SyncManager instance = SyncManager._internal();
@@ -33,13 +34,13 @@ class SyncManager {
     hasConnection = !connectivityResult.contains(ConnectivityResult.none);
   
     if (!hasConnection) {
-      print('[SYNC] Không có mạng. Bỏ qua đồng bộ.');
+      debugPrint('[SYNC] Không có mạng. Bỏ qua đồng bộ.');
       return;
     }
 
     _isSyncing = true;
-    print('[SYNC] ═══════════════════════════════════════');
-    print('[SYNC] Bắt đầu tiến trình đồng bộ ngầm...');
+    debugPrint('[SYNC] ═══════════════════════════════════════');
+    debugPrint('[SYNC] Bắt đầu tiến trình đồng bộ ngầm...');
     
     // PUSH trước (đẩy data offline lên server)
     await pushAttendance();
@@ -55,8 +56,8 @@ class SyncManager {
     await OfflineQueueService.instance.cleanCompleted();
     await _updateSyncMetadata();
 
-    print('[SYNC] Hoàn tất đồng bộ.');
-    print('[SYNC] ═══════════════════════════════════════');
+    debugPrint('[SYNC] Hoàn tất đồng bộ.');
+    debugPrint('[SYNC] ═══════════════════════════════════════');
     _isSyncing = false;
   }
 
@@ -88,11 +89,11 @@ class SyncManager {
           }
           final serverTime = data['server_time'];
           await prefs.setString('last_sync_time', serverTime);
-          print('[SYNC PULL] ✓ Sinh viên: ${students.length} bản ghi. Time: $serverTime');
+          debugPrint('[SYNC PULL] ✓ Sinh viên: ${students.length} bản ghi. Time: $serverTime');
         }
       }
     } catch (e) {
-      print('[SYNC PULL ERROR] Students: $e');
+      debugPrint('[SYNC PULL ERROR] Students: $e');
     }
   }
 
@@ -115,11 +116,11 @@ class SyncManager {
         if (data['success'] == true) {
           final List<dynamic> sessions = data['data'];
           await _sessionRepo.upsertSessions(sessions);
-          print('[SYNC PULL] ✓ Phiên điểm danh: ${sessions.length} phiên đang mở');
+          debugPrint('[SYNC PULL] ✓ Phiên điểm danh: ${sessions.length} phiên đang mở');
         }
       }
     } catch (e) {
-      print('[SYNC PULL ERROR] Sessions: $e');
+      debugPrint('[SYNC PULL ERROR] Sessions: $e');
     }
   }
 
@@ -146,11 +147,11 @@ class SyncManager {
         if (data['success'] == true) {
           final List<dynamic> schedules = data['data'];
           await _scheduleRepo.replaceSchedules(schedules);
-          print('[SYNC PULL] ✓ Lịch học: ${schedules.length} buổi');
+          debugPrint('[SYNC PULL] ✓ Lịch học: ${schedules.length} buổi');
         }
       }
     } catch (e) {
-      print('[SYNC PULL ERROR] Schedule: $e');
+      debugPrint('[SYNC PULL ERROR] Schedule: $e');
     }
   }
 
@@ -173,11 +174,11 @@ class SyncManager {
         if (data['success'] == true) {
           final List<dynamic> notifications = data['data'];
           await _notificationRepo.upsertNotifications(notifications);
-          print('[SYNC PULL] ✓ Thông báo: ${notifications.length} tin');
+          debugPrint('[SYNC PULL] ✓ Thông báo: ${notifications.length} tin');
         }
       }
     } catch (e) {
-      print('[SYNC PULL ERROR] Notifications: $e');
+      debugPrint('[SYNC PULL ERROR] Notifications: $e');
     }
   }
 
@@ -221,12 +222,12 @@ class SyncManager {
 
           if (uuidsToRemove.isNotEmpty) {
             await _attendanceRepo.markAsSynced(uuidsToRemove);
-            print('[SYNC PUSH] ✓ Đã dọn dẹp ${uuidsToRemove.length} lượt điểm danh (Thành công: ${syncedUuids.length}, Lỗi: ${errors.length})');
+            debugPrint('[SYNC PUSH] ✓ Đã dọn dẹp ${uuidsToRemove.length} lượt điểm danh (Thành công: ${syncedUuids.length}, Lỗi: ${errors.length})');
           }
         }
       }
     } catch (e) {
-      print('[SYNC PUSH ERROR] Attendance: $e');
+      debugPrint('[SYNC PUSH ERROR] Attendance: $e');
     }
   }
 
@@ -246,7 +247,7 @@ class SyncManager {
         'last_sync_status': 'success',
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
-      print('[SYNC META ERROR] $e');
+      debugPrint('[SYNC META ERROR] $e');
     }
   }
 
@@ -273,7 +274,7 @@ class SyncManager {
       hasConnection = !result.contains(ConnectivityResult.none);
     
       if (hasConnection) {
-        print('[NETWORK] Đã kết nối Internet. Kích hoạt Sync ngầm...');
+        debugPrint('[NETWORK] Đã kết nối Internet. Kích hoạt Sync ngầm...');
         syncAll();
       }
     });

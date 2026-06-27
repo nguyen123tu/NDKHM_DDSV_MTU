@@ -16,11 +16,11 @@ class Config:
     # Flask
     SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'mtu_super_secret_key_2026')
 
-    # Database MySQL
+    # Database Microsoft SQL Server
     DB_HOST = os.getenv('DB_HOST', 'localhost')
-    DB_PORT = int(os.getenv('DB_PORT', 3306))
+    DB_PORT = int(os.getenv('DB_PORT', 1433))
     DB_NAME = os.getenv('DB_NAME', 'face_attendance_db')
-    DB_USER = os.getenv('DB_USER', 'root')
+    DB_USER = os.getenv('DB_USER', 'sa')
     DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 
     # Đường dẫn thư mục
@@ -89,6 +89,7 @@ class Config:
     EVIDENCE_DIR = os.path.join(BASE_DIR, 'database', 'evidence')
     MOBILE_ALLOWED_CHECKIN_EARLY_MIN = int(os.getenv('MOBILE_ALLOWED_CHECKIN_EARLY_MIN', 15))
     MOBILE_ALLOWED_CHECKIN_LATE_MIN = int(os.getenv('MOBILE_ALLOWED_CHECKIN_LATE_MIN', 30))
+    LATE_GRACE_PERIOD_MIN = int(os.getenv('LATE_GRACE_PERIOD_MIN', 15))
 
     @classmethod
     def init_dirs(cls):

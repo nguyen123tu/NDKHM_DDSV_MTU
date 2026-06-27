@@ -10,8 +10,17 @@ import glob
 import pickle
 import time
 import threading
+import sys
 import cv2
 import numpy as np
+import numpy.core.numeric
+import numpy.core.multiarray
+
+# Patch cho numpy 1.x load file pkl từ numpy 2.x
+sys.modules['numpy._core'] = sys.modules['numpy.core']
+sys.modules['numpy._core.numeric'] = sys.modules['numpy.core.numeric']
+sys.modules['numpy._core.multiarray'] = sys.modules['numpy.core.multiarray']
+
 from config import Config
 
 

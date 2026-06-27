@@ -45,13 +45,13 @@ def api_lookup():
         
     # Lấy lịch sử 10 lần gần nhất
     history = execute_query("""
-        SELECT DATE_FORMAT(dd.thoi_gian, '%d/%m/%Y %H:%i') as thoi_gian, 
+        SELECT TOP 10 FORMAT(dd.thoi_gian, 'dd/MM/yyyy HH:mm') as thoi_gian, 
                dd.trang_thai, 
                lh.ten_lop 
         FROM diem_danh dd
         LEFT JOIN lop_hoc lh ON dd.lop_id = lh.id
         WHERE dd.sinh_vien_id = %s
-        ORDER BY dd.thoi_gian DESC LIMIT 10
+        ORDER BY dd.thoi_gian DESC
     """, (sv['id'],))
     
     # Lấy tổng số lần điểm danh
@@ -67,10 +67,10 @@ def api_lookup():
     
     # Lấy lịch sử yêu cầu hỗ trợ
     support_history = execute_query("""
-        SELECT id, tieu_de, DATE_FORMAT(thoi_gian, '%d/%m/%Y %H:%i') as thoi_gian, trang_thai
+        SELECT TOP 5 id, tieu_de, FORMAT(thoi_gian, 'dd/MM/yyyy HH:mm') as thoi_gian, trang_thai
         FROM yeu_cau_ho_tro
         WHERE mssv = %s
-        ORDER BY thoi_gian DESC LIMIT 5
+        ORDER BY thoi_gian DESC
     """, (mssv,))
     
     # Xử lý Avatar và Face Data (quét thư mục)
@@ -211,7 +211,11 @@ def _do_recognize(image_data):
             
             filename = f"fraud_{mssv}_{datetime.now().strftime('%H%M%S')}_{uuid.uuid4().hex[:6]}.jpg"
             abs_path = os.path.join(save_dir, filename)
-            cv2.imwrite(abs_path, frame)
+            
+            is_success, buffer = cv2.imencode(".jpg", frame)
+            if is_success:
+                buffer.tofile(abs_path)
+                
             rel_path = os.path.relpath(abs_path, Config.BASE_DIR).replace('\\', '/')
             evidence_path = rel_path
         except Exception as e:
@@ -379,7 +383,11 @@ def api_recognize():
         
         filename = f"kiosk_{mssv}_{datetime.now().strftime('%H%M%S')}_{uuid.uuid4().hex[:6]}.jpg"
         abs_path = os.path.join(save_dir, filename)
-        cv2.imwrite(abs_path, frame)
+        
+        is_success, buffer = cv2.imencode(".jpg", frame)
+        if is_success:
+            buffer.tofile(abs_path)
+            
         rel_path = os.path.relpath(abs_path, Config.BASE_DIR).replace('\\', '/')
         evidence_path = f"EVIDENCE:{rel_path}"
     except Exception as e:
@@ -406,7 +414,7 @@ def api_recognize():
     
     # Lấy lịch sử hôm nay
     today_records = execute_query("""
-        SELECT DATE_FORMAT(dd.thoi_gian, '%H:%i') as gio_vao,
+        SELECT FORMAT(dd.thoi_gian, 'HH:mm') as gio_vao,
                dd.trang_thai, dd.do_chinh_xac,
                lh.ten_lop
         FROM diem_danh dd

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 /// Service nhận diện khuôn mặt
 /// Hiện tại dùng server-side recognition (API).
@@ -16,7 +17,7 @@ class FaceRecognitionService {
   /// Khởi tạo model (placeholder - chưa có model file)
   Future<void> initModel() async {
     // TODO: Tích hợp TFLite khi có model file
-    print('[FaceRecognition] Offline model chưa sẵn sàng, dùng server-side.');
+    debugPrint('[FaceRecognition] Offline model chưa sẵn sàng, dùng server-side.');
   }
 
   /// Nhận diện offline (chưa hỗ trợ)

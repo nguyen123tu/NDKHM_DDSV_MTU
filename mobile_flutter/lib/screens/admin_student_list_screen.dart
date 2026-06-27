@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import 'admin_student_edit_screen.dart';
+import '../widgets/neu_container.dart';
 
 class AdminStudentListScreen extends StatefulWidget {
   const AdminStudentListScreen({super.key});
@@ -55,7 +56,7 @@ class _AdminStudentListScreenState extends State<AdminStudentListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Quản Lý Sinh Viên',
             style: TextStyle(fontWeight: FontWeight.bold)),
@@ -65,28 +66,14 @@ class _AdminStudentListScreenState extends State<AdminStudentListScreen> {
       ),
       body: Stack(
         children: [
-          // Background Glow
-          Positioned(
-            top: -50,
-            left: -50,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.secondary.withOpacity(0.1),
-                backgroundBlendMode: BlendMode.screen,
-              ),
-            ),
-          ),
-
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
           Column(
             children: [
               // Search Bar
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: Container(
-                  decoration: AppTheme.glassDecoration(borderRadius: 16),
+                child: NeuContainer(
+                  borderRadius: 16,
                   child: TextField(
                     controller: _searchController,
                     style: const TextStyle(color: AppTheme.textPrimary),
@@ -125,7 +112,7 @@ class _AdminStudentListScreenState extends State<AdminStudentListScreen> {
                               children: [
                                 Icon(Icons.group_off,
                                     size: 64,
-                                    color: Colors.white.withOpacity(0.1)),
+                                    color: Colors.white.withValues(alpha: 0.1)),
                                 const SizedBox(height: 16),
                                 const Text("Không tìm thấy sinh viên nào",
                                     style:
@@ -147,16 +134,15 @@ class _AdminStudentListScreenState extends State<AdminStudentListScreen> {
                                 final bool hasFace = (s['trang_thai'] ?? 0) ==
                                     1; // Assuming 1 = has face
 
-                                return Container(
+                                return NeuContainer(
                                   margin: const EdgeInsets.only(bottom: 12),
-                                  decoration: AppTheme.glassDecoration(
-                                      borderRadius: 16, opacity: 0.05),
+                                  borderRadius: 16,
                                   child: ListTile(
                                     contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 16, vertical: 8),
                                     leading: CircleAvatar(
                                       backgroundColor:
-                                          AppTheme.primary.withOpacity(0.2),
+                                          AppTheme.primary.withValues(alpha: 0.2),
                                       child: const Icon(Icons.person,
                                           color: AppTheme.secondary),
                                     ),

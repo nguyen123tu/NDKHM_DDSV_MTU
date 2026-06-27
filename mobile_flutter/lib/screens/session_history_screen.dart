@@ -147,14 +147,14 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
     return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: const Color(0xFF1E293B).withOpacity(0.06), shape: BoxShape.circle),
+        decoration: BoxDecoration(color: const Color(0xFF1E293B).withValues(alpha: 0.06), shape: BoxShape.circle),
         child: const Icon(Icons.history, color: Color(0xFF1E293B), size: 48),
       ),
       const SizedBox(height: 20),
       const Text('Chưa có lịch sử', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
       const SizedBox(height: 8),
       Text('Các phiên điểm danh đã đóng sẽ hiển thị ở đây',
-          style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 14)),
+          style: TextStyle(color: const Color(0xFF1E293B).withValues(alpha: 0.5), fontSize: 14)),
     ]));
   }
 
@@ -192,7 +192,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -200,7 +200,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.history, color: Color(0xFF6366F1), size: 24),
@@ -210,7 +210,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
               const SizedBox(height: 2),
-              Text(maLop, style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5), fontSize: 12)),
+              Text(maLop, style: TextStyle(color: const Color(0xFF1E293B).withValues(alpha: 0.5), fontSize: 12)),
             ])),
             // Nút xóa
             GestureDetector(
@@ -218,7 +218,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.08),
+                  color: Colors.redAccent.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
@@ -248,7 +248,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
   Widget _infoChip(IconData icon, String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 12, color: color),
         const SizedBox(width: 4),

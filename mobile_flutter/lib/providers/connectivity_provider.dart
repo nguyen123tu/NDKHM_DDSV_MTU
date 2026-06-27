@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../data/local/app_database.dart';
 import '../services/sync_manager.dart';
 import '../services/offline_queue_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Provider quản lý trạng thái kết nối mạng và đồng bộ.
 /// Hiển thị banner offline/online trên UI, trigger sync khi có mạng trở lại.
@@ -86,7 +87,7 @@ class ConnectivityProvider with ChangeNotifier {
       }
     } catch (e) {
       _syncMessage = 'Lỗi đồng bộ';
-      print('[ConnectivityProvider] Sync error: $e');
+      debugPrint('[ConnectivityProvider] Sync error: $e');
     } finally {
       _isSyncing = false;
       await refreshPendingCount();

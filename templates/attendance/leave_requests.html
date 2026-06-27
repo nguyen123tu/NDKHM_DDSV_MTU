@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Đơn Xin Phép — MTUFace{% endblock %}
+{% block page_title %}Quản lý đơn xin phép{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-envelope-open-text me-2"></i>Danh sách đơn</h5>
+            <div>
+                <a href="{{ url_for('attendance.list_leave_requests') }}" class="btn btn-sm {% if current_status is none %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-3">Tất cả</a>
+                <a href="{{ url_for('attendance.list_leave_requests', status=0) }}" class="btn btn-sm {% if current_status == 0 %}btn-warning text-white{% else %}btn-outline-warning{% endif %} rounded-pill px-3 ms-2">Chờ duyệt</a>
+                <a href="{{ url_for('attendance.list_leave_requests', status=1) }}" class="btn btn-sm {% if current_status == 1 %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill px-3 ms-2">Đã duyệt</a>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Thời gian gửi</th>
+                        <th>Sinh viên</th>
+                        <th>Lớp học</th>
+                        <th>Lý do</th>
+                        <th>Minh chứng</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td class="text-muted small">{{ req.thoi_gian_tao.strftime('%d/%m/%Y %H:%M') if req.thoi_gian_tao else '' }}</td>
+                        <td>
+                            <div class="fw-bold">{{ req.ho_ten }}</div>
+                            <div class="text-muted small">{{ req.mssv }}</div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ req.ten_lop }}</span></td>
+                        <td style="max-width: 250px;" class="text-wrap">{{ req.ly_do }}</td>
+                        <td>
+                            {% if req.minh_chung_url %}
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="viewEvidence('/{{ req.minh_chung_url|replace('\\\\', '/') }}')">
+                                <i class="fas fa-image"></i> Xem
+                            </button>
+                            {% else %}
+                            <span class="text-muted small">Không có</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.trang_thai == 0 %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Chờ duyệt</span>
+                            {% elif req.trang_thai == 1 %}
+                            <span class="badge bg-success"><i class="fas fa-check"></i> Đã duyệt</span>
+                            {% else %}
+                            <span class="badge bg-danger"><i class="fas fa-times"></i> Từ chối</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.trang_thai == 0 %}
+                            <button class="btn btn-sm btn-success shadow-sm btn-approve" data-id="{{ req.id }}" title="Duyệt"><i class="fas fa-check"></i></button>
+                            <button class="btn btn-sm btn-danger shadow-sm btn-reject ms-1" data-id="{{ req.id }}" title="Từ chối"><i class="fas fa-times"></i></button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">Không có đơn xin phép nào.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xem Ảnh -->
+<div class="modal fade" id="evidenceModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Minh chứng xin phép</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center bg-light">
+        <img id="evidenceImage" src="" alt="Minh chứng" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function viewEvidence(url) {
+        document.getElementById('evidenceImage').src = url;
+        new bootstrap.Modal(document.getElementById('evidenceModal')).show();
+    }
+
+    document.querySelectorAll('.btn-approve').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            if (confirm('Duyệt đơn xin phép này? Sinh viên sẽ nhận được thông báo.')) {
+                try {
+                    const res = await fetch(`/attendance/approve-leave/${id}`, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) location.reload();
+                    else alert(data.message);
+                } catch(e) { alert('Lỗi kết nối'); }
+            }
+        });
+    });
+
+    document.querySelectorAll('.btn-reject').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            if (confirm('Từ chối đơn xin phép này? Sinh viên sẽ nhận được thông báo.')) {
+                try {
+                    const res = await fetch(`/attendance/reject-leave/${id}`, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) location.reload();
+                    else alert(data.message);
+                } catch(e) { alert('Lỗi kết nối'); }
+            }
+        });
+    });
+</script>
+{% endblock %}

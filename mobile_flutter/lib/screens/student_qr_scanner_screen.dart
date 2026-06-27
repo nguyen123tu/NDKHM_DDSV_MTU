@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/session_model.dart';
 import 'student_attendance_screen.dart';
+import '../widgets/neu_container.dart';
 
 /// Màn hình quét mã QR từ giáo viên để điểm danh
 class StudentQRScannerScreen extends StatefulWidget {
@@ -67,12 +68,12 @@ class _StudentQRScannerScreenState extends State<StudentQRScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Quét mã QR Điểm Danh',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        backgroundColor: const Color(0xFF1E293B),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),
@@ -102,17 +103,14 @@ class _StudentQRScannerScreenState extends State<StudentQRScannerScreen> {
             right: 24,
             child: Column(
               children: [
-                Container(
+                NeuContainer(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Text(
+                  borderRadius: 16,
+                  child: Text(
                     'Hướng camera vào mã QR của giáo viên',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -140,7 +138,7 @@ class _StudentQRScannerScreenState extends State<StudentQRScannerScreen> {
         // Nền tối
         ColorFiltered(
           colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.5),
+            Colors.black.withValues(alpha: 0.5),
             BlendMode.srcOut,
           ),
           child: Stack(

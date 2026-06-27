@@ -62,9 +62,24 @@ def ask():
 
     session_id = session.get('chat_session_id', 'default')
 
+    # --- HỖ TRỢ APP MOBILE: Lấy MSSV từ token nếu có ---
+    mssv = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        try:
+            import jwt
+            from config import Config
+            payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=["HS256"])
+            if payload.get('role') == 'student':
+                mssv = payload.get('username')
+                session_id = f"mobile_{mssv}" # Dùng mssv làm session cho mobile
+        except Exception:
+            pass
+
     from services.ai_chatbot import get_chatbot
     chatbot = get_chatbot()
-    result = chatbot.chat(question, session_id)
+    result = chatbot.chat(question, session_id, student_mssv=mssv)
 
     return jsonify(result)
 

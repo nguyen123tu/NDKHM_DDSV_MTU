@@ -30,7 +30,7 @@ class AboutScreen extends StatelessWidget {
                 height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.primary.withOpacity(0.15),
+                  color: AppTheme.primary.withValues(alpha: 0.15),
                 ),
               ),
             ),
@@ -45,12 +45,12 @@ class AboutScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.08),
+                    color: Colors.white.withValues(alpha: 0.08),
                     border: Border.all(
-                        color: Colors.white.withOpacity(0.15), width: 2),
+                        color: Colors.white.withValues(alpha: 0.15), width: 2),
                     boxShadow: [
                       BoxShadow(
-                          color: AppTheme.primary.withOpacity(0.3),
+                          color: AppTheme.primary.withValues(alpha: 0.3),
                           blurRadius: 30),
                     ],
                   ),
@@ -87,10 +87,10 @@ class AboutScreen extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppTheme.secondary.withOpacity(0.15),
+                    color: AppTheme.secondary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                     border:
-                        Border.all(color: AppTheme.secondary.withOpacity(0.3)),
+                        Border.all(color: AppTheme.secondary.withValues(alpha: 0.3)),
                   ),
                   child: const Text(
                     "Phiên bản 2.0",
@@ -180,7 +180,7 @@ class AboutScreen extends StatelessWidget {
                 Text(
                   "© 2026 MTU Face Attendance System",
                   style: TextStyle(
-                      color: AppTheme.textMuted.withOpacity(0.5), fontSize: 12),
+                      color: AppTheme.textMuted.withValues(alpha: 0.5), fontSize: 12),
                 ).animate().fadeIn(delay: 800.ms),
 
                 const SizedBox(height: 40),
@@ -209,7 +209,7 @@ class AboutScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.15),
+              color: AppTheme.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppTheme.secondary, size: 22),
@@ -245,9 +245,9 @@ class AboutScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceLight.withOpacity(0.5),
+        color: AppTheme.surfaceLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

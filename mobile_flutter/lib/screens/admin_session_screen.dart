@@ -8,6 +8,8 @@ import '../models/session_model.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import 'admin_session_detail_screen.dart';
+import '../widgets/neu_container.dart';
+import '../widgets/neu_button.dart';
 
 class AdminSessionScreen extends StatefulWidget {
   const AdminSessionScreen({super.key});
@@ -86,16 +88,16 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
             child: Container(
               padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
               decoration: BoxDecoration(
-                color: AppTheme.surface.withOpacity(0.95),
+                color: AppTheme.surface.withValues(alpha: 0.95),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1))),
+                border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
                   // Handle bar
                   Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(
-                    color: AppTheme.textMuted.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+                    color: AppTheme.textMuted.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 20),
 
                   // Title
@@ -125,7 +127,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
                         isExpanded: true,
                         value: selectedLopId,
                         dropdownColor: AppTheme.surface,
-                        hint: Text('-- Chọn lớp học --', style: TextStyle(color: AppTheme.textMuted.withOpacity(0.5))),
+                        hint: Text('-- Chọn lớp học --', style: TextStyle(color: AppTheme.textMuted.withValues(alpha: 0.5))),
                         iconEnabledColor: AppTheme.secondary,
                         style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                         items: _classes.map<DropdownMenuItem<int>>((c) => DropdownMenuItem(
@@ -153,7 +155,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
                                 ? BoxDecoration(
                                     gradient: const LinearGradient(colors: [AppTheme.secondary, AppTheme.primary]),
                                     borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [BoxShadow(color: AppTheme.secondary.withOpacity(0.3), blurRadius: 8)],
+                                    boxShadow: [BoxShadow(color: AppTheme.secondary.withValues(alpha: 0.3), blurRadius: 8)],
                                   )
                                 : AppTheme.glassDecoration(borderRadius: 12, opacity: 0.06),
                             child: Center(child: Text('$m\'', style: TextStyle(
@@ -174,11 +176,11 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
                     style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'VD: Buổi học thứ 5...',
-                      hintStyle: TextStyle(color: AppTheme.textMuted.withOpacity(0.4)),
+                      hintStyle: TextStyle(color: AppTheme.textMuted.withValues(alpha: 0.4)),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.05),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
+                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.secondary)),
                     ),
                   ),
@@ -228,22 +230,6 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
     setState(() => _isLoading = true);
 
     double? lat, lng;
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (serviceEnabled && (permission == LocationPermission.always || permission == LocationPermission.whileInUse)) {
-        Position position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 10)),
-        );
-        lat = position.latitude;
-        lng = position.longitude;
-      }
-    } catch (e) {
-      debugPrint("Lỗi lấy vị trí: $e");
-    }
 
     try {
       final result = await _api.createSession(lopId, durationMinutes: duration, moTa: moTa, lat: lat, lng: lng);
@@ -307,21 +293,10 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Ambient glows
-          Positioned(top: -80, left: -80, child: Container(
-            width: 250, height: 250,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: AppTheme.success.withOpacity(0.12)),
-          ).animate(onPlay: (c) => c.repeat(reverse: true))
-           .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 5.seconds)),
-          Positioned(bottom: -60, right: -60, child: Container(
-            width: 200, height: 200,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: AppTheme.primary.withOpacity(0.1)),
-          ).animate(onPlay: (c) => c.repeat(reverse: true))
-           .scale(begin: const Offset(1, 1), end: const Offset(1.3, 1.3), duration: 4.seconds)),
-
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
           SafeArea(
             child: Column(
               children: [
@@ -350,20 +325,24 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
           ),
         ],
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(colors: [AppTheme.success, Color(0xFF059669)]),
-          boxShadow: [BoxShadow(color: AppTheme.success.withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 6))],
-        ),
-        child: FloatingActionButton.extended(
-          onPressed: _showCreateDialog,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          icon: const Icon(Icons.add_circle, color: Colors.white),
-          label: const Text('Mở phiên mới', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
-        ),
-      ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.5, end: 0),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 90), // Tránh bị khuất bởi BottomNavigationBar
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: const LinearGradient(colors: [AppTheme.success, Color(0xFF059669)]),
+            boxShadow: [BoxShadow(color: AppTheme.success.withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 6))],
+          ),
+          child: FloatingActionButton.extended(
+            heroTag: 'admin_session_fab',
+            onPressed: _showCreateDialog,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            icon: const Icon(Icons.add_circle, color: Colors.white),
+            label: const Text('Mở phiên mới', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+          ),
+        ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.5, end: 0),
+      ),
     );
   }
 
@@ -372,15 +351,6 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: AppTheme.glassDecoration(shape: BoxShape.circle, opacity: 0.08),
-              child: const Icon(Icons.arrow_back_ios_new, color: AppTheme.textPrimary, size: 18),
-            ),
-          ),
-          const SizedBox(width: 14),
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -409,12 +379,12 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
           begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8))],
+        boxShadow: [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 8))],
       ),
       child: Row(children: [
         Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
           child: const Icon(Icons.event_available, color: Colors.white, size: 28),
         ),
         const SizedBox(width: 16),
@@ -423,7 +393,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text('Sinh viên có thể điểm danh ngay',
-              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
         ])),
       ]),
     ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1));
@@ -438,12 +408,10 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
       onTap: () => Navigator.push(context, MaterialPageRoute(
         builder: (_) => AdminSessionDetailScreen(sessionId: session.id, tenLop: session.tenLop),
       )),
-      child: Container(
+      child: NeuContainer(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(18),
-        decoration: AppTheme.glassDecoration(borderRadius: 20, opacity: 0.07).copyWith(
-          border: Border.all(color: isUrgent ? AppTheme.warning.withOpacity(0.3) : Colors.white.withOpacity(0.08)),
-        ),
+        borderRadius: 20,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Container(
@@ -463,25 +431,21 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
               const SizedBox(height: 2),
               Text(session.maLop, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
             ])),
-            // QR button
             GestureDetector(
               onTap: () => _showQRDialog(session),
-              child: Container(
+              child: NeuContainer(
                 padding: const EdgeInsets.all(8),
-                decoration: AppTheme.glassDecoration(borderRadius: 10, opacity: 0.08),
+                shape: BoxShape.circle,
                 child: const Icon(Icons.qr_code, color: AppTheme.secondary, size: 20),
               ),
             ),
             const SizedBox(width: 8),
-            // Stop button
             GestureDetector(
               onTap: () => _stopSession(session.id),
-              child: Container(
+              child: NeuContainer(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                shape: BoxShape.circle,
+                isPressed: true,
                 child: const Icon(Icons.stop_circle, color: AppTheme.accent, size: 20),
               ),
             ),
@@ -496,7 +460,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
           ]),
           if (session.moTa != null && session.moTa!.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(session.moTa!, style: TextStyle(color: AppTheme.textMuted.withOpacity(0.6), fontSize: 12, fontStyle: FontStyle.italic)),
+            Text(session.moTa!, style: TextStyle(color: AppTheme.textMuted.withValues(alpha: 0.6), fontSize: 12, fontStyle: FontStyle.italic)),
           ],
         ]),
       ),
@@ -536,7 +500,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
   Widget _chip(IconData icon, String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 12, color: color),
         const SizedBox(width: 5),
@@ -547,15 +511,9 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
 
   Widget _buildEmptyState() {
     return Column(mainAxisSize: MainAxisSize.min, children: [
-      Container(
+      NeuContainer(
         padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(colors: [
-            AppTheme.secondary.withOpacity(0.15),
-            AppTheme.primary.withOpacity(0.15),
-          ]),
-        ),
+        shape: BoxShape.circle,
         child: const Icon(Icons.event_busy, color: AppTheme.secondary, size: 48),
       ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.5, 0.5), end: const Offset(1, 1)),
       const SizedBox(height: 20),
@@ -564,7 +522,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
         .animate().fadeIn(delay: 300.ms),
       const SizedBox(height: 8),
       Text('Nhấn nút bên dưới để mở phiên mới',
-          style: TextStyle(color: AppTheme.textMuted.withOpacity(0.6)))
+          style: TextStyle(color: AppTheme.textMuted.withValues(alpha: 0.6)))
         .animate().fadeIn(delay: 400.ms),
     ]);
   }

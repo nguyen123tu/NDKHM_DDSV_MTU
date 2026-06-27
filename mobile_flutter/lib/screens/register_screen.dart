@@ -9,6 +9,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
+import '../widgets/neu_button.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,7 +22,13 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _mssvCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _sdtCtrl = TextEditingController();
 
+  DateTime? _selectedDate;
+  int? _selectedGender = 1;
+
+  bool _isLoadingClasses = true;
   List<dynamic> _classes = [];
   int? _selectedLopId;
 
@@ -28,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   List<CameraDescription>? _cameras;
   bool _isCameraReady = false;
   bool _isRegistering = false;
+  int _currentStep = 0; // 0: Thông tin, 1: Camera
   final List<String> _capturedImages = [];
 
   final ApiService _apiService = ApiService();
@@ -53,11 +62,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _loadClasses() async {
+    setState(() {
+      _isLoadingClasses = true;
+    });
     try {
       final classes = await _apiService.getClasses();
       if (mounted) {
         setState(() {
           _classes = classes;
+          _isLoadingClasses = false;
           if (_classes.isNotEmpty) {
             _selectedLopId = _classes.first['id'];
           }
@@ -65,6 +78,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _isLoadingClasses = false;
+        });
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text("Lỗi tải danh sách lớp: $e")));
       }
@@ -79,7 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           (c) => c.lensDirection == CameraLensDirection.front,
           orElse: () => _cameras![0],
         );
-        _controller = CameraController(frontCamera, ResolutionPreset.medium);
+        _controller = CameraController(frontCamera, ResolutionPreset.medium, enableAudio: false);
         await _controller!.initialize();
         if (!mounted) return;
         setState(() => _isCameraReady = true);
@@ -142,8 +158,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   ];
 
   String get _currentPoseGuide {
-    if (_capturedImages.length >= _poseGuides.length)
+    if (_capturedImages.length >= _poseGuides.length) {
       return '📷 Chụp thêm tùy ý';
+    }
     return _poseGuides[_capturedImages.length];
   }
 
@@ -205,8 +222,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       }
 
-      final result = await _apiService.registerFace(_mssvCtrl.text.trim(),
-          _nameCtrl.text.trim(), _selectedLopId!, base64List);
+      final result = await _apiService.registerFace(
+          _mssvCtrl.text.trim(),
+          _nameCtrl.text.trim(), 
+          _selectedLopId!, 
+          base64List,
+          email: _emailCtrl.text.trim(),
+          sdt: _sdtCtrl.text.trim(),
+          ngaySinh: _selectedDate != null ? "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}" : null,
+          gioiTinh: _selectedGender,
+      );
       if (!mounted) return;
 
       if (result['success'] == true) {
@@ -221,7 +246,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                    color: Colors.greenAccent.withOpacity(0.1),
+                    color: Colors.greenAccent.withValues(alpha: 0.1),
                     shape: BoxShape.circle),
                 child: const Icon(Icons.check_circle,
                     color: Colors.greenAccent, size: 28),
@@ -268,31 +293,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       required String label,
       required IconData icon,
       bool readOnly = false}) {
-    return TextField(
-      controller: controller,
-      readOnly: readOnly,
-      style: TextStyle(
-          color: readOnly ? AppTheme.textMuted : AppTheme.textPrimary),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle:
-            const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-        prefixIcon: Icon(icon, color: AppTheme.primary, size: 22),
-        filled: true,
-        fillColor: readOnly
-            ? Colors.white.withOpacity(0.02)
-            : Colors.white.withOpacity(0.05),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.white10)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.primary, width: 1.5)),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return NeuContainer(
+      isPressed: true,
+      borderRadius: 12,
+      child: TextField(
+        controller: controller,
+        readOnly: readOnly,
+        style: TextStyle(
+            color: readOnly ? AppTheme.textMuted : AppTheme.textPrimary),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle:
+              const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+          prefixIcon: Icon(icon, color: AppTheme.primary, size: 22),
+          filled: false,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
       ),
     );
   }
@@ -304,25 +324,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
             'student';
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Đăng ký Khuôn mặt",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.transparent,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
+        leading: _currentStep == 1 
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => setState(() => _currentStep = 0),
+            ) 
+          : const BackButton(),
         actions: [
-          Container(
+          if (_currentStep == 1)
+            Container(
             margin: const EdgeInsets.only(right: 16, top: 10, bottom: 10),
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: _capturedImages.length >= _minPhotos
-                  ? Colors.greenAccent.withOpacity(0.2)
+                  ? Colors.greenAccent.withValues(alpha: 0.2)
                   : AppTheme.surfaceLight,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                   color: _capturedImages.length >= _minPhotos
-                      ? Colors.greenAccent.withOpacity(0.5)
+                      ? Colors.greenAccent.withValues(alpha: 0.5)
                       : Colors.white10),
             ),
             child: Center(
@@ -341,34 +368,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       body: Stack(
         children: [
-          // Ambient glow
-          Positioned(
-            top: -100,
-            right: -100,
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.primary.withOpacity(0.15),
-                  backgroundBlendMode: BlendMode.screen,
-                ),
-              ),
-            ),
-          ),
+          // Background - Clean Neumorphism
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Form card
-                Container(
+                // Thanh tiến trình
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Container(
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: _currentStep >= 1 ? AppTheme.primary : Colors.white10,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (_currentStep == 0) ...[
+                  // Form card
+                  NeuContainer(
                   padding: const EdgeInsets.all(20),
-                  decoration:
-                      AppTheme.glassDecoration(borderRadius: 16, opacity: 0.05),
+                  borderRadius: 16,
                   child: Column(
                     children: [
                       _buildInputField(
@@ -386,12 +426,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
                       // Dropdown
-                      if (_classes.isEmpty)
+                      if (_isLoadingClasses)
                         const Padding(
                           padding: EdgeInsets.all(16),
                           child: Center(
                               child: CircularProgressIndicator(
                                   color: AppTheme.primary, strokeWidth: 2)),
+                        )
+                      else if (_classes.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(
+                            child: Text(
+                              "Không có lớp học nào.",
+                              style: TextStyle(color: Colors.redAccent),
+                            ),
+                          ),
                         )
                       else
                         IgnorePointer(
@@ -405,8 +455,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   color: AppTheme.primary, size: 22),
                               filled: true,
                               fillColor: isStudent
-                                  ? Colors.white.withOpacity(0.02)
-                                  : Colors.white.withOpacity(0.05),
+                                  ? Colors.white.withValues(alpha: 0.02)
+                                  : Colors.white.withValues(alpha: 0.05),
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide.none),
@@ -440,13 +490,106 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                           ),
                         ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _emailCtrl,
+                        label: "Email",
+                        icon: Icons.email,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _sdtCtrl,
+                        label: "Số Điện Thoại",
+                        icon: Icons.phone,
+                      ),
+                      const SizedBox(height: 16),
+                      // Ngày sinh DatePicker
+                      GestureDetector(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate ?? DateTime(2000),
+                            firstDate: DateTime(1950),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) {
+                            setState(() => _selectedDate = date);
+                          }
+                        },
+                        child: NeuContainer(
+                          isPressed: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          borderRadius: 12,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today, color: AppTheme.primary, size: 22),
+                              const SizedBox(width: 12),
+                              Text(
+                                _selectedDate == null 
+                                  ? "Ngày Sinh" 
+                                  : "${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}",
+                                style: TextStyle(
+                                  color: _selectedDate == null ? AppTheme.textSecondary : AppTheme.textPrimary,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Giới tính Dropdown
+                      DropdownButtonFormField<int>(
+                        decoration: InputDecoration(
+                          labelText: "Giới Tính",
+                          labelStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                          prefixIcon: const Icon(Icons.wc, color: AppTheme.primary, size: 22),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.05),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.white10)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primary, width: 1.5)),
+                        ),
+                        dropdownColor: AppTheme.surfaceLight,
+                        initialValue: _selectedGender,
+                        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
+                        items: const [
+                          DropdownMenuItem(value: 1, child: Text("Nam")),
+                          DropdownMenuItem(value: 0, child: Text("Nữ")),
+                        ],
+                        onChanged: (val) => setState(() => _selectedGender = val),
+                      ),
                     ],
                   ),
                 ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
 
                 const SizedBox(height: 24),
+                // Nút Tiếp tục (chỉ hiển thị ở bước 0)
+                if (_currentStep == 0)
+                  SizedBox(
+                    width: double.infinity,
+                    child: NeuButton(
+                      isPrimary: true,
+                      onPressed: () {
+                        if (_mssvCtrl.text.isEmpty || _nameCtrl.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Vui lòng nhập đủ MSSV và Tên!")));
+                          return;
+                        }
+                        if (_selectedLopId == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Vui lòng chọn lớp học!")));
+                          return;
+                        }
+                        setState(() => _currentStep = 1);
+                      },
+                      child: const Center(child: Text("Tiếp tục", style: TextStyle(fontWeight: FontWeight.bold))),
+                    ),
+                  ),
+                ],
 
-                // Camera section header
+                if (_currentStep == 1) ...[
+                  // Camera section header
                 Row(
                   children: [
                     const Icon(Icons.camera_front,
@@ -467,10 +610,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.1),
+                            color: Colors.redAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: Colors.redAccent.withOpacity(0.3)),
+                                color: Colors.redAccent.withValues(alpha: 0.3)),
                           ),
                           child: const Text("Xóa tất cả",
                               style: TextStyle(
@@ -491,15 +634,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: _capturedImages.length >= _maxPhotos
-                            ? Colors.greenAccent.withOpacity(0.5)
-                            : AppTheme.primary.withOpacity(0.5),
+                            ? Colors.greenAccent.withValues(alpha: 0.5)
+                            : AppTheme.primary.withValues(alpha: 0.5),
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
                             color: _capturedImages.length >= _maxPhotos
-                                ? Colors.greenAccent.withOpacity(0.1)
-                                : AppTheme.primary.withOpacity(0.15),
+                                ? Colors.greenAccent.withValues(alpha: 0.1)
+                                : AppTheme.primary.withValues(alpha: 0.15),
                             blurRadius: 20,
                             spreadRadius: 2),
                       ],
@@ -523,11 +666,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 16, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.7),
+                                        color: Colors.black.withValues(alpha: 0.7),
                                         borderRadius: BorderRadius.circular(20),
                                         border: Border.all(
                                             color: AppTheme.secondary
-                                                .withOpacity(0.5)),
+                                                .withValues(alpha: 0.5)),
                                       ),
                                       child: Text(
                                         _currentPoseGuide,
@@ -578,7 +721,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                      color: AppTheme.primary.withOpacity(0.8),
+                                      color: AppTheme.primary.withValues(alpha: 0.8),
                                       width: 2),
                                   image: DecorationImage(
                                       image: MemoryImage(
@@ -586,7 +729,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       fit: BoxFit.cover),
                                   boxShadow: [
                                     BoxShadow(
-                                        color: Colors.black.withOpacity(0.3),
+                                        color: Colors.black.withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4))
                                   ],
@@ -621,21 +764,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
 
                 // Hướng dẫn
-                Container(
+                NeuContainer(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border:
-                        Border.all(color: AppTheme.primary.withOpacity(0.2)),
-                  ),
+                  borderRadius: 16,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
                           Icon(Icons.lightbulb_outline,
-                              color: AppTheme.secondary.withOpacity(0.8),
+                              color: AppTheme.secondary.withValues(alpha: 0.8),
                               size: 24),
                           const SizedBox(width: 12),
                           const Text(
@@ -665,7 +803,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: _capturedImages.length / _maxPhotos,
-                          backgroundColor: Colors.white.withOpacity(0.1),
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             _capturedImages.length >= _minPhotos
                                 ? AppTheme.success
@@ -734,7 +872,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                                color: const Color(0xFF10B981).withOpacity(0.4),
+                                color: const Color(0xFF10B981).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 6)),
                           ]),
@@ -767,6 +905,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ).animate().fadeIn(),
                 ],
+                ], // End if _currentStep == 1
 
                 const SizedBox(height: 40),
               ],
@@ -782,7 +921,7 @@ class OvalOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black.withOpacity(0.6)
+      ..color = Colors.black.withValues(alpha: 0.6)
       ..style = PaintingStyle.fill;
 
     final ovalRect = Rect.fromCenter(
@@ -800,7 +939,7 @@ class OvalOverlayPainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     final borderPaint = Paint()
-      ..color = AppTheme.primary.withOpacity(0.8)
+      ..color = AppTheme.primary.withValues(alpha: 0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     canvas.drawOval(ovalRect, borderPaint);

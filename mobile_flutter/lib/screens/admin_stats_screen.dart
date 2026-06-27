@@ -1,9 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
 
 class AdminStatsScreen extends StatefulWidget {
   const AdminStatsScreen({super.key});
@@ -66,7 +66,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Báo Cáo & Thống Kê',
             style: TextStyle(fontWeight: FontWeight.bold)),
@@ -82,20 +82,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
       ),
       body: Stack(
         children: [
-          // Ambient Glow
-          Positioned(
-            top: 50,
-            right: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(0.15),
-                backgroundBlendMode: BlendMode.screen,
-              ),
-            ),
-          ),
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           _isLoading
               ? const Center(
@@ -219,7 +206,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: gradient.first.withOpacity(0.3),
+              color: gradient.first.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4)),
         ],
@@ -227,7 +214,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.white.withOpacity(0.8), size: 24),
+          Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 24),
           const SizedBox(height: 12),
           Text(value,
               style: const TextStyle(
@@ -237,7 +224,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
           const SizedBox(height: 4),
           Text(title,
               style: TextStyle(
-                  color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                  color: Colors.white.withValues(alpha: 0.8), fontSize: 11)),
         ],
       ),
     );
@@ -245,9 +232,9 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
 
   Widget _buildTrendChart() {
     if (_dailyTrend.isEmpty) {
-      return Container(
+      return NeuContainer(
         height: 200,
-        decoration: AppTheme.glassDecoration(borderRadius: 20, opacity: 0.05),
+        borderRadius: 20,
         child: const Center(
             child: Text("Không đủ dữ liệu xu hướng",
                 style: TextStyle(color: AppTheme.textMuted))),
@@ -261,10 +248,10 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
       spots.add(FlSpot(i.toDouble(), yVal));
     }
 
-    return Container(
+    return NeuContainer(
       height: 240,
       padding: const EdgeInsets.only(top: 30, right: 20, left: 10, bottom: 10),
-      decoration: AppTheme.glassDecoration(borderRadius: 20, opacity: 0.05),
+      borderRadius: 20,
       child: LineChart(
         LineChartData(
           gridData: FlGridData(
@@ -273,7 +260,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
             horizontalInterval: 1,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                  color: Colors.white.withOpacity(0.05), strokeWidth: 1);
+                  color: Colors.white.withValues(alpha: 0.05), strokeWidth: 1);
             },
           ),
           titlesData: FlTitlesData(
@@ -333,8 +320,8 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
                 show: true,
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.secondary.withOpacity(0.3),
-                    AppTheme.secondary.withOpacity(0.0)
+                    AppTheme.secondary.withValues(alpha: 0.3),
+                    AppTheme.secondary.withValues(alpha: 0.0)
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -369,10 +356,10 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
           progressColor = AppTheme.error;
         } else if (percent < 0.8) progressColor = AppTheme.secondary;
 
-        return Container(
+        return NeuContainer(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
-          decoration: AppTheme.glassDecoration(borderRadius: 16, opacity: 0.05),
+          borderRadius: 16,
           child: Column(
             children: [
               Row(
@@ -404,7 +391,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
                 child: LinearProgressIndicator(
                   value: percent,
                   minHeight: 8,
-                  backgroundColor: Colors.white.withOpacity(0.1),
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
                   color: progressColor,
                 ),
               ),
@@ -423,23 +410,23 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
 
   Widget _buildAbsentRiskList() {
     if (_absentRisk.isEmpty) {
-      return Container(
+      return NeuContainer(
         padding: const EdgeInsets.all(20),
-        decoration: AppTheme.glassDecoration(borderRadius: 16, opacity: 0.05),
+        borderRadius: 16,
         child: const Center(
             child: Text("Hệ thống ổn định, không có cảnh báo vắng.",
                 style: TextStyle(color: AppTheme.success))),
       );
     }
 
-    return Container(
-      decoration: AppTheme.glassDecoration(borderRadius: 20, opacity: 0.05),
+    return NeuContainer(
+      borderRadius: 20,
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: _absentRisk.length,
         separatorBuilder: (context, index) => Divider(
-            height: 1, color: Colors.white.withOpacity(0.05), indent: 70),
+            height: 1, color: Colors.white.withValues(alpha: 0.05), indent: 70),
         itemBuilder: (context, index) {
           final s = _absentRisk[index];
           final total = s['tong_buoi_hoc'] ?? 0;
@@ -452,7 +439,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
             leading: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                  color: AppTheme.error.withOpacity(0.15),
+                  color: AppTheme.error.withValues(alpha: 0.15),
                   shape: BoxShape.circle),
               child:
                   const Icon(Icons.person_off, color: AppTheme.error, size: 20),

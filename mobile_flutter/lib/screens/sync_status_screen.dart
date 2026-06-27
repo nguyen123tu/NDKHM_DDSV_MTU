@@ -176,9 +176,9 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.withOpacity(0.1),
+                        color: Colors.redAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -200,7 +200,7 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B).withOpacity(0.04),
+                        color: const Color(0xFF1E293B).withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -235,7 +235,7 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: (isOnline ? const Color(0xFF10B981) : const Color(0xFFDC2626)).withOpacity(0.3),
+            color: (isOnline ? const Color(0xFF10B981) : const Color(0xFFDC2626)).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -246,7 +246,7 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -269,7 +269,7 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
                   isOnline
                       ? 'Dữ liệu sẽ được đồng bộ tự động'
                       : 'Dữ liệu được lưu cục bộ trên thiết bị',
-                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
                 ),
               ],
             ),
@@ -297,7 +297,7 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,7 +305,7 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -331,14 +331,14 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 18),
@@ -350,7 +350,7 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: count > 0 ? color.withOpacity(0.1) : const Color(0xFFF1F5F9),
+              color: count > 0 ? color.withValues(alpha: 0.1) : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(

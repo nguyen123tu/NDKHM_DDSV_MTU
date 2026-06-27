@@ -129,7 +129,7 @@ def serve_evidence_file(filename):
 if __name__ == '__main__':
     print("\n" + "="*50)
     print("🚀 MÁY CHỦ NHẬN DIỆN KHUÔN MẶT ĐANG KHỞI ĐỘNG...")
-    print(f"👉 URL: http://localhost:5000")
+    print(f"👉 URL: http://localhost:5001")
     print(f"👉 Chế độ: {os.getenv('FLASK_ENV', 'development')}")
     print("="*50 + "\n")
     # Tải mô hình AI trong luồng nền (Background Thread)
@@ -146,4 +146,4 @@ if __name__ == '__main__':
     threading.Thread(target=preload_models, daemon=True).start()
     
     # Khởi động SocketIO app
-    socketio.run(app, host='0.0.0.0', port=5000, debug=app.config['DEBUG'])
+    socketio.run(app, host='0.0.0.0', port=5001, debug=app.config['DEBUG'])

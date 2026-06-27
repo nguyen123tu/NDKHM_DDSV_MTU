@@ -73,7 +73,7 @@ class AIChatbot:
         self._nvidia_key = os.getenv("NVIDIA_API_KEY", "")
         self._ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
 
-    def chat(self, question: str, session_id: str = "default") -> dict:
+    def chat(self, question: str, session_id: str = "default", student_mssv: str = None) -> dict:
         """
         Xử lý câu hỏi và trả lời.
         Returns: {answer, sources, tokens_used, duration_ms}
@@ -88,6 +88,29 @@ class AIChatbot:
 
             # 2. Xây dựng context từ chunks
             context = self._build_context(relevant_chunks)
+
+            # --- INJECT REALTIME CONTEXT ---
+            if student_mssv:
+                from db.connection import execute_one
+                sv = execute_one("SELECT * FROM sinh_vien WHERE mssv = %s", (student_mssv,))
+                if sv:
+                    lop = execute_one("SELECT ten_lop FROM lop_hoc WHERE id = %s", (sv['lop_id'],))
+                    ten_lop = lop['ten_lop'] if lop else "Không rõ"
+                    
+                    total_sessions = execute_one("SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s", (sv['lop_id'],))
+                    present = execute_one("SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND trang_thai = 'Co mat'", (sv['id'],))
+                    vang = (total_sessions['count'] if total_sessions else 0) - (present['count'] if present else 0)
+                    if vang < 0: vang = 0
+                    
+                    realtime_info = (
+                        f"\n\n--- THÔNG TIN SINH VIÊN ĐANG CHAT (REALTIME) ---\n"
+                        f"- Họ tên: {sv['ho_ten']}\n"
+                        f"- MSSV: {sv['mssv']}\n"
+                        f"- Lớp: {ten_lop}\n"
+                        f"- Tổng số buổi đã vắng: {vang}\n"
+                        f"-> Yêu cầu: Hãy dùng thông tin này để xưng hô (ví dụ: Chào bạn Nguyễn Văn A) và trả lời chính xác nếu sinh viên hỏi về số buổi vắng của họ."
+                    )
+                    context += realtime_info
 
             # 3. Lấy lịch sử chat
             history = self._get_history(session_id)

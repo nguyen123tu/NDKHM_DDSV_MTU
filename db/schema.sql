@@ -1,138 +1,168 @@
--- ============================================================
 -- SCHEMA DATABASE: HỆ THỐNG ĐIỂM DANH NHẬN DIỆN KHUÔN MẶT
--- Charset: UTF8MB4 (hỗ trợ tiếng Việt đầy đủ)
--- Thứ tự tạo bảng: lop_hoc → sinh_vien → diem_danh (do FK)
--- ============================================================
+-- T-SQL for Microsoft SQL Server
 
--- 1. Bảng LỚP HỌC
-CREATE TABLE IF NOT EXISTS lop_hoc (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    ma_lop      VARCHAR(20) NOT NULL UNIQUE,
-    ten_lop     VARCHAR(100) NOT NULL,
-    khoa        VARCHAR(100),
-    hoc_ky      VARCHAR(20),
-    nam_hoc     VARCHAR(10),
-    giao_vien   VARCHAR(100),
-    mo_ta       TEXT,
-    trang_thai  TINYINT DEFAULT 1 COMMENT '1=active, 0=inactive',
-    created_at  DATETIME DEFAULT NOW(),
-    INDEX idx_ma_lop (ma_lop)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+IF OBJECT_ID('lop_hoc', 'U') IS NULL
+CREATE TABLE lop_hoc (
+    id          INT IDENTITY(1,1) PRIMARY KEY,
+    ma_lop      NVARCHAR(20) NOT NULL UNIQUE,
+    ten_lop     NVARCHAR(100) NOT NULL,
+    khoa        NVARCHAR(100),
+    hoc_ky      NVARCHAR(20),
+    nam_hoc     NVARCHAR(10),
+    giao_vien   NVARCHAR(100),
+    mo_ta       NVARCHAR(MAX),
+    trang_thai  TINYINT DEFAULT 1,
+    created_at  DATETIME DEFAULT GETDATE()
+);
 
--- 2. Bảng SINH VIÊN
-CREATE TABLE IF NOT EXISTS sinh_vien (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    mssv        VARCHAR(20) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) COMMENT 'Mật khẩu mặc định là MSSV',
-    ho_ten      VARCHAR(100) NOT NULL,
-    email       VARCHAR(100),
-    sdt         VARCHAR(15),
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_ma_lop' AND object_id = OBJECT_ID('lop_hoc'))
+CREATE INDEX idx_ma_lop ON lop_hoc(ma_lop);
+
+IF OBJECT_ID('sinh_vien', 'U') IS NULL
+CREATE TABLE sinh_vien (
+    id          INT IDENTITY(1,1) PRIMARY KEY,
+    mssv        NVARCHAR(20) NOT NULL UNIQUE,
+    password_hash NVARCHAR(255),
+    ho_ten      NVARCHAR(100) NOT NULL,
+    email       NVARCHAR(100),
+    sdt         NVARCHAR(15),
     lop_id      INT,
-    avatar      VARCHAR(255) COMMENT 'Tên file ảnh đại diện',
-    da_train    TINYINT DEFAULT 0 COMMENT '0=chưa train, 1=đã train',
+    avatar      NVARCHAR(255),
+    da_train    TINYINT DEFAULT 0,
     ngay_sinh   DATE,
-    gioi_tinh   TINYINT COMMENT '0=nữ, 1=nam',
-    trang_thai  TINYINT DEFAULT 1 COMMENT '1=active, 0=inactive',
-    trang_thai_face TINYINT DEFAULT 0 COMMENT '0=chưa đk, 1=chờ duyệt, 2=đã duyệt, 3=chụp lại',
-    face_vector TEXT COMMENT 'JSON mảng 512 số phục vụ đồng bộ offline',
-    device_id   VARCHAR(255) COMMENT 'Device ID để chống đăng nhập nhiều thiết bị',
-    fcm_token   VARCHAR(255) COMMENT 'Token để nhận Push Notification',
-    is_locked   TINYINT DEFAULT 0 COMMENT '0=bt, 1=khóa do gian lận',
-    created_at  DATETIME DEFAULT NOW(),
-    updated_at  DATETIME DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE SET NULL,
-    INDEX idx_mssv (mssv),
-    INDEX idx_lop_id (lop_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    gioi_tinh   TINYINT,
+    trang_thai  TINYINT DEFAULT 1,
+    trang_thai_face TINYINT DEFAULT 0,
+    face_vector NVARCHAR(MAX),
+    device_id   NVARCHAR(255),
+    fcm_token   NVARCHAR(255),
+    is_locked   TINYINT DEFAULT 0,
+    created_at  DATETIME DEFAULT GETDATE(),
+    updated_at  DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE SET NULL
+);
 
--- 3. Bảng ĐIỂM DANH
-CREATE TABLE IF NOT EXISTS diem_danh (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_mssv' AND object_id = OBJECT_ID('sinh_vien'))
+CREATE INDEX idx_mssv ON sinh_vien(mssv);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_lop_id' AND object_id = OBJECT_ID('sinh_vien'))
+CREATE INDEX idx_lop_id ON sinh_vien(lop_id);
+
+IF OBJECT_ID('diem_danh', 'U') IS NULL
+CREATE TABLE diem_danh (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
     sinh_vien_id    INT,
     lop_id          INT,
-    thoi_gian       DATETIME DEFAULT NOW() COMMENT 'Giờ vào (check-in)',
-    gio_vao_lop     TIME DEFAULT '07:00:00' COMMENT 'Giờ quy định bắt đầu tiết học',
-    trang_thai      VARCHAR(20) DEFAULT 'Co mat' COMMENT 'Co mat / Tre / Canh bao',
-    do_chinh_xac    FLOAT COMMENT 'Similarity score 0.0 - 1.0',
+    thoi_gian       DATETIME DEFAULT GETDATE(),
+    gio_vao_lop     TIME DEFAULT '07:00:00',
+    trang_thai      NVARCHAR(20) DEFAULT 'Co mat',
+    do_chinh_xac    FLOAT,
     camera_id       INT DEFAULT 0,
-    ghi_chu         TEXT,
-    INDEX idx_sv_id (sinh_vien_id),
-    INDEX idx_lop_id (lop_id),
-    INDEX idx_thoi_gian (thoi_gian),
+    ghi_chu         NVARCHAR(MAX),
     FOREIGN KEY (sinh_vien_id) REFERENCES sinh_vien(id) ON DELETE SET NULL,
     FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
--- 4. Bảng CAMERA
-CREATE TABLE IF NOT EXISTS camera (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    ten_cam         VARCHAR(100) NOT NULL,
-    loai            VARCHAR(20) DEFAULT 'USB' COMMENT 'USB / IP / RTSP / RTMP',
-    url_hoac_index  VARCHAR(255) COMMENT '0 hoặc rtsp://...',
-    vi_tri          VARCHAR(100),
-    do_phan_giai    VARCHAR(20) DEFAULT 'Auto',
-    trang_thai      TINYINT DEFAULT 1 COMMENT '1=active, 0=inactive',
-    created_at      DATETIME DEFAULT NOW()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_sv_id' AND object_id = OBJECT_ID('diem_danh'))
+CREATE INDEX idx_sv_id ON diem_danh(sinh_vien_id);
 
--- 5. Bảng CẢNH BÁO (Phát hiện người lạ)
-CREATE TABLE IF NOT EXISTS canh_bao (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    thoi_gian   DATETIME DEFAULT NOW(),
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_diem_danh_lop_id' AND object_id = OBJECT_ID('diem_danh'))
+CREATE INDEX idx_diem_danh_lop_id ON diem_danh(lop_id);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_thoi_gian' AND object_id = OBJECT_ID('diem_danh'))
+CREATE INDEX idx_thoi_gian ON diem_danh(thoi_gian);
+
+IF OBJECT_ID('camera', 'U') IS NULL
+CREATE TABLE camera (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
+    ten_cam         NVARCHAR(100) NOT NULL,
+    loai            NVARCHAR(20) DEFAULT 'USB',
+    url_hoac_index  NVARCHAR(255),
+    vi_tri          NVARCHAR(100),
+    do_phan_giai    NVARCHAR(20) DEFAULT 'Auto',
+    trang_thai      TINYINT DEFAULT 1,
+    created_at      DATETIME DEFAULT GETDATE()
+);
+
+IF OBJECT_ID('canh_bao', 'U') IS NULL
+CREATE TABLE canh_bao (
+    id          INT IDENTITY(1,1) PRIMARY KEY,
+    thoi_gian   DATETIME DEFAULT GETDATE(),
     camera_id   INT,
-    anh_chup    VARCHAR(255) COMMENT 'Đường dẫn ảnh chụp kẻ lạ',
-    da_xu_ly    TINYINT DEFAULT 0 COMMENT '0=chưa xử lý, 1=đã xử lý',
-    ghi_chu     TEXT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    anh_chup    NVARCHAR(255),
+    da_xu_ly    TINYINT DEFAULT 0,
+    ghi_chu     NVARCHAR(MAX)
+);
 
--- 6. Bảng ADMIN (Người quản trị)
-CREATE TABLE IF NOT EXISTS admin (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    username        VARCHAR(50) NOT NULL UNIQUE,
-    password_hash   VARCHAR(255) NOT NULL,
-    ho_ten          VARCHAR(100),
-    role            VARCHAR(20) DEFAULT 'admin' COMMENT 'admin / teacher',
-    fcm_token       VARCHAR(255) COMMENT 'Token để nhận Push Notification',
-    created_at      DATETIME DEFAULT NOW()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+IF OBJECT_ID('admin', 'U') IS NULL
+CREATE TABLE admin (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
+    username        NVARCHAR(50) NOT NULL UNIQUE,
+    password_hash   NVARCHAR(255) NOT NULL,
+    ho_ten          NVARCHAR(100),
+    role            NVARCHAR(20) DEFAULT 'admin',
+    fcm_token       NVARCHAR(255),
+    created_at      DATETIME DEFAULT GETDATE()
+);
 
--- 7. Bảng THÔNG BÁO (Thông báo cho sinh viên)
-CREATE TABLE IF NOT EXISTS thong_bao (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
+IF OBJECT_ID('thong_bao', 'U') IS NULL
+CREATE TABLE thong_bao (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
     sinh_vien_id    INT,
-    tieu_de         VARCHAR(255),
-    noi_dung        TEXT,
-    da_doc          TINYINT DEFAULT 0 COMMENT '0=chưa đọc, 1=đã đọc',
-    created_at      DATETIME DEFAULT NOW(),
+    tieu_de         NVARCHAR(255),
+    noi_dung        NVARCHAR(MAX),
+    da_doc          TINYINT DEFAULT 0,
+    created_at      DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (sinh_vien_id) REFERENCES sinh_vien(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
--- 8. Bảng CẢNH BÁO GIAN LẬN (Gian lận điểm danh)
-CREATE TABLE IF NOT EXISTS gian_lan_log (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    thoi_gian       DATETIME DEFAULT NOW(),
+IF OBJECT_ID('gian_lan_log', 'U') IS NULL
+CREATE TABLE gian_lan_log (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
+    thoi_gian       DATETIME DEFAULT GETDATE(),
     sinh_vien_id    INT NULL,
-    loai_gian_lan   VARCHAR(50) NOT NULL COMMENT 'Fake GPS, Spoofing, Khác',
-    chi_tiet        TEXT,
-    hinh_anh        VARCHAR(255) COMMENT 'Đường dẫn ảnh bằng chứng (nếu có)',
-    da_xu_ly        TINYINT DEFAULT 0 COMMENT '0=chưa xử lý, 1=đã xử lý',
+    loai_gian_lan   NVARCHAR(50) NOT NULL,
+    chi_tiet        NVARCHAR(MAX),
+    hinh_anh        NVARCHAR(255),
+    da_xu_ly        TINYINT DEFAULT 0,
     FOREIGN KEY (sinh_vien_id) REFERENCES sinh_vien(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
--- 9. Bảng PHIÊN ĐIỂM DANH (Admin mở phiên, SV tham gia)
-CREATE TABLE IF NOT EXISTS phien_diem_danh (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
+IF OBJECT_ID('phien_diem_danh', 'U') IS NULL
+CREATE TABLE phien_diem_danh (
+    id          INT IDENTITY(1,1) PRIMARY KEY,
     lop_id      INT NOT NULL,
     admin_id    INT,
-    trang_thai  TINYINT DEFAULT 1 COMMENT '1=đang mở, 0=đã đóng',
-    mo_ta       VARCHAR(255),
-    bat_dau     DATETIME DEFAULT NOW(),
+    trang_thai  TINYINT DEFAULT 1,
+    mo_ta       NVARCHAR(255),
+    bat_dau     DATETIME DEFAULT GETDATE(),
     ket_thuc    DATETIME NULL,
-    het_han     DATETIME NULL COMMENT 'Thời gian tự động đóng',
-    vi_do       DOUBLE NULL COMMENT 'Latitude GPS của admin',
-    kinh_do     DOUBLE NULL COMMENT 'Longitude GPS của admin',
-    created_at  DATETIME DEFAULT NOW(),
-    INDEX idx_lop_id (lop_id),
-    INDEX idx_trang_thai (trang_thai),
+    het_han     DATETIME NULL,
+    vi_do       FLOAT NULL,
+    kinh_do     FLOAT NULL,
+    created_at  DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_phien_lop_id' AND object_id = OBJECT_ID('phien_diem_danh'))
+CREATE INDEX idx_phien_lop_id ON phien_diem_danh(lop_id);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_trang_thai' AND object_id = OBJECT_ID('phien_diem_danh'))
+CREATE INDEX idx_trang_thai ON phien_diem_danh(trang_thai);
+
+IF OBJECT_ID('don_xin_phep', 'U') IS NULL
+CREATE TABLE don_xin_phep (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
+    sinh_vien_id    INT NOT NULL,
+    lop_id          INT NOT NULL,
+    ly_do           NVARCHAR(MAX) NOT NULL,
+    minh_chung_url  NVARCHAR(255),
+    trang_thai      TINYINT DEFAULT 0,
+    thoi_gian_tao   DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (sinh_vien_id) REFERENCES sinh_vien(id) ON DELETE CASCADE,
+    FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE NO ACTION
+);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_don_sv_id' AND object_id = OBJECT_ID('don_xin_phep'))
+CREATE INDEX idx_don_sv_id ON don_xin_phep(sinh_vien_id);
+

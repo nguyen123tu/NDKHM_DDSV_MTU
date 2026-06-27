@@ -4,6 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
+import '../widgets/neu_button.dart';
 
 /// Model đại diện một tin nhắn chat
 class ChatMessage {
@@ -162,46 +164,10 @@ class _ChatbotScreenState extends State<ChatbotScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Ambient glows
-          Positioned(
-            top: -80,
-            right: -80,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.secondary.withOpacity(0.12),
-              ),
-            )
-                .animate(
-                    onPlay: (controller) => controller.repeat(reverse: true))
-                .scale(
-                    begin: const Offset(1, 1),
-                    end: const Offset(1.3, 1.3),
-                    duration: 5.seconds),
-          ),
-          Positioned(
-            bottom: -60,
-            left: -60,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(0.1),
-              ),
-            )
-                .animate(
-                    onPlay: (controller) => controller.repeat(reverse: true))
-                .scale(
-                    begin: const Offset(1, 1),
-                    end: const Offset(1.2, 1.2),
-                    duration: 4.seconds),
-          ),
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           // Main content
           SafeArea(
@@ -231,10 +197,9 @@ class _ChatbotScreenState extends State<ChatbotScreen>
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: Container(
+            child: NeuContainer(
               padding: const EdgeInsets.all(8),
-              decoration: AppTheme.glassDecoration(
-                  shape: BoxShape.circle, opacity: 0.08),
+              shape: BoxShape.circle,
               child: const Icon(Icons.arrow_back_ios_new,
                   color: AppTheme.textPrimary, size: 18),
             ),
@@ -253,7 +218,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
               ),
               boxShadow: [
                 BoxShadow(
-                    color: AppTheme.secondary.withOpacity(0.3),
+                    color: AppTheme.secondary.withValues(alpha: 0.3),
                     blurRadius: 12,
                     spreadRadius: 0),
               ],
@@ -301,10 +266,9 @@ class _ChatbotScreenState extends State<ChatbotScreen>
           ),
           GestureDetector(
             onTap: _messages.isNotEmpty ? _clearHistory : null,
-            child: Container(
+            child: NeuContainer(
               padding: const EdgeInsets.all(8),
-              decoration: AppTheme.glassDecoration(
-                  shape: BoxShape.circle, opacity: 0.08),
+              shape: BoxShape.circle,
               child: Icon(Icons.delete_outline,
                   color: _messages.isNotEmpty
                       ? AppTheme.accent
@@ -333,12 +297,12 @@ class _ChatbotScreenState extends State<ChatbotScreen>
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [
-                  AppTheme.secondary.withOpacity(0.2),
-                  AppTheme.primary.withOpacity(0.2),
+                  AppTheme.secondary.withValues(alpha: 0.2),
+                  AppTheme.primary.withValues(alpha: 0.2),
                 ],
               ),
               border: Border.all(
-                  color: AppTheme.secondary.withOpacity(0.3), width: 2),
+                  color: AppTheme.secondary.withValues(alpha: 0.3), width: 2),
             ),
             child: const Icon(Icons.smart_toy_outlined,
                 color: AppTheme.secondary, size: 48),
@@ -375,7 +339,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
             Row(
               children: [
                 Icon(Icons.lightbulb_outline,
-                    color: AppTheme.warning.withOpacity(0.8), size: 16),
+                    color: AppTheme.warning.withValues(alpha: 0.8), size: 16),
                 const SizedBox(width: 6),
                 const Text(
                   'Câu hỏi gợi ý',
@@ -402,14 +366,10 @@ class _ChatbotScreenState extends State<ChatbotScreen>
   Widget _buildSuggestionCard(String text, int index) {
     return GestureDetector(
       onTap: () => _sendMessage(text),
-      child: Container(
-        width: double.infinity,
+      child: NeuContainer(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: AppTheme.glassDecoration(
-          borderRadius: 16,
-          opacity: 0.06,
-        ),
+        borderRadius: 16,
         child: Row(
           children: [
             const Icon(Icons.chat_bubble_outline,
@@ -466,35 +426,34 @@ class _ChatbotScreenState extends State<ChatbotScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: isUser
                   ? BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF4F46E5), Color(0xFF06B6D4)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: AppTheme.primary,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                         bottomLeft: Radius.circular(20),
                         bottomRight: Radius.circular(4),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primary.withOpacity(0.25),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     )
                   : BoxDecoration(
-                      color: Colors.white.withOpacity(0.06),
+                      color: Theme.of(context).scaffoldBackgroundColor,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(4),
                         topRight: Radius.circular(20),
                         bottomLeft: Radius.circular(20),
                         bottomRight: Radius.circular(20),
                       ),
-                      border: Border.all(
-                          color: Colors.white.withOpacity(0.08), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          offset: const Offset(-2, -2),
+                          blurRadius: 4,
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          offset: const Offset(2, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
                     ),
               child: isUser
                   ? Text(
@@ -527,7 +486,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                             fontWeight: FontWeight.bold),
                         code: TextStyle(
                           color: AppTheme.secondary,
-                          backgroundColor: AppTheme.primary.withOpacity(0.15),
+                          backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
                           fontSize: 13,
                           fontFamily: 'monospace',
                         ),
@@ -535,7 +494,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                           color: const Color(0xFF0D1117),
                           borderRadius: BorderRadius.circular(8),
                           border:
-                              Border.all(color: Colors.white.withOpacity(0.1)),
+                              Border.all(color: Colors.white.withValues(alpha: 0.1)),
                         ),
                         codeblockPadding: const EdgeInsets.all(12),
                         listBullet: const TextStyle(
@@ -544,10 +503,10 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                             color: AppTheme.secondary,
                             fontWeight: FontWeight.bold),
                         em: TextStyle(
-                            color: AppTheme.textPrimary.withOpacity(0.9),
+                            color: AppTheme.textPrimary.withValues(alpha: 0.9),
                             fontStyle: FontStyle.italic),
                         blockquoteDecoration: BoxDecoration(
-                          color: AppTheme.primary.withOpacity(0.1),
+                          color: AppTheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                           border: const Border(
                             left:
@@ -555,7 +514,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                           ),
                         ),
                         tableBorder: TableBorder.all(
-                            color: Colors.white.withOpacity(0.1)),
+                            color: Colors.white.withValues(alpha: 0.1)),
                         tableHead: const TextStyle(
                             color: AppTheme.textPrimary,
                             fontWeight: FontWeight.bold,
@@ -578,7 +537,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                       child: Text(
                         '${(msg.durationMs! / 1000).toStringAsFixed(1)}s',
                         style: TextStyle(
-                          color: AppTheme.textMuted.withOpacity(0.6),
+                          color: AppTheme.textMuted.withValues(alpha: 0.6),
                           fontSize: 10,
                         ),
                       ),
@@ -590,7 +549,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppTheme.secondary.withOpacity(0.1),
+                              color: AppTheme.secondary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -613,7 +572,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
               child: Text(
                 '${msg.timestamp.hour.toString().padLeft(2, '0')}:${msg.timestamp.minute.toString().padLeft(2, '0')}',
                 style: TextStyle(
-                  color: AppTheme.textMuted.withOpacity(0.5),
+                  color: AppTheme.textMuted.withValues(alpha: 0.5),
                   fontSize: 10,
                 ),
               ),
@@ -640,14 +599,25 @@ class _ChatbotScreenState extends State<ChatbotScreen>
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
+          color: Theme.of(context).scaffoldBackgroundColor,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(4),
             topRight: Radius.circular(20),
             bottomLeft: Radius.circular(20),
             bottomRight: Radius.circular(20),
           ),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.8),
+              offset: const Offset(-2, -2),
+              blurRadius: 4,
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              offset: const Offset(2, 2),
+              blurRadius: 4,
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -661,7 +631,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
             Text(
               'Đang suy nghĩ...',
               style: TextStyle(
-                color: AppTheme.textMuted.withOpacity(0.7),
+                color: AppTheme.textMuted.withValues(alpha: 0.7),
                 fontSize: 12,
                 fontStyle: FontStyle.italic,
               ),
@@ -678,7 +648,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
       height: 8,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppTheme.secondary.withOpacity(0.7),
+        color: AppTheme.secondary.withValues(alpha: 0.7),
       ),
     )
         .animate(onPlay: (c) => c.repeat(reverse: true))
@@ -697,88 +667,62 @@ class _ChatbotScreenState extends State<ChatbotScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
-        color: AppTheme.background.withOpacity(0.95),
+        color: AppTheme.background.withValues(alpha: 0.95),
         border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.05)),
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
         ),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.07),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    maxLines: 4,
-                    minLines: 1,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 14,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Hỏi về hệ thống MTUFace...',
-                      hintStyle: TextStyle(
-                        color: AppTheme.textMuted.withOpacity(0.5),
-                        fontSize: 14,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      border: InputBorder.none,
-                    ),
-                    onSubmitted: (text) {
-                      if (!_isLoading) _sendMessage(text);
-                    },
-                  ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: NeuContainer(
+              isPressed: true,
+              borderRadius: 24,
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                maxLines: 4,
+                minLines: 1,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 14,
                 ),
-                // Send button
-                GestureDetector(
-                  onTap: () {
-                    if (!_isLoading && _controller.text.trim().isNotEmpty) {
-                      _sendMessage(_controller.text);
-                    }
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 6, bottom: 6),
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: _isLoading
-                            ? [AppTheme.textMuted, AppTheme.textMuted]
-                            : [AppTheme.secondary, AppTheme.primary],
-                      ),
-                      boxShadow: _isLoading
-                          ? []
-                          : [
-                              BoxShadow(
-                                color: AppTheme.secondary.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                    ),
-                    child: Icon(
-                      _isLoading ? Icons.hourglass_top : Icons.arrow_upward,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+                decoration: InputDecoration(
+                  hintText: 'Hỏi về hệ thống MTUFace...',
+                  hintStyle: TextStyle(
+                    color: AppTheme.textMuted.withValues(alpha: 0.5),
+                    fontSize: 14,
                   ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12),
+                  border: InputBorder.none,
                 ),
-              ],
+                onSubmitted: (text) {
+                  if (!_isLoading) _sendMessage(text);
+                },
+              ),
             ),
           ),
-        ),
+          const SizedBox(width: 8),
+          // Send button
+          GestureDetector(
+            onTap: () {
+              if (!_isLoading && _controller.text.trim().isNotEmpty) {
+                _sendMessage(_controller.text);
+              }
+            },
+            child: NeuContainer(
+              padding: const EdgeInsets.all(10),
+              shape: BoxShape.circle,
+              child: Icon(
+                _isLoading ? Icons.hourglass_top : Icons.arrow_upward,
+                color: AppTheme.primary,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
       ),
     ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.3, end: 0);
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -52,7 +53,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Thông Báo',
             style: TextStyle(fontWeight: FontWeight.bold)),
@@ -72,20 +73,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       body: Stack(
         children: [
-          // Ambient Glow
-          Positioned(
-            top: -100,
-            left: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(0.15),
-                backgroundBlendMode: BlendMode.screen,
-              ),
-            ),
-          ),
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           _isLoading
               ? const Center(
@@ -127,17 +115,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildNotificationCard(dynamic n, bool isRead, int index) {
-    return Container(
+    return NeuContainer(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: AppTheme.glassDecoration(
-        borderRadius: 16,
-        opacity: isRead ? 0.03 : 0.08,
-      ).copyWith(
-        border: Border.all(
-          color: isRead ? Colors.white10 : AppTheme.primary.withOpacity(0.5),
-          width: 1,
-        ),
-      ),
+      borderRadius: 16,
+      isPressed: isRead,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -154,7 +135,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   decoration: BoxDecoration(
                     color: isRead
                         ? AppTheme.surfaceLight
-                        : AppTheme.primary.withOpacity(0.15),
+                        : AppTheme.primary.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -213,7 +194,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                            color: AppTheme.secondary.withOpacity(0.5),
+                            color: AppTheme.secondary.withValues(alpha: 0.5),
                             blurRadius: 8,
                             spreadRadius: 2)
                       ],

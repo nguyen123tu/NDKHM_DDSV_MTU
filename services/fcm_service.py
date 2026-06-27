@@ -52,3 +52,47 @@ def notify_student_attendance(mssv, time_str, camera_name, image_url=None, trang
         if image_url:
             data['image_url'] = image_url
         send_push_notification(sv['fcm_token'], title, body, data)
+
+def send_custom_notification(title, body, mssv_list=None):
+    """Gửi thông báo tuỳ chỉnh cho danh sách MSSV (hoặc tất cả nếu mssv_list trống)"""
+    from db.connection import execute_query
+    
+    if mssv_list and len(mssv_list) > 0:
+        # Nếu có danh sách mssv cụ thể
+        format_strings = ','.join(['%s'] * len(mssv_list))
+        sql = f"SELECT fcm_token FROM sinh_vien WHERE mssv IN ({format_strings}) AND fcm_token IS NOT NULL"
+        users = execute_query(sql, tuple(mssv_list))
+    else:
+        # Nếu gửi cho tất cả
+        sql = "SELECT fcm_token FROM sinh_vien WHERE fcm_token IS NOT NULL"
+        users = execute_query(sql)
+
+    tokens = [u['fcm_token'] for u in users if u.get('fcm_token')]
+    
+    if not tokens:
+        print("[FCM] Không có token nào để gửi thông báo.")
+        return 0
+        
+    success_count = 0
+    # Gửi qua vòng lặp (vì số lượng có thể ít, nếu nhiều nên dùng messaging.send_each_for_multicast)
+    # Tuy nhiên với số lượng nhỏ sinh viên, send_each_for_multicast là tối ưu
+    if firebase_admin._apps:
+        try:
+            # Chia nhỏ thành các batch 500 token (giới hạn của Firebase)
+            batch_size = 500
+            for i in range(0, len(tokens), batch_size):
+                batch_tokens = tokens[i:i + batch_size]
+                message = messaging.MulticastMessage(
+                    notification=messaging.Notification(
+                        title=title,
+                        body=body
+                    ),
+                    tokens=batch_tokens,
+                )
+                response = messaging.send_each_for_multicast(message)
+                success_count += response.success_count
+            print(f"[FCM] Đã gửi thông báo multicast thành công tới {success_count}/{len(tokens)} thiết bị.")
+        except Exception as e:
+            print(f"[FCM] Lỗi gửi thông báo multicast: {e}")
+            
+    return success_count

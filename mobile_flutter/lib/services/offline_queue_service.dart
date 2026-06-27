@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../data/local/app_database.dart';
 import 'api_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Command Queue Pattern: Mọi thao tác write đều qua đây.
 /// Online → execute ngay. Offline → lưu vào SQLite → sync khi có mạng.
@@ -36,7 +37,7 @@ class OfflineQueueService {
       'status': 'pending',
     });
 
-    print('[QUEUE] Đã thêm: $actionType (UUID: $localUuid)');
+    debugPrint('[QUEUE] Đã thêm: $actionType (UUID: $localUuid)');
     return localUuid;
   }
 
@@ -85,7 +86,7 @@ class OfflineQueueService {
       }
     }
 
-    print('[QUEUE] Xử lý xong: $successCount thành công, $failedCount thất bại');
+    debugPrint('[QUEUE] Xử lý xong: $successCount thành công, $failedCount thất bại');
     return {'success': successCount, 'failed': failedCount};
   }
 
@@ -162,7 +163,7 @@ class OfflineQueueService {
           where: 'id = ?',
           whereArgs: [id],
         );
-        print('[QUEUE] Thao tác ID=$id đã thất bại sau $maxRetries lần thử.');
+        debugPrint('[QUEUE] Thao tác ID=$id đã thất bại sau $maxRetries lần thử.');
       }
     }
   }

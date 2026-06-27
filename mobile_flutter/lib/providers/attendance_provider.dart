@@ -31,11 +31,8 @@ class AttendanceProvider with ChangeNotifier {
       notifyListeners();
 
       // Sau đó thử fetch online để cập nhật data mới nhất
-      bool hasConnection = await _checkConnectivity();
-      if (hasConnection) {
-        await _fetchOnline();
-        notifyListeners();
-      }
+      await _fetchOnline();
+      notifyListeners();
     } catch (e) {
       debugPrint("Error fetching dashboard: $e");
     } finally {

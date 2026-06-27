@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../services/export_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
 
 class AdminSessionDetailScreen extends StatefulWidget {
   final int sessionId;
@@ -85,7 +86,7 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('Chi tiết: ${widget.tenLop}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: Colors.transparent,
@@ -108,37 +109,7 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
       ),
       body: Stack(
         children: [
-          // Ambient Glow Background
-          Positioned(
-            top: -100,
-            left: -100,
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.primary.withOpacity(0.15),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            right: -50,
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-              child: Container(
-                width: 250,
-                height: 250,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.secondary.withOpacity(0.1),
-                ),
-              ),
-            ),
-          ),
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           _isLoading
               ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
@@ -157,10 +128,10 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
     return Column(
       children: [
         // Header Stats
-        Container(
+        NeuContainer(
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: AppTheme.glassDecoration(borderRadius: 20, opacity: 0.05),
+          borderRadius: 20,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -182,22 +153,16 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
               final student = _students[index];
               bool isPresent = student['trang_thai'] == 'Co mat';
               
-              return Container(
+              return NeuContainer(
                 margin: const EdgeInsets.only(bottom: 12),
-                decoration: AppTheme.glassDecoration(
-                  borderRadius: 16, 
-                  opacity: isPresent ? 0.05 : 0.02,
-                ).copyWith(
-                  border: Border.all(
-                    color: isPresent ? Colors.greenAccent.withOpacity(0.2) : Colors.redAccent.withOpacity(0.1),
-                  ),
-                ),
+                borderRadius: 16,
+                isPressed: isPresent,
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: isPresent ? Colors.greenAccent.withOpacity(0.1) : Colors.redAccent.withOpacity(0.1),
+                      color: isPresent ? Colors.greenAccent.withValues(alpha: 0.1) : Colors.redAccent.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -224,7 +189,7 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isPresent ? Colors.greenAccent.withOpacity(0.1) : Colors.redAccent.withOpacity(0.1),
+                          color: isPresent ? Colors.greenAccent.withValues(alpha: 0.1) : Colors.redAccent.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

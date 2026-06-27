@@ -130,7 +130,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                 height: 300,
                 decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppTheme.primary.withOpacity(0.15)),
+                    color: AppTheme.primary.withValues(alpha: 0.15)),
               ),
             ),
           ),
@@ -169,11 +169,11 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                               color: AppTheme.textSecondary, fontSize: 14),
                           hintText: "https://example.ngrok-free.dev",
                           hintStyle: TextStyle(
-                              color: AppTheme.textMuted.withOpacity(0.5)),
+                              color: AppTheme.textMuted.withValues(alpha: 0.5)),
                           prefixIcon: const Icon(Icons.link,
                               color: AppTheme.secondary, size: 20),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.05),
+                          fillColor: Colors.white.withValues(alpha: 0.05),
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none),
@@ -224,7 +224,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppTheme.textMuted,
                               side: BorderSide(
-                                  color: AppTheme.textMuted.withOpacity(0.5)),
+                                  color: AppTheme.textMuted.withValues(alpha: 0.5)),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -270,7 +270,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                                   value: _threshold,
                                   strokeWidth: 10,
                                   backgroundColor:
-                                      Colors.white.withOpacity(0.08),
+                                      Colors.white.withValues(alpha: 0.08),
                                   color: _threshold > 0.6
                                       ? AppTheme.success
                                       : _threshold > 0.3
@@ -305,7 +305,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                         max: 0.9,
                         divisions: 80,
                         activeColor: AppTheme.secondary,
-                        inactiveColor: Colors.white.withOpacity(0.1),
+                        inactiveColor: Colors.white.withValues(alpha: 0.1),
                         onChanged: _canAdjust
                             ? (val) => setState(() => _threshold = val)
                             : null,
@@ -337,7 +337,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                       ),
                       Divider(
                           height: 1,
-                          color: Colors.white.withOpacity(0.06),
+                          color: Colors.white.withValues(alpha: 0.06),
                           indent: 60),
                       _buildToggleTile(
                         icon: Icons.face_retouching_natural,
@@ -348,7 +348,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                       ),
                       Divider(
                           height: 1,
-                          color: Colors.white.withOpacity(0.06),
+                          color: Colors.white.withValues(alpha: 0.06),
                           indent: 60),
                       _buildToggleTile(
                         icon: Icons.security,
@@ -374,7 +374,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                            color: AppTheme.primary.withOpacity(0.4),
+                            color: AppTheme.primary.withValues(alpha: 0.4),
                             blurRadius: 12,
                             offset: const Offset(0, 6)),
                       ],
@@ -423,7 +423,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: (value ? AppTheme.secondary : AppTheme.textMuted)
-              .withOpacity(0.15),
+              .withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon,
@@ -439,7 +439,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
       trailing: Switch(
         value: value,
         activeThumbColor: AppTheme.secondary,
-        inactiveTrackColor: Colors.white.withOpacity(0.1),
+        inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
         onChanged: onChanged,
       ),
     );

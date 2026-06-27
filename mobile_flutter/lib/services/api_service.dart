@@ -76,6 +76,7 @@ class ApiService {
     final token = prefs.getString('auth_token');
     return {
       'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': '69420',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -181,10 +182,12 @@ class ApiService {
   }
 
   Future<List<dynamic>> getClasses() async {
+    final headers = await _getHeaders();
     try {
       final response = await http
           .get(
             Uri.parse('$baseUrl/api/mobile/classes'),
+            headers: headers,
           )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
@@ -198,7 +201,8 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> registerFace(
-      String mssv, String hoTen, int lopId, List<String> imagesBase64) async {
+      String mssv, String hoTen, int lopId, List<String> imagesBase64,
+      {String? email, String? sdt, String? ngaySinh, int? gioiTinh}) async {
     final headers = await _getHeaders();
     try {
       final response = await http
@@ -209,6 +213,10 @@ class ApiService {
               'mssv': mssv,
               'ho_ten': hoTen,
               'lop_id': lopId,
+              'email': email,
+              'sdt': sdt,
+              'ngay_sinh': ngaySinh,
+              'gioi_tinh': gioiTinh,
               'images': imagesBase64
             }),
           )

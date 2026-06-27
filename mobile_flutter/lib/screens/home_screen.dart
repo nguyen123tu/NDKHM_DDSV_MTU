@@ -1,30 +1,24 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/connectivity_provider.dart';
-import 'scan_screen.dart' as scan_screen;
 import 'register_screen.dart' as reg_screen;
 import 'profile_screen.dart';
 import 'schedule_screen.dart';
 import 'device_settings_screen.dart';
-import 'history_report_screen.dart';
-import 'face_approval_screen.dart';
-import 'student_attendance_screen.dart';
 import 'admin_session_screen.dart';
 import 'admin_student_list_screen.dart' as admin_student;
 import 'student_qr_scanner_screen.dart';
-import 'session_history_screen.dart';
 import 'admin_stats_screen.dart';
 import 'notifications_screen.dart';
 import 'sync_status_screen.dart';
 import 'chatbot_screen.dart';
 import 'about_screen.dart';
-import '../services/export_service.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -76,34 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final userName = auth.user?.name ?? 'Admin';
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Ambient Background Glows (Static - no animation loop)
-          Positioned(
-            top: -100,
-            left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(0.15),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            right: -50,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.secondary.withOpacity(0.1),
-              ),
-            ),
-          ),
+          // Background - Clean Neumorphism
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           // Main Content
           SafeArea(
@@ -134,14 +105,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: AppTheme.glassDecoration(
-                                        opacity: 0.1, borderRadius: 12),
+                                  NeuContainer(
+                                    padding: const EdgeInsets.all(12),
+                                    shape: BoxShape.circle,
                                     child: const Icon(
                                         Icons.face_retouching_natural,
                                         color: AppTheme.secondary,
-                                        size: 22),
+                                        size: 24),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
@@ -156,12 +126,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               Row(
                                 children: [
                                   if (isAdmin)
-                                    Container(
+                                    NeuContainer(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 6),
+                                          horizontal: 12, vertical: 8),
                                       margin: const EdgeInsets.only(right: 12),
-                                      decoration: AppTheme.glassDecoration(
-                                          opacity: 0.1, borderRadius: 20),
+                                      borderRadius: 20,
                                       child: const Row(
                                         children: [
                                           Icon(Icons.admin_panel_settings,
@@ -186,10 +155,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       const NotificationsScreen()))
                                           .then((_) => _fetchUnreadCount());
                                     },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: AppTheme.glassDecoration(
-                                          shape: BoxShape.circle),
+                                    child: NeuContainer(
+                                      padding: const EdgeInsets.all(10),
+                                      shape: BoxShape.circle,
                                       child: Stack(
                                         clipBehavior: Clip.none,
                                         children: [
@@ -236,12 +204,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                         MaterialPageRoute(
                                             builder: (_) =>
                                                 const ProfileScreen())),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: AppTheme.glassDecoration(
-                                          shape: BoxShape.circle),
+                                    child: NeuContainer(
+                                      padding: const EdgeInsets.all(10),
+                                      shape: BoxShape.circle,
                                       child: const Icon(Icons.person,
-                                          color: AppTheme.textPrimary,
+                                          color: AppTheme.primary,
                                           size: 20),
                                     ),
                                   ),
@@ -274,12 +241,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                         borderRadius: BorderRadius.circular(16),
                                         side: const BorderSide(
                                             color: Colors.white10)),
-                                    icon: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: AppTheme.glassDecoration(
-                                          shape: BoxShape.circle),
+                                    icon: NeuContainer(
+                                      padding: const EdgeInsets.all(10),
+                                      shape: BoxShape.circle,
                                       child: const Icon(Icons.more_vert,
-                                          color: AppTheme.textPrimary,
+                                          color: AppTheme.primary,
                                           size: 20),
                                     ),
                                     itemBuilder: (context) => [
@@ -358,13 +324,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (auth.isOfflineMode)
                                     Padding(
                                       padding: const EdgeInsets.only(left: 12),
-                                      child: Container(
+                                      child: NeuContainer(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: AppTheme.glassDecoration(
-                                            color: AppTheme.warning,
-                                            opacity: 0.2,
-                                            borderRadius: 8),
+                                            horizontal: 12, vertical: 6),
+                                        borderRadius: 12,
                                         child: const Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
@@ -376,8 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 style: TextStyle(
                                                     color: AppTheme.warning,
                                                     fontSize: 10,
-                                                    fontWeight:
-                                                        FontWeight.bold)),
+                                                    fontWeight: FontWeight.bold)),
                                           ],
                                         ),
                                       ),
@@ -391,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         // ====== STATS CARDS ======
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: _buildStatsGrid(attendance)
+                          child: _buildStatsGrid(attendance, isAdmin)
                               .animate()
                               .fadeIn(delay: 150.ms),
                         ),
@@ -441,8 +403,9 @@ class _HomeScreenState extends State<HomeScreen> {
       glowColor = AppTheme.error;
       icon = Icons.cloud_off;
       message = 'Offline';
-      if (connectivity.pendingSyncCount > 0)
+      if (connectivity.pendingSyncCount > 0) {
         message += ' • ${connectivity.pendingSyncCount} pending';
+      }
     } else if (connectivity.isSyncing) {
       glowColor = AppTheme.secondary;
       icon = Icons.sync;
@@ -460,22 +423,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => Navigator.push(
           context, MaterialPageRoute(builder: (_) => const SyncStatusScreen())),
-      child: Container(
+      child: NeuContainer(
         margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: AppTheme.glassDecoration(
-          color: glowColor,
-          opacity: 0.15,
-          borderRadius: 16,
-        ).copyWith(
-          border: Border.all(color: glowColor.withOpacity(0.5), width: 1),
-          boxShadow: [
-            BoxShadow(
-                color: glowColor.withOpacity(0.2),
-                blurRadius: 12,
-                spreadRadius: 0),
-          ],
-        ),
+        borderRadius: 16,
         child: Row(
           children: [
             if (connectivity.isSyncing)
@@ -506,7 +457,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: glowColor.withOpacity(0.2),
+                    color: glowColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text('SYNC NOW',
@@ -519,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             if (!connectivity.isOnline)
               Icon(Icons.chevron_right,
-                  color: glowColor.withOpacity(0.8), size: 18),
+                  color: glowColor.withValues(alpha: 0.8), size: 18),
           ],
         ),
       ),
@@ -527,7 +478,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ====== Stats Grid ======
-  Widget _buildStatsGrid(AttendanceProvider attendance) {
+  Widget _buildStatsGrid(AttendanceProvider attendance, bool isAdmin) {
     if (attendance.isLoading && attendance.stats == null) {
       return const Center(
           child: CircularProgressIndicator(color: AppTheme.secondary));
@@ -538,9 +489,9 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Expanded(
           child: _buildGlassStatCard(
-            title: "Tổng SV",
+            title: isAdmin ? "Tổng SV" : "Số phiên",
             value: "${stats?.total ?? 0}",
-            icon: Icons.people_alt,
+            icon: isAdmin ? Icons.people_alt : Icons.class_,
             color: AppTheme.primary,
           ),
         ),
@@ -571,23 +522,22 @@ class _HomeScreenState extends State<HomeScreen> {
       required String value,
       required IconData icon,
       required Color color}) {
-    return Container(
+    return NeuContainer(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: AppTheme.glassDecoration(borderRadius: 20),
+      borderRadius: 20,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
+          Icon(icon, color: color, size: 28),
           const SizedBox(height: 12),
           Text(value,
-              style: const TextStyle(
-                  color: AppTheme.textPrimary,
+              style: TextStyle(
+                  color: Theme.of(context).textTheme.displayLarge?.color,
                   fontSize: 24,
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text(title,
-              style:
-                  const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 12)),
         ],
       ),
     );
@@ -598,10 +548,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Tính năng mở rộng",
+        Text(
+          "Tính năng chính",
           style: TextStyle(
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).textTheme.displayLarge?.color,
               fontSize: 18,
               fontWeight: FontWeight.bold),
         ),
@@ -748,44 +698,31 @@ class _HomeScreenState extends State<HomeScreen> {
       {required String title,
       required String subtitle,
       required IconData icon,
-      required List<Color> gradient,
+      required List<Color> gradient, // Bỏ qua gradient để dùng màu tĩnh Neumorphism
       required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: NeuContainer(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-              colors: gradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-                color: gradient.first.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 8)),
-          ],
-        ),
+        borderRadius: 20,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-              child: Icon(icon, color: Colors.white, size: 24),
+            NeuContainer(
+              padding: const EdgeInsets.all(12),
+              shape: BoxShape.circle,
+              child: Icon(icon, color: gradient.first, size: 28),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(title,
-                style: const TextStyle(
-                    color: Colors.white,
+                style: TextStyle(
+                    color: Theme.of(context).textTheme.displayLarge?.color,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(subtitle,
                 style: TextStyle(
-                    color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                    color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 12)),
           ],
         ),
       ),

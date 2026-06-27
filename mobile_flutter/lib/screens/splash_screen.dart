@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_theme.dart';
+import '../widgets/neu_container.dart';
 
 class SplashScreen extends StatefulWidget {
   final VoidCallback onComplete;
@@ -37,41 +38,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Ambient Glow 1
-          Positioned(
-            top: -150,
-            left: -100,
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-              child: Container(
-                width: 400,
-                height: 400,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.primary.withOpacity(0.25),
-                ),
-              ),
-            ),
-          ),
-          // Ambient Glow 2
-          Positioned(
-            bottom: -100,
-            right: -80,
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-              child: Container(
-                width: 350,
-                height: 350,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.secondary.withOpacity(0.15),
-                ),
-              ),
-            ),
-          ),
+          Container(color: Theme.of(context).scaffoldBackgroundColor),
 
           // Main Content
           Center(
@@ -79,20 +49,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo
-                Container(
+                NeuContainer(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.08),
-                    border: Border.all(color: Colors.white.withOpacity(0.15), width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primary.withOpacity(0.3),
-                        blurRadius: 40,
-                        spreadRadius: 10,
-                      ),
-                    ],
-                  ),
+                  shape: BoxShape.circle,
                   child: ClipOval(
                     child: Image.asset(
                       "assets/images/logo_MTU.png",
@@ -148,9 +107,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       animation: _pulseController,
                       builder: (context, _) {
                         return LinearProgressIndicator(
-                          backgroundColor: Colors.white.withOpacity(0.08),
+                          backgroundColor: Colors.white.withValues(alpha: 0.08),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.secondary.withOpacity(0.5 + _pulseController.value * 0.5),
+                            AppTheme.secondary.withValues(alpha: 0.5 + _pulseController.value * 0.5),
                           ),
                           minHeight: 3,
                         );
@@ -183,7 +142,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 Text(
                   "ĐẠI HỌC XÂY DỰNG MIỀN TÂY",
                   style: TextStyle(
-                    color: AppTheme.textSecondary.withOpacity(0.7),
+                    color: AppTheme.textSecondary.withValues(alpha: 0.7),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.5,
@@ -193,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 Text(
                   "v2.0 • AI Face Recognition",
                   style: TextStyle(
-                    color: AppTheme.textMuted.withOpacity(0.5),
+                    color: AppTheme.textMuted.withValues(alpha: 0.5),
                     fontSize: 11,
                   ),
                 ),
