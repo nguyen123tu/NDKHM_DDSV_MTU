@@ -59,3 +59,7 @@ models/chroma_db/
 *.pth
 
 serviceAccountKey.json
+.env.production
+
+# Docker volumes data
+mssql_data/

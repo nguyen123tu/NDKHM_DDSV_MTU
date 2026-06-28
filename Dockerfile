@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     libfontconfig1 \
     fonts-liberation \
+    freetds-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Tạo thư mục làm việc
@@ -36,11 +37,11 @@ COPY . .
 RUN mkdir -p /app/database /app/models /app/static
 
 # Expose port
-EXPOSE 5000
+EXPOSE 5001
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/auth/login')" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5001/auth/login')" || exit 1
 
 # Entrypoint
 CMD ["python", "app.py"]
