@@ -39,7 +39,7 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      extendBody: true, // Cho phép nội dung cuộn dưới BottomBar
+      extendBody: false, // Tắt extendBody để thanh BottomBar không che mất nội dung
       body: Stack(
         children: List.generate(pages.length, (index) {
           if (index == 2) return const SizedBox(); // Placeholder for FAB
@@ -62,74 +62,50 @@ class _MainScreenState extends State<MainScreen> {
       ),
       
       // Floating Action Button (Nút nổi ở giữa - thiết kế lại theo Neu/Glass)
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(top: 20),
-        child: NeuButton(
-          shape: BoxShape.circle,
-          isPrimary: true,
-          padding: const EdgeInsets.all(16),
-          onPressed: () {
-            if (isAdmin) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const scan_screen.ScanScreen()));
-            } else {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentQRScannerScreen()));
-            }
-          },
-          child: Icon(
-            isAdmin ? Icons.document_scanner : Icons.qr_code_scanner,
-            color: Colors.white,
-            size: 30,
-          ),
+      floatingActionButton: NeuButton(
+        shape: BoxShape.circle,
+        isPrimary: true,
+        padding: const EdgeInsets.all(16),
+        onPressed: () {
+          if (isAdmin) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const scan_screen.ScanScreen()));
+          } else {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentQRScannerScreen()));
+          }
+        },
+        child: Icon(
+          isAdmin ? Icons.document_scanner : Icons.qr_code_scanner,
+          color: Colors.white,
+          size: 30,
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      // --- Neumorphic / Glassmorphic Floating Tab Bar ---
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24), // Cách viền để lơ lửng
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 20,
-              offset: const Offset(5, 5),
+      // --- Modern Standard Bottom App Bar ---
+      bottomNavigationBar: BottomAppBar(
+        color: AppTheme.surface,
+        elevation: 20,
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                _buildNavItem(icon: Icons.home_rounded, label: "Trang chủ", index: 0),
+                const SizedBox(width: 8),
+                _buildNavItem(icon: Icons.calendar_month_rounded, label: isAdmin ? "Phiên" : "Điểm danh", index: 1),
+              ],
             ),
-            BoxShadow(
-              color: Colors.white.withValues(alpha: 0.05), // Giảm độ chói của bóng sáng
-              blurRadius: 20,
-              offset: const Offset(-2, -2),
+            Row(
+              children: [
+                _buildNavItem(icon: Icons.notifications_rounded, label: "Thông báo", index: 3),
+                const SizedBox(width: 8),
+                _buildNavItem(icon: Icons.person_rounded, label: "Cá nhân", index: 4),
+              ],
             ),
           ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              height: 70,
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? AppTheme.surface.withValues(alpha: 0.8) 
-                    : AppTheme.neuBackground.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  width: 1.5,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildNavItem(icon: Icons.home_rounded, label: "Trang chủ", index: 0),
-                  _buildNavItem(icon: Icons.calendar_month_rounded, label: isAdmin ? "Phiên" : "Điểm danh", index: 1),
-                  const SizedBox(width: 60), // Khoảng trống cho FAB
-                  _buildNavItem(icon: Icons.notifications_rounded, label: "Thông báo", index: 3),
-                  _buildNavItem(icon: Icons.person_rounded, label: "Cá nhân", index: 4),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -139,46 +115,39 @@ class _MainScreenState extends State<MainScreen> {
     final isSelected = _currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    final activeColor = AppTheme.primary;
-    final inactiveColor = isDark ? AppTheme.textMuted : AppTheme.textDarkSecondary.withValues(alpha: 0.6);
+    final activeColor = isDark ? AppTheme.secondary : AppTheme.primary;
+    final inactiveColor = isDark ? AppTheme.textMuted : AppTheme.textSecondary.withValues(alpha: 0.6);
     
-    return GestureDetector(
+    return InkWell(
       onTap: () => setState(() => _currentIndex = index),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.fastOutSlowIn,
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 18 : 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? activeColor.withValues(alpha: 0.15) 
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedSwitcher(
+            AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+              padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 0, vertical: 4),
+              decoration: BoxDecoration(
+                color: isSelected ? activeColor.withOpacity(0.15) : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(
                 icon,
-                key: ValueKey('$index-$isSelected'),
                 color: isSelected ? activeColor : inactiveColor,
-                size: isSelected ? 26 : 24,
+                size: 24,
               ),
             ),
-            if (isSelected) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: activeColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.2, end: 0),
-            ]
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? activeColor : inactiveColor,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),

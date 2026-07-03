@@ -29,7 +29,7 @@ SYSTEM_PROMPT = """Bạn là **MTU AI Assistant** — trợ lý AI thông minh c
 
 ## Quy tắc:
 1. Trả lời DỰA TRÊN kiến thức dự án được cung cấp trong context bên dưới.
-2. Nếu câu hỏi nằm ngoài phạm vi dự án, hãy cho biết và gợi ý hướng tìm kiếm.
+2. Nếu câu hỏi nằm ngoài phạm vi dự án, hãy cho biết và gợi ý hướng tìm kiếm. Tuy nhiên, nếu bạn được cung cấp công cụ Google Search Grounding, hãy duyệt web để lấy dữ liệu thực tế và trả lời chính xác.
 3. Khi trích dẫn code, hãy chỉ rõ file nguồn.
 4. Sử dụng markdown formatting cho câu trả lời rõ ràng.
 5. Nếu không chắc chắn, hãy nói rõ thay vì bịa ra thông tin.
@@ -72,6 +72,7 @@ class AIChatbot:
         self._gemini_key = os.getenv("GEMINI_API_KEY", "")
         self._nvidia_key = os.getenv("NVIDIA_API_KEY", "")
         self._ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
+        self._lmstudio_url = os.getenv("LMSTUDIO_URL", "http://127.0.0.1:1234")
 
     def chat(self, question: str, session_id: str = "default", student_mssv: str = None) -> dict:
         """
@@ -79,6 +80,11 @@ class AIChatbot:
         Returns: {answer, sources, tokens_used, duration_ms}
         """
         start_time = time.time()
+        
+        use_web_search = False
+        if question.strip().startswith('/search '):
+            use_web_search = True
+            question = question.strip()[8:].strip()
 
         try:
             # 1. Tìm kiến thức liên quan
@@ -112,11 +118,15 @@ class AIChatbot:
                     )
                     context += realtime_info
 
+            # --- INJECT WEB SEARCH CONTEXT (Nếu là local AI) ---
+            if use_web_search and self._llm_backend != "gemini":
+                context += self._fetch_web_search(question)
+
             # 3. Lấy lịch sử chat
             history = self._get_history(session_id)
 
             # 4. Gọi LLM
-            answer = self._call_llm(question, context, history)
+            answer = self._call_llm(question, context, history, use_web_search)
 
             # 5. Lưu lịch sử
             self._add_to_history(session_id, question, answer)
@@ -169,6 +179,85 @@ class AIChatbot:
                 "error": True,
             }
 
+    def chat_stream(self, question: str, session_id: str = "default", student_mssv: str = None):
+        """
+        Xử lý câu hỏi và trả lời dưới dạng Stream (Generator).
+        Yields chuỗi JSON (SSE format).
+        """
+        start_time = time.time()
+        
+        use_web_search = False
+        if question.strip().startswith('/search '):
+            use_web_search = True
+            question = question.strip()[8:].strip()
+
+        try:
+            # 1. Tìm kiến thức liên quan
+            from services.knowledge_builder import get_knowledge_builder
+            kb = get_knowledge_builder()
+            relevant_chunks = kb.search(question, n_results=5)
+
+            # 2. Xây dựng context từ chunks
+            context = self._build_context(relevant_chunks)
+
+            # --- INJECT REALTIME CONTEXT ---
+            if student_mssv:
+                from db.connection import execute_one
+                sv = execute_one("SELECT * FROM sinh_vien WHERE mssv = %s", (student_mssv,))
+                if sv:
+                    lop = execute_one("SELECT ten_lop FROM lop_hoc WHERE id = %s", (sv['lop_id'],))
+                    ten_lop = lop['ten_lop'] if lop else "Không rõ"
+                    
+                    total_sessions = execute_one("SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s", (sv['lop_id'],))
+                    present = execute_one("SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND trang_thai = 'Co mat'", (sv['id'],))
+                    vang = (total_sessions['count'] if total_sessions else 0) - (present['count'] if present else 0)
+                    if vang < 0: vang = 0
+                    
+                    realtime_info = (
+                        f"\n\n--- THÔNG TIN SINH VIÊN ĐANG CHAT (REALTIME) ---\n"
+                        f"- Họ tên: {sv['ho_ten']}\n"
+                        f"- MSSV: {sv['mssv']}\n"
+                        f"- Lớp: {ten_lop}\n"
+                        f"- Tổng số buổi đã vắng: {vang}\n"
+                        f"-> Yêu cầu: Hãy dùng thông tin này để xưng hô (ví dụ: Chào bạn Nguyễn Văn A) và trả lời chính xác nếu sinh viên hỏi về số buổi vắng của họ."
+                    )
+                    context += realtime_info
+
+            # --- INJECT WEB SEARCH CONTEXT (Nếu là local AI) ---
+            if use_web_search and self._llm_backend != "gemini":
+                context += self._fetch_web_search(question)
+
+            # 3. Lấy lịch sử chat
+            history = self._get_history(session_id)
+            
+            # Gửi tín hiệu bắt đầu cùng với sources
+            sources = [
+                {"file": c["source"], "category": c["category"]}
+                for c in relevant_chunks
+            ]
+            yield f"data: {json.dumps({'type': 'sources', 'sources': sources})}\n\n"
+
+            # 4. Gọi LLM Stream
+            if self._llm_backend == "gemini":
+                for chunk in self._call_gemini_stream(question, context, history, session_id, use_web_search):
+                    yield chunk
+            elif self._llm_backend == "lmstudio":
+                for chunk in self._call_lmstudio_stream(question, context, history, session_id):
+                    yield chunk
+            else:
+                # Fallback to sync call if backend is not gemini/lmstudio
+                answer = self._call_llm(question, context, history, use_web_search)
+                self._add_to_history(session_id, question, answer)
+                yield f"data: {json.dumps({'type': 'chunk', 'text': answer})}\n\n"
+                
+            duration_ms = int((time.time() - start_time) * 1000)
+            yield f"data: {json.dumps({'type': 'done', 'duration_ms': duration_ms})}\n\n"
+
+        except Exception as e:
+            error_msg = str(e)
+            yield f"data: {json.dumps({'type': 'error', 'text': f'Lỗi: {error_msg}'})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'duration_ms': 0})}\n\n"
+
     def clear_history(self, session_id: str = "default"):
         """Xóa lịch sử chat"""
         with self._lock:
@@ -188,6 +277,24 @@ class AIChatbot:
         ]
 
     # ─── PRIVATE METHODS ─────────────────────────────────────────────────
+
+    def _fetch_web_search(self, query: str) -> str:
+        """Sử dụng duckduckgo-search để tìm kiếm thông tin từ Internet"""
+        try:
+            from duckduckgo_search import DDGS
+            results = DDGS().text(query, max_results=3)
+            if not results:
+                return "\n(Không tìm thấy kết quả nào trên Internet.)\n"
+            
+            search_context = "\n\n--- KẾT QUẢ TÌM KIẾM TỪ INTERNET (Web Search) ---\n"
+            search_context += "Ghi chú: Dưới đây là thông tin mới nhất từ internet, hãy dùng nó để trả lời nếu phù hợp.\n\n"
+            for i, res in enumerate(results, 1):
+                search_context += f"{i}. {res.get('title', '')}\nNội dung: {res.get('body', '')}\nNguồn: {res.get('href', '')}\n\n"
+            return search_context
+        except ImportError:
+            return "\n(Tính năng tìm kiếm web chưa được cài đặt - thiếu thư viện duckduckgo-search.)\n"
+        except Exception as e:
+            return f"\n(Lỗi khi tìm kiếm web: {str(e)})\n"
 
     def _build_context(self, chunks: list) -> str:
         """Xây dựng context string từ các chunk (đã lọc thông tin nhạy cảm)"""
@@ -225,20 +332,22 @@ class AIChatbot:
             text = re.sub(pattern, replacement, text)
         return text
 
-    def _call_llm(self, question: str, context: str, history: list) -> str:
+    def _call_llm(self, question: str, context: str, history: list, use_web_search: bool = False) -> str:
         """Gọi LLM backend phù hợp"""
         if self._llm_backend == "nvidia":
             return self._call_nvidia(question, context, history)
         elif self._llm_backend == "ollama":
             return self._call_ollama(question, context, history)
+        elif self._llm_backend == "lmstudio":
+            return self._call_lmstudio(question, context, history)
         else:
-            return self._call_gemini(question, context, history)
+            return self._call_gemini(question, context, history, use_web_search)
 
-    def _call_gemini(self, question: str, context: str, history: list) -> str:
+    def _call_gemini(self, question: str, context: str, history: list, use_web_search: bool = False) -> str:
         """Gọi Google Gemini API"""
         api_key = self._gemini_key
         if not api_key:
-            raise ValueError("Chưa cấu hình GEMINI_API_KEY trong file .env")
+            raise ValueError("Hệ thống AI hiện đang bận hoặc chưa sẵn sàng. Vui lòng thử lại sau.")
 
         # gemini-2.0-flash-lite: quota miễn phí cao hơn (30 RPM, 1500 RPD)
         model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-lite")
@@ -276,13 +385,16 @@ class AIChatbot:
                 "maxOutputTokens": 2048,
             }
         }
+        
+        if use_web_search:
+            payload["tools"] = [{"googleSearch": {}}]
 
         response = requests.post(url, json=payload, timeout=60)
 
         if response.status_code != 200:
             error_body = response.text
             if "API_KEY" in error_body or "PERMISSION_DENIED" in error_body:
-                raise ValueError("GEMINI_API_KEY không hợp lệ hoặc chưa được cấu hình")
+                raise ValueError("Hệ thống AI hiện đang bảo trì hoặc gián đoạn kết nối. Vui lòng thử lại sau.")
             raise ValueError(f"Gemini API error ({response.status_code}): {error_body[:200]}")
 
         data = response.json()
@@ -291,11 +403,77 @@ class AIChatbot:
         except (KeyError, IndexError):
             raise ValueError(f"Unexpected Gemini response format: {json.dumps(data)[:200]}")
 
+    def _call_gemini_stream(self, question: str, context: str, history: list, session_id: str, use_web_search: bool = False):
+        """Gọi Google Gemini API (Stream)"""
+        api_key = self._gemini_key
+        if not api_key:
+            raise ValueError("Hệ thống AI hiện đang bận hoặc chưa sẵn sàng. Vui lòng thử lại sau.")
+
+        model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-lite")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={api_key}"
+
+        contents = []
+        for msg in history[-6:]:
+            contents.append({
+                "role": "user" if msg["role"] == "user" else "model",
+                "parts": [{"text": msg["content"]}]
+            })
+
+        user_prompt = (
+            f"## Kiến thức dự án liên quan:\n{context}\n\n"
+            f"## Câu hỏi của người dùng:\n{question}"
+        )
+        contents.append({
+            "role": "user",
+            "parts": [{"text": user_prompt}]
+        })
+
+        payload = {
+            "system_instruction": {
+                "parts": [{"text": SYSTEM_PROMPT}]
+            },
+            "contents": contents,
+            "generationConfig": {
+                "temperature": 0.7,
+                "topP": 0.95,
+                "maxOutputTokens": 2048,
+            }
+        }
+        
+        if use_web_search:
+            payload["tools"] = [{"googleSearch": {}}]
+
+        response = requests.post(url, json=payload, stream=True, timeout=60)
+        
+        if response.status_code != 200:
+            error_body = response.text
+            if "API_KEY" in error_body or "PERMISSION_DENIED" in error_body:
+                yield f"data: {json.dumps({'type': 'error', 'text': 'Lỗi: Hệ thống AI hiện đang bảo trì hoặc gián đoạn kết nối. Vui lòng thử lại sau.'})}\n\n"
+            else:
+                yield f"data: {json.dumps({'type': 'error', 'text': f'Lỗi API ({response.status_code}): {error_body[:200]}' })}\n\n"
+            return
+
+        full_answer = ""
+        for line in response.iter_lines():
+            if line:
+                decoded_line = line.decode('utf-8')
+                if decoded_line.startswith("data: "):
+                    try:
+                        data = json.loads(decoded_line[6:])
+                        if "candidates" in data and len(data["candidates"]) > 0:
+                            chunk_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                            full_answer += chunk_text
+                            yield f"data: {json.dumps({'type': 'chunk', 'text': chunk_text})}\n\n"
+                    except Exception:
+                        pass
+                        
+        self._add_to_history(session_id, question, full_answer)
+
     def _call_nvidia(self, question: str, context: str, history: list) -> str:
         """Gọi NVIDIA NIM API"""
         api_key = self._nvidia_key
         if not api_key:
-            raise ValueError("Chưa cấu hình NVIDIA_API_KEY trong file .env")
+            raise ValueError("Hệ thống AI hiện đang bận hoặc chưa sẵn sàng. Vui lòng thử lại sau.")
 
         url = "https://integrate.api.nvidia.com/v1/chat/completions"
 
@@ -358,6 +536,85 @@ class AIChatbot:
 
         data = response.json()
         return data["message"]["content"]
+
+    def _call_lmstudio(self, question: str, context: str, history: list) -> str:
+        """Gọi LM Studio Local OpenAI-compatible API"""
+        url = f"{self._lmstudio_url}/v1/chat/completions"
+
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        for msg in history[-6:]:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+
+        user_prompt = (
+            f"## Kiến thức dự án liên quan:\n{context}\n\n"
+            f"## Câu hỏi:\n{question}"
+        )
+        messages.append({"role": "user", "content": user_prompt})
+
+        payload = {
+            "model": "local-model",
+            "messages": messages,
+            "temperature": 0.7,
+            "stream": False,
+        }
+
+        try:
+            response = requests.post(url, json=payload, timeout=120)
+            if response.status_code != 200:
+                raise ValueError(f"LM Studio error ({response.status_code}): {response.text[:200]}")
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            raise ValueError(f"Không thể kết nối đến LM Studio. Vui lòng kiểm tra server ở {self._lmstudio_url}. Chi tiết: {str(e)}")
+
+    def _call_lmstudio_stream(self, question: str, context: str, history: list, session_id: str):
+        """Gọi LM Studio API (Stream)"""
+        url = f"{self._lmstudio_url}/v1/chat/completions"
+
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        for msg in history[-6:]:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+
+        user_prompt = (
+            f"## Kiến thức dự án liên quan:\n{context}\n\n"
+            f"## Câu hỏi:\n{question}"
+        )
+        messages.append({"role": "user", "content": user_prompt})
+
+        payload = {
+            "model": "local-model",
+            "messages": messages,
+            "temperature": 0.7,
+            "stream": True,
+        }
+
+        try:
+            response = requests.post(url, json=payload, stream=True, timeout=120)
+            if response.status_code != 200:
+                yield f"data: {json.dumps({'type': 'error', 'text': f'Lỗi kết nối LM Studio: {response.text[:200]}' })}\n\n"
+                return
+
+            full_answer = ""
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode('utf-8')
+                    if decoded_line.startswith("data: "):
+                        data_str = decoded_line[6:].strip()
+                        if data_str == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(data_str)
+                            if "choices" in data and len(data["choices"]) > 0:
+                                delta = data["choices"][0].get("delta", {})
+                                chunk_text = delta.get("content", "")
+                                if chunk_text:
+                                    full_answer += chunk_text
+                                    yield f"data: {json.dumps({'type': 'chunk', 'text': chunk_text})}\n\n"
+                        except Exception:
+                            pass
+            self._add_to_history(session_id, question, full_answer)
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'text': f'Không thể kết nối đến LM Studio tại {self._lmstudio_url}. Vui lòng bật server.' })}\n\n"
 
     def _get_history(self, session_id: str) -> list:
         with self._lock:

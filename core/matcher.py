@@ -60,8 +60,22 @@ class FaceMatcher:
             with self._lock:
                 with open(self._pkl_path, 'rb') as f:
                     self._known_faces = pickle.load(f)
+                
+                # Tối ưu hóa: Tạo Ma trận (N x 512) để so sánh song song hàng nghìn mặt
+                if len(self._known_faces) > 0:
+                    self._mssv_list = list(self._known_faces.keys())
+                    emb_matrix = np.array(list(self._known_faces.values()))
+                    
+                    # L2 Normalize ma trận một lần duy nhất lúc load
+                    norms = np.linalg.norm(emb_matrix, axis=1, keepdims=True)
+                    # Tránh chia cho 0
+                    self._emb_matrix = np.where(norms > 0, emb_matrix / norms, emb_matrix)
+                else:
+                    self._mssv_list = []
+                    self._emb_matrix = np.array([])
+                
                 self._last_mtime = os.path.getmtime(self._pkl_path)
-            print(f"[AI MATCHER] Đã nạp {len(self._known_faces)} vector não bộ.")
+            print(f"[AI MATCHER] Đã nạp {len(self._known_faces)} vector não bộ (Ma trận Tối ưu).")
             return True
         except Exception as e:
             print(f"[AI MATCHER LỖI] Không đọc được pkl: {e}")
@@ -84,15 +98,14 @@ class FaceMatcher:
 
     def match(self, embedding, threshold=None):
         """
-        So khớp embedding với cơ sở dữ liệu.
+        So khớp embedding với cơ sở dữ liệu. Tốc độ siêu cao nhờ Matrix Multiplication.
         
         Args:
-            embedding: numpy array 512 chiều (đã L2 normalized)
-            threshold: Ngưỡng similarity tối thiểu (mặc định từ Config)
+            embedding: numpy array 512 chiều
+            threshold: Ngưỡng similarity tối thiểu
             
         Returns:
-            tuple: (mssv, similarity) nếu tìm thấy,
-                   ("UNKNOWN", 0.0) nếu không khớp
+            tuple: (mssv, similarity)
         """
         if threshold is None:
             threshold = Config.SIMILARITY_THRESHOLD
@@ -101,14 +114,24 @@ class FaceMatcher:
         best_sim = 0.0
 
         with self._lock:
-            for mssv, known_emb in self._known_faces.items():
-                # Cosine Similarity = dot(a, b) / (||a|| * ||b||)
-                sim = np.dot(embedding, known_emb) / (
-                    np.linalg.norm(embedding) * np.linalg.norm(known_emb)
-                )
-                if sim > best_sim and sim > threshold:
-                    best_sim = float(sim)
-                    best_match = mssv
+            if len(self._mssv_list) == 0 or self._emb_matrix.size == 0:
+                return best_match, best_sim
+                
+            # L2 Normalize input embedding
+            norm = np.linalg.norm(embedding)
+            if norm > 0:
+                embedding = embedding / norm
+                
+            # NHÂN MA TRẬN: So sánh 1 vector với TẤT CẢ sinh viên cùng lúc
+            # Kết quả là mảng similarities chứa độ giống nhau với từng sinh viên
+            similarities = np.dot(self._emb_matrix, embedding)
+            
+            # Lấy index của sinh viên giống nhất
+            best_idx = np.argmax(similarities)
+            best_sim = float(similarities[best_idx])
+            
+            if best_sim > threshold:
+                best_match = self._mssv_list[best_idx]
 
         return best_match, best_sim
 

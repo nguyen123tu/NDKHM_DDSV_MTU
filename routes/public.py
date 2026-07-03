@@ -330,11 +330,15 @@ def api_recognize():
         return jsonify({"success": False, "msg": "Không có ảnh"})
     
     lop_id = data.get('lop_id')
-    start_time = data.get('start_time', '07:00')
+    start_time = data.get('start_time', 'auto')
     
     # [NEW] Kiểm tra bắt buộc chọn lớp
     if not lop_id:
         return jsonify({"success": False, "msg": "Vui lòng chọn lớp học trước khi điểm danh!"})
+
+    if start_time == 'auto' or not start_time:
+        from services.class_service import get_class_start_time
+        start_time = get_class_start_time(lop_id)
 
     # Sử dụng hàm nhận diện chung
     recognize_result = _do_recognize(data['image'])
@@ -420,7 +424,7 @@ def api_recognize():
         FROM diem_danh dd
         LEFT JOIN lop_hoc lh ON dd.lop_id = lh.id
         WHERE dd.sinh_vien_id = (SELECT id FROM sinh_vien WHERE mssv = %s)
-          AND DATE(dd.thoi_gian) = CURDATE()
+          AND CAST(dd.thoi_gian AS DATE) = CAST(GETDATE() AS DATE)
         ORDER BY dd.thoi_gian DESC
     """, (mssv,))
     

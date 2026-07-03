@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'neu_container.dart';
 import '../theme/app_theme.dart';
 
 class NeuButton extends StatefulWidget {
@@ -8,13 +7,13 @@ class NeuButton extends StatefulWidget {
   final double borderRadius;
   final EdgeInsetsGeometry padding;
   final BoxShape shape;
-  final bool isPrimary; // Nếu là primary button, thay vì nền thường sẽ có nền màu gradient hoặc icon màu nổi
+  final bool isPrimary; // Primary = Gradient Background
 
   const NeuButton({
     super.key,
     required this.child,
     this.onPressed,
-    this.borderRadius = 16,
+    this.borderRadius = 30, // Pill shape default
     this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
     this.shape = BoxShape.rectangle,
     this.isPrimary = false,
@@ -48,8 +47,6 @@ class _NeuButtonState extends State<NeuButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     Widget content = widget.child;
 
     return GestureDetector(
@@ -57,21 +54,31 @@ class _NeuButtonState extends State<NeuButton> {
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
       child: AnimatedScale(
-        scale: _isPressed ? 0.95 : 1.0,
+        scale: _isPressed ? 0.92 : 1.0,
         duration: const Duration(milliseconds: 100),
-        child: NeuContainer(
-          borderRadius: widget.borderRadius,
-          shape: widget.shape,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
           padding: widget.padding,
-          isPressed: _isPressed,
+          decoration: BoxDecoration(
+            shape: widget.shape,
+            borderRadius: widget.shape == BoxShape.circle ? null : BorderRadius.circular(widget.borderRadius),
+            gradient: widget.isPrimary ? AppTheme.primaryGradient : null,
+            color: widget.isPrimary ? null : AppTheme.surfaceLight,
+            boxShadow: widget.isPrimary && !_isPressed ? [
+              BoxShadow(
+                color: AppTheme.primary.withOpacity(0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              )
+            ] : null,
+          ),
           child: DefaultTextStyle(
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
-              color: widget.isPrimary ? (isDark ? AppTheme.secondary : AppTheme.primary) : (isDark ? Colors.white : AppTheme.textDarkPrimary),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
             child: IconTheme(
-              data: IconThemeData(
-                color: widget.isPrimary ? (isDark ? AppTheme.secondary : AppTheme.primary) : (isDark ? Colors.white : AppTheme.textDarkPrimary),
-              ),
+              data: const IconThemeData(color: Colors.white),
               child: content,
             ),
           ),

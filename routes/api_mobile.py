@@ -20,49 +20,13 @@ from services.telegram_alert import send_telegram_message
 # Blueprint sẽ được register trong routes/__init__.py
 api_mobile_bp = Blueprint('api_mobile', __name__, url_prefix='/api/mobile')
 
-def calculate_distance(lat1, lon1, lat2, lon2):
-    """Tính khoảng cách (mét) giữa 2 tọa độ GPS bằng công thức Haversine"""
-    R = 6371e3
-    phi1 = lat1 * math.pi / 180
-    phi2 = lat2 * math.pi / 180
-    delta_phi = (lat2 - lat1) * math.pi / 180
-    delta_lambda = (lon2 - lon1) * math.pi / 180
-    a = math.sin(delta_phi / 2) * math.sin(delta_phi / 2) + \
-        math.cos(phi1) * math.cos(phi2) * \
-        math.sin(delta_lambda / 2) * math.sin(delta_lambda / 2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return R * c
-
-def _make_token(user, is_student=False):
-    """Tạo JWT cho mobile app."""
-    payload = {
-        "sub": str(user["id"]),
-        "username": user["username"] if not is_student else user["mssv"],
-        "role": user.get("role", "admin") if not is_student else "student",
-        "exp": datetime.utcnow() + timedelta(hours=Config.JWT_EXPIRE_HOURS),
-        "iat": datetime.utcnow(),
-    }
-    return jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm="HS256")
-
-
-def _extract_bearer_token():
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return None
-    return auth_header.split(" ", 1)[1].strip()
-
-
-def _require_mobile_auth():
-    token = _extract_bearer_token()
-    if not token:
-        return None, (jsonify({"success": False, "message": "Thiếu Bearer token"}), 401)
-    try:
-        payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=["HS256"])
-        return payload, None
-    except jwt.ExpiredSignatureError:
-        return None, (jsonify({"success": False, "message": "Token đã hết hạn"}), 401)
-    except jwt.InvalidTokenError:
-        return None, (jsonify({"success": False, "message": "Token không hợp lệ"}), 401)
+from core.security import (
+    calculate_distance,
+    make_token as _make_token,
+    extract_bearer_token as _extract_bearer_token,
+    require_mobile_auth as _require_mobile_auth,
+    verify_nonce
+)
 
 
 def _save_evidence_image(image_b64, mssv):
@@ -276,6 +240,23 @@ def mobile_checkin():
     data = request.get_json(silent=True) or {}
     if request.content_type and "multipart/form-data" in request.content_type:
         data = request.form.to_dict()
+        
+    # === ANTI-REPLAY CHECK ===
+    nonce = data.get("nonce")
+    timestamp_ms = data.get("timestamp")
+    
+    if nonce and timestamp_ms:
+        is_valid, err_msg = verify_nonce(nonce, timestamp_ms, max_age_seconds=15)
+        if not is_valid:
+            # Ghi log gian lận Replay Attack
+            user_id = payload.get('sub')
+            if user_id:
+                execute_update(
+                    "INSERT INTO gian_lan_log (sinh_vien_id, loai_gian_lan, chi_tiet) VALUES (%s, %s, %s)",
+                    (user_id, 'Replay Attack', err_msg)
+                )
+            return jsonify({"success": False, "message": err_msg}), 403
+            
     mssv = (data.get("mssv") or "").strip()
     lop_id = data.get("lop_id")
     session_id = data.get("session_id")  # ID phiên điểm danh
@@ -313,7 +294,7 @@ def mobile_checkin():
         if session.get('het_han'):
             if datetime.now() > session['het_han']:
                 # Auto-close expired session
-                execute_update("UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = NOW() WHERE id = %s", (session_id,))
+                execute_update("UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = GETDATE() WHERE id = %s", (session_id,))
                 return jsonify({"success": False, "message": "Phiên điểm danh đã hết hạn"}), 403
     elif lop_id:
         # Kiểm tra có phiên đang mở cho lớp này không
@@ -342,6 +323,10 @@ def mobile_checkin():
                     "success": False,
                     "message": f"Bạn đang ở ngoài phạm vi lớp học ({dist:.1f}m)! Vui lòng di chuyển vào lớp."
                 }), 403
+
+    if session_start == 'auto' or not session_start:
+        from services.class_service import get_class_start_time
+        session_start = get_class_start_time(lop_id)
 
     in_window, window_error = _is_within_checkin_window(session_start)
     if not in_window:
@@ -376,6 +361,7 @@ def mobile_checkin():
         do_chinh_xac=do_chinh_xac,
         camera_id=camera_id,
         trang_thai=trang_thai,
+        class_start_time=session_start
     )
 
     if not log_result:
@@ -387,8 +373,8 @@ def mobile_checkin():
 
     if evidence_path:
         execute_update(
-            "UPDATE diem_danh SET ghi_chu = %s WHERE sinh_vien_id = %s AND lop_id = %s AND DATE(thoi_gian) = CURDATE() ORDER BY id DESC LIMIT 1",
-            (f"EVIDENCE:{evidence_path}", sv["id"], lop_id),
+            "WITH cte AS (SELECT TOP 1 * FROM diem_danh WHERE sinh_vien_id = %s AND lop_id = %s AND CAST(thoi_gian AS DATE) = CAST(GETDATE() AS DATE) ORDER BY id DESC) UPDATE cte SET ghi_chu = %s",
+            (sv["id"], lop_id, f"EVIDENCE:{evidence_path}"),
         )
 
     return jsonify({
@@ -415,11 +401,27 @@ def mobile_checkout():
       200:
         description: Thành công
     """
-    _, auth_error = _require_mobile_auth()
+    payload, auth_error = _require_mobile_auth()
     if auth_error:
         return auth_error
 
     data = request.get_json(silent=True) or {}
+    
+    # === ANTI-REPLAY CHECK ===
+    nonce = data.get("nonce")
+    timestamp_ms = data.get("timestamp")
+    
+    if nonce and timestamp_ms:
+        is_valid, err_msg = verify_nonce(nonce, timestamp_ms, max_age_seconds=15)
+        if not is_valid:
+            user_id = payload.get('sub')
+            if user_id:
+                execute_update(
+                    "INSERT INTO gian_lan_log (sinh_vien_id, loai_gian_lan, chi_tiet) VALUES (%s, %s, %s)",
+                    (user_id, 'Replay Attack', err_msg)
+                )
+            return jsonify({"success": False, "message": err_msg}), 403
+            
     mssv = (data.get("mssv") or "").strip()
     lop_id = data.get("lop_id")
     camera_id = int(data.get("camera_id") or 0)

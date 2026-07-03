@@ -37,12 +37,16 @@ class KnowledgeBuilder:
     # Các file/thư mục cần index
     KNOWLEDGE_SOURCES = {
         "docs": [
-            "bao_cao_do_an.md",
             "README.md",
+            "docs/bao_cao_do_an.md",
+            "docs/ccc.md",
             "docs/huong_dan_su_dung.md",
             "docs/faq.md",
             "docs/api_documentation.md",
             "docs/PROJECT_STRUCTURE.md",
+            "docs/HUONG_DAN_CAI_DAT.md",
+            "docs/implementation_plan.md",
+            "docs/offline_architecture_tasks.md",
         ],
         "database": [
             "db/schema.sql",

@@ -1,34 +1,50 @@
 {
-  "last_built": "2026-05-31 10:44:00",
-  "total_chunks": 986,
+  "last_built": "2026-07-03 15:41:03",
+  "total_chunks": 1178,
   "sources": [
     {
       "file": "README.md",
-      "chunks": 21
+      "chunks": 17
+    },
+    {
+      "file": "docs/bao_cao_do_an.md",
+      "chunks": 6
+    },
+    {
+      "file": "docs/ccc.md",
+      "chunks": 41
     },
     {
       "file": "docs/huong_dan_su_dung.md",
-      "chunks": 29
-    },
-    {
-      "file": "docs/faq.md",
-      "chunks": 42
-    },
-    {
-      "file": "docs/api_documentation.md",
-      "chunks": 28
-    },
-    {
-      "file": "docs/PROJECT_STRUCTURE.md",
-      "chunks": 4
-    },
-    {
-      "file": "db/schema.sql",
       "chunks": 8
     },
     {
-      "file": "db/seed.sql",
-      "chunks": 3
+      "file": "docs/faq.md",
+      "chunks": 7
+    },
+    {
+      "file": "docs/api_documentation.md",
+      "chunks": 8
+    },
+    {
+      "file": "docs/PROJECT_STRUCTURE.md",
+      "chunks": 7
+    },
+    {
+      "file": "docs/HUONG_DAN_CAI_DAT.md",
+      "chunks": 14
+    },
+    {
+      "file": "docs/implementation_plan.md",
+      "chunks": 16
+    },
+    {
+      "file": "docs/offline_architecture_tasks.md",
+      "chunks": 11
+    },
+    {
+      "file": "db/schema.sql",
+      "chunks": 19
     },
     {
       "file": "config.py",
@@ -40,11 +56,11 @@
     },
     {
       "file": "routes\\api_mobile.py",
-      "chunks": 194
+      "chunks": 239
     },
     {
       "file": "routes\\attendance.py",
-      "chunks": 13
+      "chunks": 20
     },
     {
       "file": "routes\\auth.py",
@@ -56,7 +72,7 @@
     },
     {
       "file": "routes\\chatbot.py",
-      "chunks": 16
+      "chunks": 26
     },
     {
       "file": "routes\\classes.py",
@@ -72,15 +88,19 @@
     },
     {
       "file": "routes\\fraud.py",
-      "chunks": 10
+      "chunks": 16
     },
     {
       "file": "routes\\public.py",
-      "chunks": 28
+      "chunks": 43
     },
     {
       "file": "routes\\students.py",
-      "chunks": 34
+      "chunks": 38
+    },
+    {
+      "file": "routes\\support.py",
+      "chunks": 7
     },
     {
       "file": "routes\\training.py",
@@ -88,15 +108,15 @@
     },
     {
       "file": "routes\\__init__.py",
-      "chunks": 3
+      "chunks": 4
     },
     {
       "file": "services\\ai_chatbot.py",
-      "chunks": 35
+      "chunks": 61
     },
     {
       "file": "services\\attendance_service.py",
-      "chunks": 31
+      "chunks": 35
     },
     {
       "file": "services\\class_service.py",
@@ -104,19 +124,23 @@
     },
     {
       "file": "services\\export_service.py",
-      "chunks": 38
+      "chunks": 50
     },
     {
       "file": "services\\fcm_service.py",
-      "chunks": 7
+      "chunks": 12
     },
     {
       "file": "services\\knowledge_builder.py",
       "chunks": 46
     },
     {
+      "file": "services\\leave_service.py",
+      "chunks": 9
+    },
+    {
       "file": "services\\recognition_thread.py",
-      "chunks": 48
+      "chunks": 51
     },
     {
       "file": "services\\student_service.py",
@@ -136,7 +160,7 @@
     },
     {
       "file": "core\\camera.py",
-      "chunks": 33
+      "chunks": 44
     },
     {
       "file": "core\\detector.py",
@@ -144,7 +168,7 @@
     },
     {
       "file": "core\\detector_yolo.py",
-      "chunks": 13
+      "chunks": 14
     },
     {
       "file": "core\\embedder.py",
@@ -156,15 +180,19 @@
     },
     {
       "file": "core\\engine.py",
-      "chunks": 17
-    },
-    {
-      "file": "core\\matcher.py",
       "chunks": 18
     },
     {
+      "file": "core\\matcher.py",
+      "chunks": 22
+    },
+    {
+      "file": "core\\security.py",
+      "chunks": 14
+    },
+    {
       "file": "core\\trainer.py",
-      "chunks": 33
+      "chunks": 34
     },
     {
       "file": "core\\__init__.py",
@@ -181,14 +209,6 @@
     {
       "file": "utils\\__init__.py",
       "chunks": 1
-    },
-    {
-      "file": "scripts\\auto_swagger.py",
-      "chunks": 11
-    },
-    {
-      "file": "scripts\\fix_duplicates.py",
-      "chunks": 2
     }
   ]
 }

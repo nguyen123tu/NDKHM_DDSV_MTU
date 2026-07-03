@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
 import '../theme/app_theme.dart';
+import 'dart:ui';
 import '../widgets/neu_container.dart';
 import '../widgets/neu_button.dart';
 
@@ -108,8 +109,43 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Background - Clean Neumorphism
-          Container(color: Theme.of(context).scaffoldBackgroundColor),
+          // Background - Deep Slate
+          Container(color: AppTheme.background),
+
+          // Glowing Orbs (Mesh Gradient Effect)
+          Positioned(
+            top: -100,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primary.withOpacity(0.15),
+              ),
+            ),
+          ).animate().fadeIn(duration: 1000.ms).scale(begin: const Offset(0.8, 0.8)),
+          
+          Positioned(
+            bottom: -50,
+            right: -100,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.secondary.withOpacity(0.15),
+              ),
+            ),
+          ).animate().fadeIn(duration: 1000.ms, delay: 300.ms).scale(begin: const Offset(0.8, 0.8)),
+
+          // Blur Overlay
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+              child: Container(color: Colors.transparent),
+            ),
+          ),
 
           SafeArea(
             child: Center(
@@ -118,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Neumorphic Card
+                    // Glassmorphism Card
                     NeuContainer(
                       padding: const EdgeInsets.all(32),
                       borderRadius: 32,
@@ -126,9 +162,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // Logo Section
-                          NeuContainer(
+                          Container(
                             padding: const EdgeInsets.all(16),
-                            shape: BoxShape.circle,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppTheme.surfaceLight,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primary.withOpacity(0.2),
+                                  blurRadius: 20,
+                                  spreadRadius: 5,
+                                )
+                              ]
+                            ),
                             child: ClipOval(
                               child: Image.asset(
                                 "assets/images/logo_MTU.png",

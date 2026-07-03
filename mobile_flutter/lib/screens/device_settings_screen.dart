@@ -153,7 +153,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration:
-                      AppTheme.glassDecoration(borderRadius: 20, opacity: 0.05),
+                      AppTheme.modernCardDecoration(borderRadius: 20, color: AppTheme.surfaceLight.withOpacity(0.05)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -252,7 +252,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                   padding:
                       const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
                   decoration:
-                      AppTheme.glassDecoration(borderRadius: 20, opacity: 0.05),
+                      AppTheme.modernCardDecoration(borderRadius: 20, color: AppTheme.surfaceLight.withOpacity(0.05)),
                   child: Column(
                     children: [
                       // Gauge
@@ -325,7 +325,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                 // ====== TOGGLE SETTINGS ======
                 Container(
                   decoration:
-                      AppTheme.glassDecoration(borderRadius: 20, opacity: 0.05),
+                      AppTheme.modernCardDecoration(borderRadius: 20, color: AppTheme.surfaceLight.withOpacity(0.05)),
                   child: Column(
                     children: [
                       _buildToggleTile(

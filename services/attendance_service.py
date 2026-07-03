@@ -162,7 +162,7 @@ def get_history(lop_id=None, date=None, mssv=None, page=1, per_page=50):
         params.append(lop_id)
 
     if date:
-        conditions.append("DATE(dd.thoi_gian) = %s")
+        conditions.append("CAST(dd.thoi_gian AS DATE) = %s")
         params.append(date)
 
     if mssv:

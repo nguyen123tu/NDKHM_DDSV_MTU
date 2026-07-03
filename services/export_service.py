@@ -28,19 +28,29 @@ def to_excel(lop_id, date=None):
     if not lop:
         return None
 
-    # Query dữ liệu điểm danh
+    # Query dữ liệu điểm danh — chỉ lấy lần check-in ĐẦU TIÊN mỗi SV trong ngày
     if date:
-        date_filter = "DATE(dd.thoi_gian) = %s"
-        params = (lop_id, date)
+        date_filter = "CAST(dd.thoi_gian AS DATE) = %s"
+        params = (date, lop_id)
     else:
-        date_filter = "DATE(dd.thoi_gian) = CURDATE()"
+        date_filter = "CAST(dd.thoi_gian AS DATE) = CAST(GETDATE() AS DATE)"
         date = datetime.now().strftime("%Y-%m-%d")
         params = (lop_id,)
 
     sql = f"""
-        SELECT sv.mssv, sv.ho_ten, dd.thoi_gian, dd.trang_thai, dd.do_chinh_xac, dd.gio_vao_lop
+        SELECT sv.mssv, sv.ho_ten, 
+               first_dd.thoi_gian, first_dd.trang_thai, first_dd.do_chinh_xac, first_dd.gio_vao_lop
         FROM sinh_vien sv
-        LEFT JOIN diem_danh dd ON sv.id = dd.sinh_vien_id AND {date_filter}
+        LEFT JOIN (
+            SELECT dd.sinh_vien_id, 
+                   MIN(dd.thoi_gian) as thoi_gian,
+                   MIN(dd.trang_thai) as trang_thai,
+                   MAX(dd.do_chinh_xac) as do_chinh_xac,
+                   MAX(dd.gio_vao_lop) as gio_vao_lop
+            FROM diem_danh dd
+            WHERE {date_filter}
+            GROUP BY dd.sinh_vien_id
+        ) first_dd ON sv.id = first_dd.sinh_vien_id
         WHERE sv.lop_id = %s
         ORDER BY sv.mssv ASC
     """
@@ -107,11 +117,18 @@ def to_excel(lop_id, date=None):
         # Xử lý giờ vào lớp
         gio_vao_lop_td = record.get("gio_vao_lop")
         if gio_vao_lop_td is not None:
-            total_seconds = int(gio_vao_lop_td.total_seconds())
-            hours = total_seconds // 3600
-            minutes = (total_seconds % 3600) // 60
-            gio_vao_str = f"{hours:02d}:{minutes:02d}"
-            start_time_obj = datetime.strptime(gio_vao_str, "%H:%M").time()
+            if isinstance(gio_vao_lop_td, str):
+                gio_vao_str = gio_vao_lop_td[:5] # "HH:MM"
+                start_time_obj = datetime.strptime(gio_vao_str, "%H:%M").time()
+            elif hasattr(gio_vao_lop_td, 'total_seconds'):
+                total_seconds = int(gio_vao_lop_td.total_seconds())
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                gio_vao_str = f"{hours:02d}:{minutes:02d}"
+                start_time_obj = datetime.strptime(gio_vao_str, "%H:%M").time()
+            else: # datetime.time
+                gio_vao_str = gio_vao_lop_td.strftime("%H:%M")
+                start_time_obj = gio_vao_lop_td
         else:
             gio_vao_str = "07:00"
             from datetime import time as datetime_time
@@ -212,11 +229,20 @@ def to_pdf(lop_id, date=None):
     if not date:
         date = datetime.now().strftime("%Y-%m-%d")
 
-    # Query dữ liệu
+    # Query dữ liệu — chỉ lấy lần check-in ĐẦU TIÊN mỗi SV trong ngày
     sql = """
-        SELECT sv.mssv, sv.ho_ten, dd.thoi_gian, dd.trang_thai, dd.gio_vao_lop
+        SELECT sv.mssv, sv.ho_ten, 
+               first_dd.thoi_gian, first_dd.trang_thai, first_dd.gio_vao_lop
         FROM sinh_vien sv
-        LEFT JOIN diem_danh dd ON sv.id = dd.sinh_vien_id AND DATE(dd.thoi_gian) = %s
+        LEFT JOIN (
+            SELECT dd.sinh_vien_id,
+                   MIN(dd.thoi_gian) as thoi_gian,
+                   MIN(dd.trang_thai) as trang_thai,
+                   MAX(dd.gio_vao_lop) as gio_vao_lop
+            FROM diem_danh dd
+            WHERE CAST(dd.thoi_gian AS DATE) = %s
+            GROUP BY dd.sinh_vien_id
+        ) first_dd ON sv.id = first_dd.sinh_vien_id
         WHERE sv.lop_id = %s
         ORDER BY sv.mssv ASC
     """
@@ -251,12 +277,18 @@ def to_pdf(lop_id, date=None):
         
         gio_vao_lop_td = record.get("gio_vao_lop")
         if gio_vao_lop_td is not None:
-            total_seconds = int(gio_vao_lop_td.total_seconds())
-            hours = total_seconds // 3600
-            minutes = (total_seconds % 3600) // 60
-            gio_vao_str = f"{hours:02d}:{minutes:02d}"
-            from datetime import time as datetime_time
-            start_time_obj = datetime_time(hours, minutes)
+            if isinstance(gio_vao_lop_td, str):
+                gio_vao_str = gio_vao_lop_td[:5] # "HH:MM"
+                start_time_obj = datetime.strptime(gio_vao_str, "%H:%M").time()
+            elif hasattr(gio_vao_lop_td, 'total_seconds'):
+                total_seconds = int(gio_vao_lop_td.total_seconds())
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                gio_vao_str = f"{hours:02d}:{minutes:02d}"
+                start_time_obj = datetime.strptime(gio_vao_str, "%H:%M").time()
+            else: # datetime.time
+                gio_vao_str = gio_vao_lop_td.strftime("%H:%M")
+                start_time_obj = gio_vao_lop_td
         else:
             gio_vao_str = "07:00"
             from datetime import time as datetime_time
@@ -432,10 +464,10 @@ def monthly_matrix_to_excel(lop_id, month, year):
 
     # Lấy toàn bộ dữ liệu điểm danh trong tháng
     attendance_sql = """
-        SELECT sinh_vien_id, DATE(thoi_gian) as ngay, MIN(thoi_gian) as checkin_time
+        SELECT sinh_vien_id, CAST(thoi_gian AS DATE) as ngay, MIN(thoi_gian) as checkin_time
         FROM diem_danh
         WHERE lop_id = %s AND MONTH(thoi_gian) = %s AND YEAR(thoi_gian) = %s
-        GROUP BY sinh_vien_id, DATE(thoi_gian)
+        GROUP BY sinh_vien_id, CAST(thoi_gian AS DATE)
     """
     records = execute_query(attendance_sql, (lop_id, month, year))
 

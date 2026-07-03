@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (setupStartTime) {
-        const savedTime = localStorage.getItem('kiosk_start_time');
+        const savedTime = localStorage.getItem('kiosk_start_time') || 'auto';
         if (savedTime) setupStartTime.value = savedTime;
     }
 
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let reqBody = { 
             lop_id: parseInt(savedLopId),
-            start_time: localStorage.getItem('kiosk_start_time') || '07:00'
+            start_time: localStorage.getItem('kiosk_start_time') || 'auto'
         };
         let imageData = "";
 

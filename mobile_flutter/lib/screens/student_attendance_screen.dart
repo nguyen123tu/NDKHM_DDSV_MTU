@@ -12,6 +12,9 @@ import '../providers/attendance_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/neu_container.dart';
 import '../widgets/neu_button.dart';
+import 'dart:io';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import '../utils/camera_utils.dart';
 
 /// Màn hình điểm danh cho sinh viên
 /// Flow: Xem phiên đang mở → Chọn phiên → Quét mặt → Server xác minh
@@ -81,7 +84,22 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
       ),
       body: Stack(
         children: [
-          Container(color: Theme.of(context).scaffoldBackgroundColor),
+          // Background - Deep Slate
+          Container(color: AppTheme.background),
+
+          // Glowing Orbs (Mesh Gradient Effect)
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primary.withOpacity(0.12),
+              ),
+            ),
+          ).animate().fadeIn(duration: 1000.ms),
 
           _isLoading
             ? const Center(child: CircularProgressIndicator(color: AppTheme.secondary))
@@ -104,7 +122,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
                     color: AppTheme.secondary,
                     backgroundColor: AppTheme.surface,
                     child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100), // Thêm padding 100px ở dưới đáy để không bị thanh Tab Bar lơ lửng che mất
                       itemCount: _sessions.length + 1,
                       itemBuilder: (ctx, i) {
                         if (i == 0) return _buildHeader();
@@ -126,7 +144,10 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
         child: Row(children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: const Icon(Icons.how_to_reg, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 14),
@@ -256,6 +277,15 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
   String? _statusMessage;
   bool? _success;
 
+  // Real-time Validation
+  final FaceDetector _faceDetector = FaceDetector(
+    options: FaceDetectorOptions(performanceMode: FaceDetectorMode.fast),
+  );
+  bool _isProcessingFrame = false;
+  String _realtimeWarning = "Đang khởi tạo...";
+  bool _hasBlinked = false;
+  List<CameraDescription>? _cameras;
+
   @override
   void initState() {
     super.initState();
@@ -265,18 +295,107 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
 
   Future<void> _initCamera() async {
     try {
-      final cameras = await availableCameras();
-      final front = cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.front, orElse: () => cameras[0]);
-      _controller = CameraController(front, ResolutionPreset.medium, enableAudio: false);
+      _cameras = await availableCameras();
+      if (_cameras == null || _cameras!.isEmpty) return;
+      
+      final front = _cameras!.firstWhere((c) => c.lensDirection == CameraLensDirection.front, orElse: () => _cameras![0]);
+      _controller = CameraController(
+        front, 
+        ResolutionPreset.high, 
+        enableAudio: false,
+        imageFormatGroup: Platform.isAndroid ? ImageFormatGroup.yuv420 : ImageFormatGroup.bgra8888,
+      );
       await _controller!.initialize();
-      if (mounted) setState(() => _isInitialized = true);
+      if (!mounted) return;
+      
+      await _controller!.setFocusMode(FocusMode.auto);
+      await _controller!.setExposureMode(ExposureMode.auto);
+
+      setState(() {
+        _isInitialized = true;
+        _realtimeWarning = "Vui lòng đưa khuôn mặt vào khung";
+      });
+
+      _controller!.startImageStream((CameraImage image) {
+        if (!_isProcessing && mounted) {
+          _processCameraImage(image, front);
+        }
+      });
     } catch (e) {
       if (mounted) setState(() => _statusMessage = 'Không thể mở camera: $e');
     }
   }
 
+  Future<void> _processCameraImage(CameraImage image, CameraDescription camera) async {
+    if (_isProcessingFrame || _isProcessing) return;
+    _isProcessingFrame = true;
+
+    try {
+      if (CameraUtils.isImageTooDark(image)) {
+        if (mounted) setState(() => _realtimeWarning = "Thiếu sáng! Hãy tìm nơi sáng hơn");
+        _isProcessingFrame = false;
+        return;
+      }
+
+      final inputImage = CameraUtils.convertCameraImageToInputImage(image, camera);
+      if (inputImage == null) {
+        _isProcessingFrame = false;
+        return;
+      }
+
+      final faces = await _faceDetector.processImage(inputImage);
+      if (faces.isEmpty) {
+        if (mounted) setState(() => _realtimeWarning = "Không tìm thấy khuôn mặt");
+        _isProcessingFrame = false;
+        return;
+      }
+
+      final face = faces.first;
+      
+      final rotY = face.headEulerAngleY ?? 0;
+      final rotZ = face.headEulerAngleZ ?? 0;
+      if (rotY.abs() > 15 || rotZ.abs() > 15) {
+        if (mounted) setState(() => _realtimeWarning = "Vui lòng nhìn thẳng camera");
+        _isProcessingFrame = false;
+        return;
+      }
+
+      final screenWidth = MediaQuery.of(context).size.width;
+      if (face.boundingBox.width < screenWidth * 0.3) {
+        if (mounted) setState(() => _realtimeWarning = "Hãy di chuyển lại gần hơn");
+        _isProcessingFrame = false;
+        return;
+      }
+
+      final leftEyeOpen = face.leftEyeOpenProbability ?? 1.0;
+      final rightEyeOpen = face.rightEyeOpenProbability ?? 1.0;
+      if (leftEyeOpen < 0.2 && rightEyeOpen < 0.2) {
+        _hasBlinked = true;
+      }
+
+      if (!_hasBlinked) {
+        if (mounted) setState(() => _realtimeWarning = "Vui lòng chớp mắt để xác thực");
+        _isProcessingFrame = false;
+        return;
+      }
+
+      if (mounted) setState(() {
+        _realtimeWarning = "Hoàn hảo! Đang nhận diện...";
+      });
+      
+      await _controller!.stopImageStream();
+      _captureAndCheckin();
+
+    } catch (e) {
+      // Ignore
+    } finally {
+      _isProcessingFrame = false;
+    }
+  }
+
   @override
   void dispose() {
+    _faceDetector.close();
     _controller?.dispose();
     _pulseController.dispose();
     super.dispose();
@@ -315,7 +434,23 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
         Future.delayed(const Duration(seconds: 2), () { if (mounted) setState(() { _statusMessage = null; _success = null; }); });
       }
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+          _hasBlinked = false;
+        });
+        
+        try {
+          if (_cameras != null && _cameras!.isNotEmpty) {
+            final front = _cameras!.firstWhere((c) => c.lensDirection == CameraLensDirection.front, orElse: () => _cameras![0]);
+            _controller!.startImageStream((CameraImage image) {
+              if (!_isProcessing && mounted) {
+                _processCameraImage(image, front);
+              }
+            });
+          }
+        } catch (e) {}
+      }
     }
   }
 
@@ -332,7 +467,7 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
             child: CameraPreview(_controller!),
           )))
         else
-          Container(color: const Color(0xFF0F172A), child: const Center(child: CircularProgressIndicator(color: Color(0xFF2E96EB)))),
+          Container(color: AppTheme.background, child: const Center(child: CircularProgressIndicator(color: AppTheme.secondary))),
 
         // Dark overlay
         Positioned.fill(child: Container(color: Colors.black.withValues(alpha: 0.3))),
@@ -390,8 +525,18 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
         Positioned(bottom: 0, left: 0, right: 0, child: SafeArea(child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('Đưa khuôn mặt vào khung hình và nhấn nút bên dưới',
-              textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: _hasBlinked ? Colors.green.withValues(alpha: 0.8) : Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                _isProcessing ? 'ĐANG TẢI LÊN...' : _realtimeWarning.toUpperCase(),
+                textAlign: TextAlign.center, 
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)
+              ),
+            ),
             const SizedBox(height: 20),
             GestureDetector(
               onTap: _isProcessing ? null : _captureAndCheckin,
@@ -401,15 +546,15 @@ class _StudentFaceScanScreenState extends State<StudentFaceScanScreen> with Tick
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white.withValues(alpha: 0.5 + _pulseController.value * 0.5), width: 3),
-                    boxShadow: [BoxShadow(color: const Color(0xFF2E96EB).withValues(alpha: 0.3 * _pulseController.value), blurRadius: 20)],
+                    boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3 * _pulseController.value), blurRadius: 20)],
                   ),
                   child: Container(
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(colors: [
-                        _isProcessing ? Colors.orange : const Color(0xFF2E96EB),
-                        _isProcessing ? Colors.deepOrange : const Color(0xFF1E293B),
+                        _isProcessing ? Colors.orange : AppTheme.primary,
+                        _isProcessing ? Colors.deepOrange : AppTheme.secondary,
                       ]),
                     ),
                     child: Icon(_isProcessing ? Icons.hourglass_empty : Icons.face_retouching_natural,

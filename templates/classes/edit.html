@@ -89,6 +89,88 @@
     </div>
 </div>
 
+<div class="row justify-content-center mt-4">
+    <div class="col-md-7">
+        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4">
+            <h5 class="fw-bold mb-4 border-bottom pb-2"><i class="fas fa-calendar-alt text-info me-2"></i> Lịch Học (Thời Khóa Biểu)</h5>
+            
+            <!-- Danh sách lịch học hiện tại -->
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center">Thứ</th>
+                            <th>Giờ bắt đầu</th>
+                            <th>Giờ kết thúc</th>
+                            <th>Phòng học</th>
+                            <th>Ghi chú</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if schedules %}
+                            {% for sch in schedules %}
+                            <tr>
+                                <td class="text-center fw-bold">
+                                    {% if sch.thu == 8 %}Chủ Nhật{% else %}Thứ {{ sch.thu }}{% endif %}
+                                </td>
+                                <td>{{ sch.gio_bat_dau }}</td>
+                                <td>{{ sch.gio_ket_thuc or '-' }}</td>
+                                <td>{{ sch.phong_hoc or '-' }}</td>
+                                <td>{{ sch.ghi_chu or '-' }}</td>
+                                <td class="text-center">
+                                    <form method="POST" action="{{ url_for('classes.schedule_delete', id=cls.id, schedule_id=sch.id) }}" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa lịch này?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">Chưa có lịch học nào được cấu hình. Hệ thống sẽ tự động đoán giờ vào lớp theo thời gian thực (Sáng/Chiều/Tối).</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Form thêm lịch học -->
+            <form method="POST" action="{{ url_for('classes.schedule_add', id=cls.id) }}" class="bg-light p-3 rounded border">
+                <h6 class="fw-bold mb-3"><i class="fas fa-plus-circle text-success me-1"></i> Thêm ca học mới</h6>
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Thứ <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-sm" name="thu" required>
+                            <option value="2">Thứ 2</option>
+                            <option value="3">Thứ 3</option>
+                            <option value="4">Thứ 4</option>
+                            <option value="5">Thứ 5</option>
+                            <option value="6">Thứ 6</option>
+                            <option value="7">Thứ 7</option>
+                            <option value="8">Chủ Nhật</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Bắt đầu <span class="text-danger">*</span></label>
+                        <input type="time" class="form-control form-control-sm" name="gio_bat_dau" required value="07:00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Kết thúc</label>
+                        <input type="time" class="form-control form-control-sm" name="gio_ket_thuc">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Phòng</label>
+                        <input type="text" class="form-control form-control-sm" name="phong_hoc" placeholder="VD: E3.4">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-sm btn-success w-100"><i class="fas fa-plus"></i> Thêm</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 
 {% endblock %}

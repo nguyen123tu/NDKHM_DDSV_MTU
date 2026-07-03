@@ -84,6 +84,50 @@ def ask():
     return jsonify(result)
 
 
+@chatbot_bp.route('/ask_stream', methods=['POST'])
+def ask_stream():
+    """
+    API: Gửi câu hỏi cho AI (Streaming SSE)
+    """
+    data = request.get_json()
+    question = data.get('question', '').strip()
+
+    if not question:
+        return jsonify({"error": "Câu hỏi không được để trống"}), 400
+
+    if len(question) > 2000:
+        return jsonify({"error": "Câu hỏi quá dài (tối đa 2000 ký tự)"}), 400
+
+    session_id = session.get('chat_session_id', 'default')
+
+    # --- HỖ TRỢ APP MOBILE: Lấy MSSV từ token nếu có ---
+    mssv = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        try:
+            import jwt
+            from config import Config
+            payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=["HS256"])
+            if payload.get('role') == 'student':
+                mssv = payload.get('username')
+                session_id = f"mobile_{mssv}"
+        except Exception:
+            pass
+
+    from services.ai_chatbot import get_chatbot
+    chatbot = get_chatbot()
+    
+    return Response(
+        chatbot.chat_stream(question, session_id, student_mssv=mssv),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',
+        }
+    )
+
+
 @chatbot_bp.route('/clear', methods=['POST'])
 def clear_chat():
     """

@@ -142,7 +142,7 @@ class AboutScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration:
-                      AppTheme.glassDecoration(borderRadius: 20, opacity: 0.05),
+                      AppTheme.modernCardDecoration(borderRadius: 20, color: AppTheme.surfaceLight.withOpacity(0.05)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -202,8 +202,10 @@ class AboutScreen extends StatelessWidget {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: AppTheme.glassDecoration(
-          borderRadius: 16, opacity: 0.04, border: false),
+      decoration: AppTheme.modernCardDecoration(
+        color: AppTheme.surfaceLight.withOpacity(0.05),
+        borderRadius: 20,
+      ),
       child: Row(
         children: [
           Container(

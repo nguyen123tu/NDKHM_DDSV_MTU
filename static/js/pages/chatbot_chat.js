@@ -145,7 +145,7 @@ function clearUI() {
 // --- Messaging ---
 function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
 
-function sendMessage() {
+async function sendMessage() {
     const text = inputEl.value.trim();
     if (!text || isLoading) return;
     addMsgDOM(text, 'user');
@@ -156,10 +156,83 @@ function sendMessage() {
     setLoading(true);
     renderList();
 
-    fetch('/chatbot/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: text }) })
-        .then(r => r.json())
-        .then(data => { setLoading(false); addMsgDOM(data.answer, 'bot', data.sources, data.duration_ms); CH.addMsg(curId, 'bot', data.answer, data.sources, data.duration_ms); })
-        .catch(err => { setLoading(false); const m = '❌ Lỗi: ' + err.message; addMsgDOM(m, 'bot'); CH.addMsg(curId, 'bot', m); });
+    try {
+        const response = await fetch('/chatbot/ask_stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: text })
+        });
+        
+        setLoading(false);
+
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="msg-avatar"><i class="fas fa-robot"></i></div><div class="msg-body"><div class="bubble"></div></div>`;
+        messagesEl.insertBefore(div, typingEl);
+        
+        const bodyEl = div.querySelector('.msg-body');
+        const bubble = bodyEl.querySelector('.bubble');
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        
+        let fullAnswer = "";
+        let sources = [];
+        let durationMs = 0;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            
+            for (let line of lines) {
+                if (line.startsWith('data: ')) {
+                    const dataStr = line.replace('data: ', '').trim();
+                    if (dataStr === '[DONE]') break;
+                    try {
+                        const parsed = JSON.parse(dataStr);
+                        if (parsed.type === 'sources') {
+                            sources = parsed.sources;
+                        } else if (parsed.type === 'chunk') {
+                            fullAnswer += parsed.text;
+                            bubble.innerHTML = marked.parse(fullAnswer);
+                            messagesEl.scrollTop = messagesEl.scrollHeight;
+                        } else if (parsed.type === 'done') {
+                            durationMs = parsed.duration_ms;
+                        } else if (parsed.type === 'error') {
+                            fullAnswer += "\n\n" + parsed.text;
+                            bubble.innerHTML = marked.parse(fullAnswer);
+                            messagesEl.scrollTop = messagesEl.scrollHeight;
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+        
+        if (durationMs) {
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'meta';
+            metaDiv.innerHTML = '⏱ ' + durationMs + 'ms';
+            bodyEl.appendChild(metaDiv);
+        }
+        // if (sources && sources.length) {
+        //     const s = [...new Set(sources.map(x => x.file))].join(', ');
+        //     const sourcesDiv = document.createElement('div');
+        //     sourcesDiv.className = 'sources';
+        //     sourcesDiv.innerHTML = '📚 ' + s;
+        //     bodyEl.appendChild(sourcesDiv);
+        // }
+        
+        CH.addMsg(curId, 'bot', fullAnswer, sources, durationMs);
+        
+    } catch (err) {
+        setLoading(false);
+        const m = '❌ Lỗi: ' + err.message;
+        addMsgDOM(m, 'bot');
+        CH.addMsg(curId, 'bot', m);
+    }
 }
 
 function addMsgDOM(text, role, sources, dur, animate = true) {
@@ -170,7 +243,7 @@ function addMsgDOM(text, role, sources, dur, animate = true) {
     let h = `<div class="msg-avatar"><i class="fas ${icon}"></i></div><div class="msg-body">`;
     h += '<div class="bubble">' + (role === 'bot' ? marked.parse(text) : esc(text)) + '</div>';
     if (role === 'bot' && dur) h += '<div class="meta">⏱ ' + dur + 'ms</div>';
-    if (sources && sources.length) { const s = [...new Set(sources.map(x => x.file))].join(', '); h += '<div class="sources">📚 ' + s + '</div>'; }
+    // if (sources && sources.length) { const s = [...new Set(sources.map(x => x.file))].join(', '); h += '<div class="sources">📚 ' + s + '</div>'; }
     h += '</div>';
     div.innerHTML = h;
     messagesEl.insertBefore(div, typingEl);

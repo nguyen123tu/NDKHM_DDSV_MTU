@@ -166,3 +166,18 @@ CREATE TABLE don_xin_phep (
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_don_sv_id' AND object_id = OBJECT_ID('don_xin_phep'))
 CREATE INDEX idx_don_sv_id ON don_xin_phep(sinh_vien_id);
 
+IF OBJECT_ID('lich_hoc', 'U') IS NULL
+CREATE TABLE lich_hoc (
+    id          INT IDENTITY(1,1) PRIMARY KEY,
+    lop_id      INT NOT NULL,
+    thu         TINYINT NOT NULL,
+    gio_bat_dau TIME NOT NULL,
+    gio_ket_thuc TIME NULL,
+    phong_hoc   NVARCHAR(50) NULL,
+    ghi_chu     NVARCHAR(255) NULL,
+    FOREIGN KEY (lop_id) REFERENCES lop_hoc(id) ON DELETE CASCADE
+);
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_lich_lop_id' AND object_id = OBJECT_ID('lich_hoc'))
+CREATE INDEX idx_lich_lop_id ON lich_hoc(lop_id);
+

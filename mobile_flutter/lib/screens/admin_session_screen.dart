@@ -121,7 +121,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: AppTheme.glassDecoration(borderRadius: 14, opacity: 0.08),
+                    decoration: AppTheme.modernCardDecoration(borderRadius: 14, color: AppTheme.surfaceLight.withOpacity(0.08)),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<int>(
                         isExpanded: true,
@@ -157,7 +157,7 @@ class _AdminSessionScreenState extends State<AdminSessionScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [BoxShadow(color: AppTheme.secondary.withValues(alpha: 0.3), blurRadius: 8)],
                                   )
-                                : AppTheme.glassDecoration(borderRadius: 12, opacity: 0.06),
+                                : AppTheme.modernCardDecoration(borderRadius: 12, color: AppTheme.surfaceLight.withOpacity(0.06)),
                             child: Center(child: Text('$m\'', style: TextStyle(
                               color: duration == m ? Colors.white : AppTheme.textSecondary,
                               fontWeight: FontWeight.bold, fontSize: 15,

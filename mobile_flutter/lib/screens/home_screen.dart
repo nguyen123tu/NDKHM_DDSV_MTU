@@ -73,8 +73,35 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Background - Clean Neumorphism
-          Container(color: Theme.of(context).scaffoldBackgroundColor),
+          // Background - Modern Deep Slate
+          Container(color: AppTheme.background),
+
+          // Glowing Orbs (Mesh Gradient Effect)
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primary.withOpacity(0.12),
+              ),
+            ),
+          ).animate().fadeIn(duration: 1000.ms),
+          
+          Positioned(
+            bottom: 100,
+            left: -150,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.accent.withOpacity(0.08),
+              ),
+            ),
+          ).animate().fadeIn(duration: 1000.ms, delay: 300.ms),
 
           // Main Content
           SafeArea(
@@ -105,12 +132,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Row(
                                 children: [
-                                  NeuContainer(
+                                  Container(
                                     padding: const EdgeInsets.all(12),
-                                    shape: BoxShape.circle,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: AppTheme.primaryGradient,
+                                    ),
                                     child: const Icon(
                                         Icons.face_retouching_natural,
-                                        color: AppTheme.secondary,
+                                        color: Colors.white,
                                         size: 24),
                                   ),
                                   const SizedBox(width: 12),
@@ -698,7 +728,7 @@ class _HomeScreenState extends State<HomeScreen> {
       {required String title,
       required String subtitle,
       required IconData icon,
-      required List<Color> gradient, // Bỏ qua gradient để dùng màu tĩnh Neumorphism
+      required List<Color> gradient,
       required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
@@ -708,10 +738,24 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            NeuContainer(
+            Container(
               padding: const EdgeInsets.all(12),
-              shape: BoxShape.circle,
-              child: Icon(icon, color: gradient.first, size: 28),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: gradient,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: gradient.first.withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              ),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
             const SizedBox(height: 16),
             Text(title,

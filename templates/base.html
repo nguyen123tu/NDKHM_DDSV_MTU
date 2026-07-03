@@ -59,19 +59,19 @@
             <div class="nav-group-label"><span class="nav-label-text">Tổng quan</span></div>
             <li>
                 <a href="{{ url_for('dashboard.index') }}" title="Trang chủ"
-                    class="nav-link {% if request.endpoint and request.endpoint.startswith('dashboard') %}active{% endif %}">
+                    class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
                     <i class="fas fa-home"></i> <span class="link-text">Trang chủ</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if active_page == 'kiosk' %}active{% endif %}" href="{{ url_for('dashboard.kiosk') }}" target="_blank" title="Kiosk Mode">
+                <a class="nav-link {% if request.endpoint == 'dashboard.kiosk' %}active{% endif %}" href="{{ url_for('dashboard.kiosk') }}" target="_blank" title="Kiosk Mode">
                     <i class="fas fa-desktop"></i> <span class="link-text">Kiosk Mode</span>
                 </a>
             </li>
 
             <div class="nav-group-label"><span class="nav-label-text">Quản lý</span></div>
             <li class="nav-item">
-                <a class="nav-link {% if active_page == 'pending' %}active{% endif %}" href="{{ url_for('students.pending_faces') }}" title="Duyệt khuôn mặt">
+                <a class="nav-link {% if request.endpoint == 'students.pending_faces' %}active{% endif %}" href="{{ url_for('students.pending_faces') }}" title="Duyệt khuôn mặt">
                     <i class="fas fa-user-check"></i> <span class="link-text">Duyệt khuôn mặt</span>
                 </a>
             </li>
@@ -97,12 +97,12 @@
             <div class="nav-group-label"><span class="nav-label-text">Điểm danh</span></div>
             <li>
                 <a href="{{ url_for('attendance.live') }}" title="Ghi nhận ra/vào"
-                    class="nav-link {% if request.endpoint and request.endpoint.startswith('attendance') %}active{% endif %}">
+                    class="nav-link {% if request.endpoint == 'attendance.live' %}active{% endif %}">
                     <i class="fas fa-video"></i> <span class="link-text">Ghi nhận ra/vào</span>
                 </a>
             </li>
             <li>
-                <a href="{{ url_for('attendance.history') }}" class="nav-link" title="Lịch sử ra/vào">
+                <a href="{{ url_for('attendance.history') }}" class="nav-link {% if request.endpoint == 'attendance.history' %}active{% endif %}" title="Lịch sử ra/vào">
                     <i class="fas fa-history"></i> <span class="link-text">Lịch sử ra/vào</span>
                 </a>
             </li>

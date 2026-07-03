@@ -56,7 +56,7 @@ async function captureAndRecognize() {
     if (isRtsp && rtspImg.naturalWidth === 0) return;
 
     const lopId = localStorage.getItem('kiosk_lop_id');
-    const startTime = localStorage.getItem('kiosk_start_time') || '07:00';
+    const startTime = localStorage.getItem('kiosk_start_time') || 'auto';
 
     if (!lopId) return;
 
@@ -307,7 +307,7 @@ if (setupLopId) {
 }
 
 if (setupStartTime) {
-    const savedTime = localStorage.getItem('kiosk_start_time');
+    const savedTime = localStorage.getItem('kiosk_start_time') || 'auto';
     if (savedTime) setupStartTime.value = savedTime;
 }
 

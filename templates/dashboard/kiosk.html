@@ -151,7 +151,12 @@
 
                     <div class="mb-4">
                         <label class="form-label text-info fw-semibold"><i class="fas fa-clock me-2"></i>Giờ Bắt Đầu Lớp Học</label>
-                        <input type="time" id="setupStartTime" class="form-control bg-dark text-light border-secondary form-control-lg" value="07:00">
+                        <select id="setupStartTime" class="form-select bg-dark text-light border-secondary form-select-lg">
+                            <option value="auto">Tự động (Theo lịch học của lớp)</option>
+                            <option value="07:00">Ca Sáng (07:00 - 11:30)</option>
+                            <option value="13:00">Ca Chiều (13:00 - 17:30)</option>
+                            <option value="18:00">Ca Tối (18:00 - 21:00)</option>
+                        </select>
                     </div>
 
                     <button id="btnGoLive" class="btn btn-info btn-lg w-100 fw-bold rounded-pill mt-3 shadow" style="font-family: 'Orbitron', sans-serif;">

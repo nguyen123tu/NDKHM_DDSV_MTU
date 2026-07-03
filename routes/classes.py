@@ -137,7 +137,8 @@ def edit(id):
         else:
             flash("Cập nhật thất bại", "danger")
             
-    return render_template('classes/edit.html', cls=cls)
+    schedules = class_service.get_schedule(id)
+    return render_template('classes/edit.html', cls=cls, schedules=schedules)
 
 @classes_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
@@ -173,3 +174,33 @@ def students_json(id):
     """
     students = class_service.get_students_in_class(id)
     return jsonify({"students": students})
+
+@classes_bp.route('/<int:id>/schedule/add', methods=['POST'])
+@login_required
+def schedule_add(id):
+    """
+    API thêm lịch học cho lớp
+    """
+    thu = request.form.get('thu', type=int)
+    gio_bat_dau = request.form.get('gio_bat_dau')
+    gio_ket_thuc = request.form.get('gio_ket_thuc')
+    phong_hoc = request.form.get('phong_hoc')
+    ghi_chu = request.form.get('ghi_chu')
+    
+    if not thu or not gio_bat_dau:
+        flash("Thiếu thông tin Thứ hoặc Giờ bắt đầu", "danger")
+        return redirect(url_for('classes.edit', id=id))
+        
+    class_service.add_schedule(id, thu, gio_bat_dau, gio_ket_thuc, phong_hoc, ghi_chu)
+    flash("Thêm lịch học thành công", "success")
+    return redirect(url_for('classes.edit', id=id))
+
+@classes_bp.route('/<int:id>/schedule/<int:schedule_id>/delete', methods=['POST'])
+@login_required
+def schedule_delete(id, schedule_id):
+    """
+    API xóa lịch học của lớp
+    """
+    class_service.delete_schedule(schedule_id)
+    flash("Xóa lịch học thành công", "success")
+    return redirect(url_for('classes.edit', id=id))
