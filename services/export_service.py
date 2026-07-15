@@ -9,6 +9,49 @@ from datetime import datetime
 from db.connection import execute_query
 from services import class_service
 
+def _create_attendance_pie_chart(present, late, absent):
+    import matplotlib
+    matplotlib.use('Agg') # Tránh lỗi main thread GUI trên server
+    import matplotlib.pyplot as plt
+    import io
+    
+    labels = []
+    sizes = []
+    colors = []
+    
+    if present > 0:
+        labels.append('Co mat')
+        sizes.append(present)
+        colors.append('#2ecc71') # Green
+    if late > 0:
+        labels.append('Di tre')
+        sizes.append(late)
+        colors.append('#f39c12') # Orange
+    if absent > 0:
+        labels.append('Vang mat')
+        sizes.append(absent)
+        colors.append('#e74c3c') # Red
+        
+    if not sizes:
+        labels = ['Chua co du lieu']
+        sizes = [1]
+        colors = ['#bdc3c7']
+
+    fig, ax = plt.subplots(figsize=(6, 3.5)) # Tăng kích thước chút cho đẹp
+    patches = ax.pie(
+        sizes, colors=colors, labels=labels, autopct='%1.1f%%', pctdistance=0.75,
+        startangle=90, textprops=dict(color="#333333", weight="bold", fontsize=10),
+        wedgeprops=dict(width=0.4, edgecolor='white', linewidth=2) # Donut chart
+    )
+    
+    ax.axis('equal')
+    
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', transparent=True, bbox_inches='tight')
+    buf.seek(0)
+    plt.close(fig)
+    return buf
+
 
 def to_excel(lop_id, date=None):
     """
@@ -23,6 +66,7 @@ def to_excel(lop_id, date=None):
     """
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.drawing.image import Image as ExcelImage
 
     lop = class_service.get_by_id(lop_id)
     if not lop:
@@ -107,6 +151,10 @@ def to_excel(lop_id, date=None):
     present_font = Font(name="Arial", size=11, color="008000")
     late_font = Font(name="Arial", size=11, color="E67E22", bold=True)
     
+    total_present = 0
+    total_late = 0
+    total_absent = 0
+    
     for i, record in enumerate(records, 1):
         row = i + 6
         ws1.cell(row=row, column=1, value=i).border = thin_border
@@ -153,10 +201,12 @@ def to_excel(lop_id, date=None):
                 ws1.cell(row=row, column=6).font = late_font
                 status_cell = ws1.cell(row=row, column=7, value="Đi trễ")
                 status_cell.font = late_font
+                total_late += 1
             else:
                 ws1.cell(row=row, column=6, value="Đúng giờ").border = thin_border
                 status_cell = ws1.cell(row=row, column=7, value="Có mặt")
                 status_cell.font = present_font
+                total_present += 1
                 
             ws1.cell(row=row, column=6).alignment = Alignment(horizontal="center")
             status_cell.border = thin_border
@@ -171,6 +221,7 @@ def to_excel(lop_id, date=None):
             status_cell.border = thin_border
             status_cell.font = absent_font
             status_cell.alignment = Alignment(horizontal="center")
+            total_absent += 1
 
     # Auto-width
     ws1.column_dimensions['A'].width = 6
@@ -190,13 +241,21 @@ def to_excel(lop_id, date=None):
 
     stats_data = [
         ("Sĩ số lớp", summary["si_so"]),
-        ("Có mặt", summary["co_mat"]),
-        ("Vắng", summary["vang"]),
+        ("Có mặt", total_present),
+        ("Đi trễ", total_late),
+        ("Vắng", total_absent),
         ("Tỷ lệ chuyên cần", f"{summary['ty_le']}%"),
     ]
     for i, (label, value) in enumerate(stats_data, 3):
         ws2.cell(row=i, column=1, value=label).font = Font(bold=True)
         ws2.cell(row=i, column=2, value=value)
+        
+    try:
+        chart_buf = _create_attendance_pie_chart(total_present, total_late, total_absent)
+        img = ExcelImage(chart_buf)
+        ws2.add_image(img, 'E3')
+    except Exception as e:
+        print(f"[EXCEL CHART ERROR] {e}")
 
     # Xuất ra bytes
     output = io.BytesIO()
@@ -219,8 +278,20 @@ def to_pdf(lop_id, date=None):
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import cm
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage
     from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    try:
+        pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
+        pdfmetrics.registerFont(TTFont('Arial-Bold', 'arialbd.ttf'))
+        font_regular = 'Arial'
+        font_bold = 'Arial-Bold'
+    except Exception as e:
+        print("[PDF FONT ERROR]", e)
+        font_regular = 'Helvetica'
+        font_bold = 'Helvetica-Bold'
 
     lop = class_service.get_by_id(lop_id)
     if not lop:
@@ -252,6 +323,13 @@ def to_pdf(lop_id, date=None):
     output = io.BytesIO()
     doc = SimpleDocTemplate(output, pagesize=A4, topMargin=2 * cm, bottomMargin=2 * cm)
     styles = getSampleStyleSheet()
+    
+    # Cập nhật font cho các style mặc định
+    styles['Normal'].fontName = font_regular
+    styles['Title'].fontName = font_bold
+    styles['Heading1'].fontName = font_bold
+    styles['Heading2'].fontName = font_bold
+    
     elements = []
 
     # Tiêu đề
@@ -272,6 +350,10 @@ def to_pdf(lop_id, date=None):
 
     # Bảng dữ liệu
     table_data = [["STT", "MSSV", "Ho va Ten", "Vao lop", "Diem danh", "Trang thai"]]
+    total_present = 0
+    total_late = 0
+    total_absent = 0
+    
     for i, record in enumerate(records, 1):
         thoi_gian = record.get("thoi_gian")
         
@@ -302,13 +384,17 @@ def to_pdf(lop_id, date=None):
                 di_tre_phut = int((thoi_gian - target_dt).total_seconds() / 60)
                 if di_tre_phut > 0:
                     trang_thai_str = f"Tre {di_tre_phut} p"
+                    total_late += 1
                 else:
                     trang_thai_str = "Co mat"
+                    total_present += 1
             else:
                 trang_thai_str = "Co mat"
+                total_present += 1
         else:
             tg_str = "--:--:--"
             trang_thai_str = "Vang mat"
+            total_absent += 1
             
         table_data.append([
             str(i),
@@ -319,16 +405,43 @@ def to_pdf(lop_id, date=None):
             trang_thai_str
         ])
 
+    try:
+        chart_buf = _create_attendance_pie_chart(total_present, total_late, total_absent)
+        chart_img = RLImage(chart_buf, width=11*cm, height=6.5*cm)
+        elements.append(chart_img)
+        elements.append(Spacer(1, 0.5 * cm))
+    except Exception as e:
+        print(f"[PDF CHART ERROR] {e}")
+
     if len(table_data) > 1:
         table = Table(table_data, colWidths=[1.2 * cm, 3.2 * cm, 4.5 * cm, 2.3 * cm, 3 * cm, 3.5 * cm])
-        table.setStyle(TableStyle([
+        
+        # Style hiện đại hơn
+        style = TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6A3CBC')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('FONTNAME', (0, 0), (-1, 0), font_bold),
+            ('FONTNAME', (0, 1), (-1, -1), font_regular),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F0FF')]),
-        ]))
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E5E7EB')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F8FAFC')]),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ])
+        
+        # Tô màu trạng thái
+        for row_idx, row_data in enumerate(table_data[1:], start=1):
+            status = row_data[5]
+            if status == "Co mat":
+                style.add('TEXTCOLOR', (5, row_idx), (5, row_idx), colors.HexColor('#16A34A'))
+            elif status == "Vang mat":
+                style.add('TEXTCOLOR', (5, row_idx), (5, row_idx), colors.HexColor('#DC2626'))
+            else: # Đi trễ
+                style.add('TEXTCOLOR', (5, row_idx), (5, row_idx), colors.HexColor('#D97706'))
+                
+        table.setStyle(style)
         elements.append(table)
     else:
         elements.append(Paragraph("Khong co du lieu diem danh.", styles['Normal']))
@@ -344,6 +457,7 @@ def to_pdf(lop_id, date=None):
     sig_table = Table(sig_data, colWidths=[8 * cm, 8 * cm])
     sig_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), font_regular),
         ('FONTSIZE', (0, 0), (-1, -1), 11),
     ]))
     elements.append(sig_table)

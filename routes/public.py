@@ -187,8 +187,9 @@ def _do_recognize(image_data):
     if mssv == "UNKNOWN":
         return {
             "success": False, 
-            "msg": "Không nhận diện được. Đảm bảo khuôn mặt đã được đăng ký trong hệ thống.",
-            "similarity": round(sim, 2)
+            "msg": "Không nhận diện được. Người lạ hoặc chưa đăng ký khuôn mặt trong hệ thống.",
+            "similarity": round(sim, 2),
+            "is_unknown": True
         }
         
     # --- KIỂM TRA LIVENESS (CHỐNG GIẢ MẠO BẰNG MINIFASNET) ---

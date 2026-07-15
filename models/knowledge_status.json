@@ -1,6 +1,6 @@
 {
-  "last_built": "2026-07-03 15:41:03",
-  "total_chunks": 1178,
+  "last_built": "2026-07-07 23:02:12",
+  "total_chunks": 1207,
   "sources": [
     {
       "file": "README.md",
@@ -44,7 +44,7 @@
     },
     {
       "file": "db/schema.sql",
-      "chunks": 19
+      "chunks": 21
     },
     {
       "file": "config.py",
@@ -72,11 +72,11 @@
     },
     {
       "file": "routes\\chatbot.py",
-      "chunks": 26
+      "chunks": 27
     },
     {
       "file": "routes\\classes.py",
-      "chunks": 17
+      "chunks": 22
     },
     {
       "file": "routes\\dashboard.py",
@@ -112,7 +112,7 @@
     },
     {
       "file": "services\\ai_chatbot.py",
-      "chunks": 61
+      "chunks": 65
     },
     {
       "file": "services\\attendance_service.py",
@@ -120,11 +120,11 @@
     },
     {
       "file": "services\\class_service.py",
-      "chunks": 19
+      "chunks": 30
     },
     {
       "file": "services\\export_service.py",
-      "chunks": 50
+      "chunks": 54
     },
     {
       "file": "services\\fcm_service.py",
@@ -132,7 +132,7 @@
     },
     {
       "file": "services\\knowledge_builder.py",
-      "chunks": 46
+      "chunks": 48
     },
     {
       "file": "services\\leave_service.py",

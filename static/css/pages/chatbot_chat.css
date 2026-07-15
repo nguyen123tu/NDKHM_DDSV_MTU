@@ -100,6 +100,18 @@ body,.main-wrapper{background:var(--bg-body)!important;color:var(--text-primary)
 .msg .meta{font-size:.7rem;color:#4b5563;margin-top:5px;padding:0 4px}
 .msg.user .meta{text-align:right}
 .msg .sources{font-size:.76rem;color:#38bdf8;margin-top:6px;padding:5px 10px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.12);border-radius:8px;display:inline-block}
+.tool-indicator{font-size:0.85rem;color:#0ea5e9;margin-bottom:8px;padding:6px 14px;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:12px;display:inline-flex;align-items:center;gap:8px;font-style:italic}
+
+/* Action Buttons */
+.msg-actions{display:flex;gap:6px;margin-top:6px;opacity:0;transition:.2s}
+.msg:hover .msg-actions{opacity:1}
+.msg-action-btn{background:rgba(255,255,255,.05);border:none;border-radius:6px;color:#94a3b8;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;transition:.2s}
+.msg-action-btn:hover{background:rgba(255,255,255,.1);color:#e2e8f0}
+
+/* Download Card */
+.btn-download-card{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff!important;text-decoration:none;border-radius:12px;font-weight:600;font-size:.95rem;box-shadow:0 6px 20px rgba(99,102,241,.3);transition:.3s;margin-top:10px}
+.btn-download-card:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(99,102,241,.4)}
+.btn-download-card i{font-size:1.1rem}
 
 /* Suggestions Bar */
 .suggestions-bar{display:flex;flex-wrap:wrap;gap:7px;padding:6px 28px 10px;overflow-x:auto}
@@ -118,6 +130,11 @@ body,.main-wrapper{background:var(--bg-body)!important;color:var(--text-primary)
 .btn-send{width:40px;height:40px;border-radius:50%;border:none;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;font-size:1.05rem;cursor:pointer;box-shadow:0 0 14px rgba(99,102,241,.3);transition:.3s cubic-bezier(.175,.885,.32,1.275);display:flex;align-items:center;justify-content:center;margin-bottom:1px;flex-shrink:0}
 .btn-send:hover{transform:scale(1.08);box-shadow:0 0 24px rgba(99,102,241,.45)}
 .btn-send:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;background:rgba(255,255,255,.07);color:rgba(255,255,255,.2)}
+
+/* Scroll Button */
+.btn-scroll-bottom{position:absolute;bottom:90px;right:40px;width:36px;height:36px;border-radius:50%;background:rgba(30,41,59,.8);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(10px);transition:.3s;z-index:10;backdrop-filter:blur(8px)}
+.btn-scroll-bottom.visible{opacity:1;pointer-events:auto;transform:translateY(0)}
+.btn-scroll-bottom:hover{background:rgba(99,102,241,.9);color:#fff;border-color:rgba(99,102,241,1)}
 
 /* Typing */
 .typing-indicator{display:none;align-self:flex-start}
@@ -177,6 +194,10 @@ body,.main-wrapper{background:var(--bg-body)!important;color:var(--text-primary)
 .chat-app.light .settings-header h3{color:#1e293b}
 .chat-app.light .setting-row label{color:#475569}
 .chat-app.light .btn-setting{border-color:#e5e7eb;background:#f8fafc;color:#334155}
+.chat-app.light .tool-indicator{color:#0284c7;background:rgba(14,165,233,0.05);border-color:rgba(14,165,233,0.15)}
+.chat-app.light .btn-scroll-bottom{background:rgba(255,255,255,.9);border-color:#e5e7eb;color:#475569;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.chat-app.light .msg-action-btn{background:rgba(0,0,0,.04);color:#64748b}
+.chat-app.light .msg-action-btn:hover{background:rgba(0,0,0,.08);color:#334155}
 
 /* Animations */
 @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}

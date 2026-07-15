@@ -5,8 +5,8 @@ Application Factory và Giao tiếp Socket.IO
 
 import os
 import eventlet
-# Sử dụng eventlet cho WebSocket hiệu năng cao
-eventlet.monkey_patch()
+# Sử dụng eventlet cho WebSocket hiệu năng cao, nhưng KHÔNG patch thread để tránh deadlock với ChromaDB (native threads)
+eventlet.monkey_patch(thread=False)
 
 from flask import Flask, render_template, send_from_directory
 from flask_socketio import SocketIO

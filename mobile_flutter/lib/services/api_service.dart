@@ -636,7 +636,7 @@ class ApiService {
             headers: headers,
             body: jsonEncode({'question': question}),
           )
-          .timeout(const Duration(seconds: 60));
+          .timeout(const Duration(seconds: 120));
       return jsonDecode(response.body);
     } catch (e) {
       return {
@@ -651,7 +651,7 @@ class ApiService {
     final headers = await _getHeaders();
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/mobile/chatbot/suggestions'),
+        Uri.parse('$baseUrl/chatbot/suggestions'),
         headers: headers,
       );
       final data = jsonDecode(response.body);
@@ -673,7 +673,7 @@ class ApiService {
     try {
       final response = await http
           .post(
-            Uri.parse('$baseUrl/api/mobile/chatbot/clear'),
+            Uri.parse('$baseUrl/chatbot/clear'),
             headers: headers,
           )
           .timeout(const Duration(seconds: 10));

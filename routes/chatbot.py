@@ -62,8 +62,20 @@ def ask():
 
     session_id = session.get('chat_session_id', 'default')
 
-    # --- HỖ TRỢ APP MOBILE: Lấy MSSV từ token nếu có ---
-    mssv = None
+    # --- HỖ TRỢ APP MOBILE & WEB: Lấy User Context ---
+    user_context = None
+    
+    # 1. Từ Web Session
+    if 'admin_username' in session:
+        user_context = {
+            'role': session.get('admin_role', 'admin'),
+            'username': session.get('admin_username'),
+            'id': session.get('admin_id'),
+            'name': session.get('admin_name')
+        }
+        session_id = f"web_{session.get('admin_username')}"
+
+    # 2. Từ Mobile Token
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         token = auth_header.split(" ")[1]
@@ -71,15 +83,18 @@ def ask():
             import jwt
             from config import Config
             payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=["HS256"])
-            if payload.get('role') == 'student':
-                mssv = payload.get('username')
-                session_id = f"mobile_{mssv}" # Dùng mssv làm session cho mobile
+            user_context = {
+                'role': payload.get('role', 'student'),
+                'username': payload.get('username'),
+                'id': payload.get('sub')
+            }
+            session_id = f"mobile_{payload.get('username')}"
         except Exception:
             pass
 
     from services.ai_chatbot import get_chatbot
     chatbot = get_chatbot()
-    result = chatbot.chat(question, session_id, student_mssv=mssv)
+    result = chatbot.chat(question, session_id, user_context=user_context)
 
     return jsonify(result)
 
@@ -100,8 +115,20 @@ def ask_stream():
 
     session_id = session.get('chat_session_id', 'default')
 
-    # --- HỖ TRỢ APP MOBILE: Lấy MSSV từ token nếu có ---
-    mssv = None
+    # --- HỖ TRỢ APP MOBILE & WEB: Lấy User Context ---
+    user_context = None
+    
+    # 1. Từ Web Session
+    if 'admin_username' in session:
+        user_context = {
+            'role': session.get('admin_role', 'admin'),
+            'username': session.get('admin_username'),
+            'id': session.get('admin_id'),
+            'name': session.get('admin_name')
+        }
+        session_id = f"web_{session.get('admin_username')}"
+
+    # 2. Từ Mobile Token
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         token = auth_header.split(" ")[1]
@@ -109,9 +136,12 @@ def ask_stream():
             import jwt
             from config import Config
             payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=["HS256"])
-            if payload.get('role') == 'student':
-                mssv = payload.get('username')
-                session_id = f"mobile_{mssv}"
+            user_context = {
+                'role': payload.get('role', 'student'),
+                'username': payload.get('username'),
+                'id': payload.get('sub')
+            }
+            session_id = f"mobile_{payload.get('username')}"
         except Exception:
             pass
 
@@ -119,7 +149,7 @@ def ask_stream():
     chatbot = get_chatbot()
     
     return Response(
-        chatbot.chat_stream(question, session_id, student_mssv=mssv),
+        chatbot.chat_stream(question, session_id, user_context=user_context),
         mimetype='text/event-stream',
         headers={
             'Cache-Control': 'no-cache',
@@ -127,6 +157,14 @@ def ask_stream():
         }
     )
 
+
+@chatbot_bp.route('/suggestions', methods=['GET'])
+def mobile_chatbot_suggestions():
+    # Helper for mobile app
+    from services.ai_chatbot import get_chatbot
+    chatbot = get_chatbot()
+    suggestions = chatbot.get_suggested_questions()
+    return jsonify({"success": True, "data": suggestions}), 200
 
 @chatbot_bp.route('/clear', methods=['POST'])
 def clear_chat():
@@ -199,6 +237,17 @@ def knowledge_progress():
             'X-Accel-Buffering': 'no',
         }
     )
+
+
+@chatbot_bp.route('/download-export/<path:filename>')
+def download_export(filename):
+    """
+    Tải file báo cáo do AI sinh ra
+    """
+    import os
+    from flask import send_from_directory
+    exports_dir = os.path.join(os.path.dirname(__file__), "..", "static", "exports")
+    return send_from_directory(exports_dir, filename, as_attachment=True)
 
 
 @chatbot_bp.route('/knowledge-status')

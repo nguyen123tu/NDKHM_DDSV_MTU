@@ -20,11 +20,11 @@ async function setupCamera() {
     } catch (err) {
         console.error("Cam Error:", err);
         if (err.name === 'NotAllowedError') {
-            alert("⚠️ Cần cấp quyền Camera cho trình duyệt!\n\nVào Cài đặt trình duyệt → Quyền riêng tư → Cho phép Camera.");
+            Swal.fire({ icon: 'error', title: 'Từ chối quyền Camera', text: 'Vào Cài đặt trình duyệt → Quyền riêng tư → Cho phép Camera.' });
         } else if (err.name === 'NotFoundError') {
-            alert("❌ Không tìm thấy Camera trên thiết bị này!\n\nHãy kiểm tra:\n- Thiết bị có webcam không?\n- Camera có đang bị ứng dụng khác chiếm?");
+            Swal.fire({ icon: 'error', title: 'Không tìm thấy Camera', text: 'Kiểm tra xem thiết bị có webcam không hoặc camera có đang bị ứng dụng khác chiếm?' });
         } else if (err.name === 'NotReadableError') {
-            alert("❌ Camera đang bị ứng dụng khác sử dụng!\n\nĐóng các app đang dùng camera (Zoom, Teams...) rồi thử lại.");
+            Swal.fire({ icon: 'warning', title: 'Camera đang bị chiếm dụng', text: 'Đóng các ứng dụng đang dùng camera (Zoom, Teams...) rồi thử lại.' });
         } else {
             console.log("Thử lại với cấu hình Camera mặc định...");
             try {
@@ -33,7 +33,7 @@ async function setupCamera() {
                 video.srcObject = fallbackStream;
             } catch (fallbackErr) {
                 console.error("Fallback Cam Error:", fallbackErr);
-                alert("❌ Không thể mở Camera!\n\nLỗi: " + fallbackErr.message + "\n\nThử mở bằng Chrome hoặc Edge.");
+                Swal.fire({ icon: 'error', title: 'Lỗi khởi tạo Camera', text: fallbackErr.message + '\n\nThử mở bằng Chrome hoặc Edge.' });
             }
         }
     }
@@ -96,7 +96,7 @@ async function captureAndRecognize() {
             }
         } else {
             if (d.msg && d.msg !== "Không có ảnh" && d.msg !== "Không phát hiện khuôn mặt. Hãy nhìn thẳng vào camera.") {
-                showError(d.msg);
+                showError(d.msg, d.is_unknown);
             }
         }
     } catch (e) { console.error("API:", e) }
@@ -146,12 +146,12 @@ function showResult(data) {
     setTimeout(() => { p.style.display = 'none' }, 5000);
 }
 
-function showError(msg) {
+function showError(msg, isUnknown = false) {
     const p = document.getElementById('result-panel');
     const status = document.getElementById('res-status');
 
-    document.getElementById('res-name').innerText = "Cảnh Báo";
-    document.getElementById('res-mssv').innerText = "Vui lòng thử lại";
+    document.getElementById('res-name').innerText = isUnknown ? "Người Lạ" : "Cảnh Báo";
+    document.getElementById('res-mssv').innerText = isUnknown ? "Chưa đăng ký khuôn mặt" : "Vui lòng thử lại";
     document.getElementById('res-avatar').src = '/static/img/logo_MTU.jpg';
     document.getElementById('res-msg').innerText = msg;
 
@@ -160,7 +160,7 @@ function showError(msg) {
     if (timeValEl) timeValEl.innerText = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     status.className = "res-badge res-badge-err";
-    status.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Access Denied';
+    status.innerHTML = isUnknown ? '<i class="fas fa-user-secret"></i> Unknown User' : '<i class="fas fa-exclamation-triangle"></i> Access Denied';
 
     if (ttsAudio) {
         ttsAudio.src = `/chatbot/tts?text=${encodeURIComponent("Nhận diện thất bại")}`;
@@ -346,7 +346,7 @@ if (btnGoLive) {
         }
         
         if (!processInterval) {
-            processInterval = setInterval(captureAndRecognize, 2000);
+            processInterval = setInterval(captureAndRecognize, 1200);
         }
         
         if (ttsAudio) ttsAudio.play().catch(e => {}); 

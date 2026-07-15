@@ -78,6 +78,13 @@ class KnowledgeBuilder:
             path=self._chroma_dir,
             settings=Settings(anonymized_telemetry=False)
         )
+        self._collection = None
+
+    def _get_collection(self):
+        """Lấy và cache collection để tránh load lại model AI nhiều lần"""
+        if self._collection is None:
+            self._collection = self._client.get_collection(self.COLLECTION_NAME)
+        return self._collection
 
     # ─── PUBLIC INTERFACE ────────────────────────────────────────────────
 
@@ -98,7 +105,7 @@ class KnowledgeBuilder:
         Returns list of {text, source, category, distance}
         """
         try:
-            collection = self._client.get_collection(self.COLLECTION_NAME)
+            collection = self._get_collection()
             results = collection.query(
                 query_texts=[query],
                 n_results=n_results,
@@ -124,7 +131,7 @@ class KnowledgeBuilder:
     def get_status(self) -> dict:
         """Lấy trạng thái kho tri thức"""
         try:
-            collection = self._client.get_collection(self.COLLECTION_NAME)
+            collection = self._get_collection()
             count = collection.count()
             status_data = self._load_status()
             return {

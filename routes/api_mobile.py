@@ -2151,7 +2151,14 @@ def mobile_chatbot_ask():
     try:
         from services.ai_chatbot import get_chatbot
         chatbot = get_chatbot()
-        result = chatbot.chat(question, session_id)
+        
+        user_context = {
+            'role': payload.get('role', 'student'),
+            'username': payload.get('username'),
+            'id': payload.get('sub')
+        }
+        
+        result = chatbot.chat(question, session_id, user_context=user_context)
 
         return jsonify({
             "success": True,

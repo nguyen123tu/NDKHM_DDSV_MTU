@@ -49,6 +49,8 @@ def generate_perfect_charts():
     plt.legend(fontsize=11)
 
     plt.tight_layout()
+    import os
+    os.makedirs('docs', exist_ok=True)
     plt.savefig('docs/Bieu_Do_Train_Dep.png', dpi=300, bbox_inches='tight')
     print("Da tao thanh cong bieu do tai: docs/Bieu_Do_Train_Dep.png")
 

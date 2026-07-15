@@ -40,6 +40,22 @@ function genId() { return 'c_' + Date.now() + '_' + Math.random().toString(36).s
     inputEl.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; });
     document.getElementById('btnSidebarToggle').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
     document.getElementById('btnThemeToggle').addEventListener('click', toggleTheme);
+    
+    // Scroll to bottom setup
+    const btnScroll = document.getElementById('btnScrollBottom');
+    if (btnScroll) {
+        messagesEl.addEventListener('scroll', () => {
+            if (messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight > 150) {
+                btnScroll.classList.add('visible');
+            } else {
+                btnScroll.classList.remove('visible');
+            }
+        });
+        btnScroll.addEventListener('click', () => {
+            messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
+        });
+    }
+    
     inputEl.focus();
 })();
 
@@ -195,7 +211,16 @@ async function sendMessage() {
                         const parsed = JSON.parse(dataStr);
                         if (parsed.type === 'sources') {
                             sources = parsed.sources;
+                        } else if (parsed.type === 'tool_call') {
+                            const indicator = document.createElement('div');
+                            indicator.className = 'tool-indicator';
+                            indicator.innerHTML = '<i class="fas fa-cog fa-spin"></i> Đang tự động xử lý (' + parsed.tool_name + ')...';
+                            bodyEl.insertBefore(indicator, bubble); // Chèn lên trên bubble text
+                            messagesEl.scrollTop = messagesEl.scrollHeight;
                         } else if (parsed.type === 'chunk') {
+                            const ind = bodyEl.querySelector('.tool-indicator');
+                            if (ind) ind.remove();
+                            
                             fullAnswer += parsed.text;
                             bubble.innerHTML = marked.parse(fullAnswer);
                             messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -242,12 +267,38 @@ function addMsgDOM(text, role, sources, dur, animate = true) {
     const icon = role === 'bot' ? 'fa-robot' : 'fa-user';
     let h = `<div class="msg-avatar"><i class="fas ${icon}"></i></div><div class="msg-body">`;
     h += '<div class="bubble">' + (role === 'bot' ? marked.parse(text) : esc(text)) + '</div>';
-    if (role === 'bot' && dur) h += '<div class="meta">⏱ ' + dur + 'ms</div>';
-    // if (sources && sources.length) { const s = [...new Set(sources.map(x => x.file))].join(', '); h += '<div class="sources">📚 ' + s + '</div>'; }
+    
+    if (role === 'bot') {
+        h += `<div class="msg-actions">
+                <button class="msg-action-btn" onclick="copyMsgText(this)" title="Sao chép"><i class="fas fa-copy"></i></button>
+                <button class="msg-action-btn" onclick="speakMsgText(this)" title="Đọc văn bản"><i class="fas fa-volume-up"></i></button>
+              </div>`;
+        if (dur) h += '<div class="meta">⏱ ' + dur + 'ms</div>';
+    }
+    
     h += '</div>';
     div.innerHTML = h;
     messagesEl.insertBefore(div, typingEl);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function copyMsgText(btn) {
+    const text = btn.closest('.msg-body').querySelector('.bubble').innerText;
+    navigator.clipboard.writeText(text);
+    const i = btn.querySelector('i');
+    i.className = 'fas fa-check text-success';
+    setTimeout(() => i.className = 'fas fa-copy', 2000);
+}
+
+function speakMsgText(btn) {
+    const text = btn.closest('.msg-body').querySelector('.bubble').innerText;
+    if (window.voiceEngine) {
+        window.voiceEngine.speak(text);
+    } else {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'vi-VN';
+        speechSynthesis.speak(u);
+    }
 }
 
 function setLoading(v) {
@@ -257,7 +308,12 @@ function setLoading(v) {
     if (v) messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-function askSuggested(el) { inputEl.value = (el.querySelector('span') || el).textContent; sendMessage(); }
+function askSuggested(el) { 
+    inputEl.value = (el.querySelector('span') || el).textContent; 
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+    inputEl.focus();
+}
 
 // --- Settings ---
 function openSettings() { document.getElementById('settingsModal').classList.add('open'); }

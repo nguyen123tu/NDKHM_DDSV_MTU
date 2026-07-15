@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <div id="video-container">
@@ -97,51 +97,58 @@
     <div class="hud-footer">MTUFACE · "Trí tuệ xây dựng — Công nghệ tương lai"</div>
 
 <!-- ===== Pre-Livestream Setup Screen ===== -->
-<div id="setupScreen" class="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column" style="z-index: 9999; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); overflow-y: auto;">
-    <div class="container flex-grow-1 d-flex flex-column justify-content-center py-5">
-        <div class="text-center mb-5">
-            <h1 class="fw-bold text-info mb-2" style="font-family: 'Orbitron', sans-serif;"><i class="fas fa-satellite-dish me-3"></i>MTUFace Dashboard Kiosk</h1>
-            <p class="text-white-50 fs-5">Kiểm tra kết nối và cấu hình phiên điểm danh (Dành cho Giảng Viên / Admin)</p>
+<div id="setupScreen" class="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column setup-screen-bg" style="z-index: 9999; overflow-y: auto;">
+    <div class="container flex-grow-1 d-flex flex-column justify-content-center py-5 setup-container">
+        <div class="text-center mb-5 setup-header-anim">
+            <h1 class="fw-bold text-info mb-3" style="font-family: 'Orbitron', sans-serif; text-shadow: 0 0 20px rgba(6, 182, 212, 0.5);">
+                <i class="fas fa-satellite-dish me-3"></i>MTUFace Dashboard Kiosk
+            </h1>
+            <p class="fs-5" style="color: #94A3B8; letter-spacing: 1px;">Kiểm tra kết nối và cấu hình phiên điểm danh <span class="text-info opacity-75">(Dành cho Giảng Viên / Admin)</span></p>
         </div>
 
         <div class="row g-5 align-items-center">
             <!-- Left: Preview -->
-            <div class="col-lg-7">
-                <div class="card bg-dark border-info shadow-lg rounded-4 overflow-hidden" style="border-width: 2px;">
-                    <div class="card-header border-info bg-black d-flex justify-content-between align-items-center py-3">
-                        <h6 class="mb-0 text-info" style="font-family: 'Orbitron', sans-serif;"><i class="fas fa-video me-2"></i>Camera Preview</h6>
-                        <span class="badge bg-secondary" id="previewStatus">Chưa kết nối</span>
+            <div class="col-lg-7 slide-in-left">
+                <div class="cyber-panel">
+                    <div class="cyber-panel-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 text-info" style="font-family: 'Orbitron', sans-serif; letter-spacing: 1.5px;">
+                            <i class="fas fa-video me-2"></i>CAMERA PREVIEW
+                        </h6>
+                        <span class="badge bg-dark border border-info text-info px-3 py-2" id="previewStatus" style="font-family: 'Orbitron', sans-serif;">Chưa kết nối</span>
                     </div>
-                    <div class="card-body p-0 position-relative bg-black" style="aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;">
+                    <div class="card-body p-0 position-relative bg-black camera-preview-box" style="aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;">
                         <video id="previewWebcam" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
                         <img id="previewRtsp" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-                        <div id="previewPlaceholder" class="text-center text-white-50">
-                            <div class="spinner-border text-info mb-3 d-none" id="previewLoading" role="status"></div>
-                            <i class="fas fa-camera-slash mb-3" id="previewIcon" style="font-size: 3rem;"></i>
-                            <p id="previewText">Chọn nguồn camera để xem trước</p>
+                        <div class="corner-br"></div>
+                        <div id="previewPlaceholder" class="text-center" style="color: rgba(6, 182, 212, 0.4);">
+                            <div class="spinner-border text-info mb-3 d-none" id="previewLoading" role="status" style="width: 3rem; height: 3rem;"></div>
+                            <i class="fas fa-camera-slash mb-3" id="previewIcon" style="font-size: 4rem; filter: drop-shadow(0 0 10px rgba(6,182,212,0.2));"></i>
+                            <p id="previewText" style="font-family: 'Orbitron', sans-serif; letter-spacing: 1px;">Chờ tín hiệu Camera...</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Right: Config -->
-            <div class="col-lg-5">
-                <div class="card bg-black border-info shadow-lg rounded-4 p-4 p-md-5" style="border-width: 2px;">
-                    <h4 class="text-info mb-4 border-bottom border-info pb-3" style="font-family: 'Orbitron', sans-serif;">System Setup</h4>
+            <div class="col-lg-5 slide-in-right">
+                <div class="cyber-panel p-4 p-md-5">
+                    <h4 class="text-info mb-4 pb-3" style="font-family: 'Orbitron', sans-serif; border-bottom: 1px solid rgba(6, 182, 212, 0.3); text-shadow: 0 0 10px rgba(6,182,212,0.3);">
+                        <i class="fas fa-sliders-h me-2"></i> SYSTEM SETUP
+                    </h4>
                     
                     <div class="mb-4">
-                        <label class="form-label text-info fw-semibold"><i class="fas fa-video me-2"></i>Nguồn Camera</label>
-                        <select id="setupCamSource" class="form-select bg-dark text-light border-secondary form-select-lg">
-                            <option value="webcam">Webcam Nội Bộ</option>
-                            <option value="rtsp_lan">Camera IMOU (Cắm dây LAN - 1.108)</option>
-                            <option value="rtsp_wan">Camera IMOU (Không dây WAN - 1.80)</option>
+                        <label class="form-label text-info fw-semibold" style="letter-spacing: 1px;"><i class="fas fa-signal me-2"></i>Nguồn Camera</label>
+                        <select id="setupCamSource" class="form-select form-select-lg cyber-select">
+                            <option value="webcam">Webcam Nội Bộ (Local)</option>
+                            <option value="rtsp_lan">Camera IMOU (LAN - 1.108)</option>
+                            <option value="rtsp_wan">Camera IMOU (WAN - 1.80)</option>
                             <option value="rtsp_custom">RTSP Tùy Chỉnh Khác</option>
                         </select>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label text-info fw-semibold"><i class="fas fa-chalkboard-teacher me-2"></i>Lớp Điểm Danh</label>
-                        <select id="setupLopId" class="form-select bg-dark text-light border-secondary form-select-lg">
+                        <label class="form-label text-info fw-semibold" style="letter-spacing: 1px;"><i class="fas fa-users-viewfinder me-2"></i>Lớp Điểm Danh</label>
+                        <select id="setupLopId" class="form-select form-select-lg cyber-select">
                             <option value="">-- Chọn lớp học --</option>
                             {% for c in classes %}
                             <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
@@ -149,9 +156,9 @@
                         </select>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label text-info fw-semibold"><i class="fas fa-clock me-2"></i>Giờ Bắt Đầu Lớp Học</label>
-                        <select id="setupStartTime" class="form-select bg-dark text-light border-secondary form-select-lg">
+                    <div class="mb-5">
+                        <label class="form-label text-info fw-semibold" style="letter-spacing: 1px;"><i class="fas fa-clock me-2"></i>Ca Học</label>
+                        <select id="setupStartTime" class="form-select form-select-lg cyber-select">
                             <option value="auto">Tự động (Theo lịch học của lớp)</option>
                             <option value="07:00">Ca Sáng (07:00 - 11:30)</option>
                             <option value="13:00">Ca Chiều (13:00 - 17:30)</option>
@@ -159,8 +166,8 @@
                         </select>
                     </div>
 
-                    <button id="btnGoLive" class="btn btn-info btn-lg w-100 fw-bold rounded-pill mt-3 shadow" style="font-family: 'Orbitron', sans-serif;">
-                        <i class="fas fa-power-off me-2"></i> INITIALIZE SYSTEM
+                    <button id="btnGoLive" class="btn btn-cyber btn-lg w-100 rounded-pill py-3">
+                        <i class="fas fa-power-off me-2 pulse-icon"></i> INITIALIZE SYSTEM
                     </button>
                 </div>
             </div>
