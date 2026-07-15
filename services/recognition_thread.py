@@ -118,15 +118,14 @@ class RecognitionSession:
             return False
 
         self._running = True
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
+        self._thread = self.socketio.start_background_task(target=self._run)
         print(f"[SESSION] Bắt đầu điểm danh lớp {self.lop_id}, camera {self.camera_id}")
         return True
 
     def stop(self):
         """Dừng thread nhận diện."""
         self._running = False
-        if self._thread:
+        if self._thread and hasattr(self._thread, 'join'):
             self._thread.join(timeout=3)
         print(f"[SESSION] Dừng điểm danh lớp {self.lop_id}")
 
@@ -422,7 +421,9 @@ class RecognitionSession:
             # Giới hạn FPS
             elapsed = time.time() - loop_start
             if elapsed < frame_interval:
-                time.sleep(frame_interval - elapsed)
+                self.socketio.sleep(frame_interval - elapsed)
+            else:
+                self.socketio.sleep(0) # Đảm bảo luôn nhường CPU cho event loop
 
         # Cleanup
         cam_manager.disconnect(self.camera_id)

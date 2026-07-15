@@ -58,7 +58,7 @@
                             <td class="text-center">
                                 {% if alert.hinh_anh %}
                                 <a href="/{{ alert.hinh_anh }}" target="_blank">
-                                    <img src="/{{ alert.hinh_anh }}" alt="Bằng chứng" class="img-thumbnail" style="height: 60px; object-fit: cover; cursor: pointer;">
+                                    <img src="/{{ alert.hinh_anh }}" alt="Bằng chứng" class="img-thumbnail" style="height: 60px; object-fit: cover; cursor: pointer;" onerror="let a=this.closest('a'); if(a){a.outerHTML=`<span class='text-muted small' title='File ảnh đã bị xóa khỏi ổ cứng'>[Ảnh đã xóa]</span>`;}">
                                 </a>
                                 {% else %}
                                 <span class="text-muted small">Không có</span>

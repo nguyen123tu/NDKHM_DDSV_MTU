@@ -71,14 +71,10 @@ class IPCamera:
 class ThreadedCamera:
     """Đọc luồng Camera (USB/RTSP) bằng Thread riêng biệt để tránh lag do buffer của OpenCV"""
     def __init__(self, source):
-        # Dùng eventlet.tpool để chạy các hàm C chặn luồng (blocking) trong OS thread thực sự
-        try:
-            from eventlet import tpool
-            self.cap = tpool.execute(cv2.VideoCapture, source)
-            self._use_tpool = True
-        except ImportError:
+        if isinstance(source, int) and os.name == 'nt':
+            self.cap = cv2.VideoCapture(source, cv2.CAP_DSHOW)
+        else:
             self.cap = cv2.VideoCapture(source)
-            self._use_tpool = False
             
         # Tắt buffer nếu có thể
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -95,12 +91,7 @@ class ThreadedCamera:
     def _update(self):
         while self.running:
             try:
-                if self._use_tpool:
-                    from eventlet import tpool
-                    ret, frame = tpool.execute(self.cap.read)
-                else:
-                    ret, frame = self.cap.read()
-                    
+                ret, frame = self.cap.read()
                 if ret:
                     # Giảm kích thước ảnh xuống max 1280px để tiết kiệm RAM và CPU tránh lag mạng
                     h, w = frame.shape[:2]

@@ -197,16 +197,30 @@
         (function() {
             const originalFetch = window.fetch;
             window.fetch = function(url, options) {
-                options = options || {};
-                options.headers = options.headers || {};
-                // Nếu headers là Headers object, convert về plain object
-                if (options.headers instanceof Headers) {
-                    const h = {};
-                    options.headers.forEach((v, k) => { h[k] = v; });
-                    h['ngrok-skip-browser-warning'] = '1';
-                    options.headers = h;
-                } else {
-                    options.headers['ngrok-skip-browser-warning'] = '1';
+                let isLocal = true;
+                try {
+                    const urlStr = (typeof url === 'string') ? url : (url && url.url ? url.url : String(url));
+                    if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {
+                        if (new URL(urlStr).origin !== window.location.origin) isLocal = false;
+                    }
+                } catch(e) {}
+                
+                if (isLocal) {
+                    let newOptions = options ? { ...options } : {};
+                    let newHeaders = newOptions.headers ? newOptions.headers : {};
+                    
+                    if (newHeaders instanceof Headers) {
+                        const h = new Headers(newHeaders);
+                        h.set('ngrok-skip-browser-warning', '1');
+                        newOptions.headers = h;
+                    } else {
+                        newOptions.headers = { ...newHeaders, 'ngrok-skip-browser-warning': '1' };
+                    }
+                    return originalFetch.call(this, url, newOptions);
+                }
+                
+                if (options === undefined) {
+                    return originalFetch.call(this, url);
                 }
                 return originalFetch.call(this, url, options);
             };

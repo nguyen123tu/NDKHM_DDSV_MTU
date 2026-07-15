@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const lopId = document.getElementById('selectLopId').value;
             const startTimeStr = document.getElementById('inputStartTime') ? document.getElementById('inputStartTime').value : "07:00";
             
-            const res = await fetch('/api/recognize', {
+            const res = await fetch('/public/api/recognize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -383,6 +383,16 @@ document.addEventListener('DOMContentLoaded', () => {
      * Tạo thẻ tr table log và thêm lên đầu danh sách + hiện toast
      */
     function addLogEntry(mssv, name, timeStr, similarity, action, avatarPath) {
+        // Cooldown check (tránh lặp lại điểm danh)
+        const cooldownInput = document.getElementById('inputCooldown');
+        const cooldownSecs = cooldownInput ? parseInt(cooldownInput.value) : 120;
+        const cooldownMs = (isNaN(cooldownSecs) ? 120 : cooldownSecs) * 1000;
+        const now = Date.now();
+        if (logCooldowns[mssv] && (now - logCooldowns[mssv] < cooldownMs)) {
+            return; // Đang trong thời gian cooldown, bỏ qua
+        }
+        logCooldowns[mssv] = now;
+
         const emptyMsg = document.getElementById('emptyLogMsg');
         if (emptyMsg) emptyMsg.remove();
 
