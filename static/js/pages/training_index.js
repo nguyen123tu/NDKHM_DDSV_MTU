@@ -14,8 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     btnTrainAll.addEventListener('click', async () => {
         if(!confirm('Chạy lại Training AI toàn bộ?\n\nDừng Camera trước khi chạy.')) return;
         btnTrainAll.disabled = true;
-        idlePanel.style.display = 'none';
-        progressPanel.style.display = 'block';
+        if (typeof showProgress === 'function') {
+            showProgress();
+        } else {
+            idlePanel.style.display = 'none';
+            progressPanel.style.display = 'block';
+        }
         const t0 = Date.now();
         const timer = setInterval(() => {
             const s = Math.floor((Date.now()-t0)/1000);
@@ -45,10 +49,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         statusText.innerText = 'Có lỗi!';
                         btnTrainAll.disabled = false;
+                        if (typeof hideProgress === 'function') hideProgress();
                     }
                 }
             };
-        } catch(err) { alert('Lỗi Server'); clearInterval(timer); btnTrainAll.disabled=false; }
+        } catch(err) { 
+            alert('Lỗi Server'); 
+            clearInterval(timer); 
+            btnTrainAll.disabled=false; 
+            if (typeof hideProgress === 'function') hideProgress();
+        }
     });
 
     document.querySelectorAll('.btn-train-single:not([disabled])').forEach(btn => {
@@ -67,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function switchEngine(engine) {
-    const labels = {'insightface':'InsightFace','yolo_resnet':'YOLO+ResNet50','deepface':'DeepFace'};
+    const labels = {'insightface':'InsightFace','yolo_resnet':'YOLOv11+ResNet50','deepface':'DeepFace'};
     if(!confirm(`Chuyển sang ${labels[engine]}?\n\nCần TRAIN LẠI nếu chưa có file não bộ.`)) return;
     let payload = {engine};
     if(engine==='deepface') {

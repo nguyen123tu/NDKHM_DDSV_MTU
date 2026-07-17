@@ -1,180 +1,211 @@
 {% extends "base.html" %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/class_edit.css') }}">
-{% endblock %}
-
-{% block title %}Chỉnh Sửa Lớp Học{% endblock %}
+{% block title %}Chỉnh Sửa Lớp Học — MTU Face AI{% endblock %}
+{% block page_title %}Cập nhật Lớp học{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-7">
-        <div class="d-flex align-items-center mb-4">
-            <a href="{{ url_for('classes.list_classes') }}" class="btn btn-outline-secondary border-0 p-2 me-3 text-muted hover-text-dark">
-                <i class="fas fa-arrow-left fs-5"></i>
-            </a>
-            <h3 class="fw-bold m-0"><i class="fas fa-edit text-secondary me-2"></i> Chỉnh Sửa {{ cls.ten_lop }}</h3>
+<div class="max-w-4xl mx-auto py-8 space-y-8">
+    
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="{{ url_for('classes.list_classes') }}" class="w-10 h-10 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center hover:bg-surface-variant transition-colors border border-outline-variant">
+            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        </a>
+        <div>
+            <h2 class="text-2xl font-bold text-on-surface">Chỉnh Sửa <span class="text-primary">{{ cls.ten_lop }}</span></h2>
+            <p class="text-sm text-on-surface-variant mt-1">Cập nhật thông tin và cấu hình lịch học cho lớp.</p>
         </div>
+    </div>
 
-        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4">
-            <form method="POST" action="{{ url_for('classes.edit', id=cls.id) }}">
-                <div class="row g-3">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Mã Lớp</label>
-                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark bg-light border-secondary" name="ma_lop" value="{{ cls.ma_lop }}" readonly disabled>
-                        <div class="small text-muted mt-1">Không thể thay đổi mã.</div>
+    <!-- Edit Class Form Container -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant overflow-hidden">
+        
+        <form method="POST" action="{{ url_for('classes.edit', id=cls.id) }}" class="p-8">
+            <h3 class="text-sm font-bold text-on-surface uppercase tracking-wider mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary text-[20px]">edit_document</span> Dữ liệu Lớp học
+            </h3>
+            
+            <div class="space-y-5">
+                <!-- Row 1: Code & Name -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="md:col-span-1">
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Mã Lớp</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant/50 text-[20px]">tag</span>
+                            <input type="text" name="ma_lop" value="{{ cls.ma_lop }}" readonly disabled class="w-full pl-10 pr-4 py-2.5 bg-surface-container-high/50 border border-outline-variant/50 rounded-xl text-sm text-on-surface-variant cursor-not-allowed font-mono">
+                        </div>
+                        <p class="text-[10px] text-on-surface-variant mt-1">Không thể thay đổi mã.</p>
                     </div>
                     
-                    <div class="col-md-8 mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Tên Lớp (Môn học) <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="ten_lop" required value="{{ cls.ten_lop }}">
+                    <div class="md:col-span-2">
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Tên Lớp (Môn học) <span class="text-error">*</span></label>
+                        <input type="text" name="ten_lop" required value="{{ cls.ten_lop }}" class="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm">
                     </div>
                 </div>
                 
-                <div class="row g-3">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Học Kỳ</label>
-                        <select class="form-select border-light shadow-sm bg-white text-dark" name="hoc_ky">
+                <!-- Row 2: Semester & Year & Faculty -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Học Kỳ</label>
+                        <select name="hoc_ky" class="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm cursor-pointer">
                             <option value="HK1" {% if cls.hoc_ky == 'HK1' %}selected{% endif %}>Học Kỳ 1</option>
                             <option value="HK2" {% if cls.hoc_ky == 'HK2' %}selected{% endif %}>Học Kỳ 2</option>
                             <option value="HK3" {% if cls.hoc_ky == 'HK3' %}selected{% endif %}>Học Kỳ 3 (Hè)</option>
                         </select>
                     </div>
                     
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Năm Học</label>
-                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="nam_hoc" value="{{ cls.nam_hoc or '' }}">
+                    <div>
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Năm Học</label>
+                        <input type="text" name="nam_hoc" value="{{ cls.nam_hoc or '' }}" class="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm">
                     </div>
                     
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Khoa / Viện</label>
-                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="khoa" value="{{ cls.khoa or '' }}">
+                    <div>
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Khoa / Viện</label>
+                        <input type="text" name="khoa" value="{{ cls.khoa or '' }}" class="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm">
                     </div>
                 </div>
                 
-                <div class="row g-3">
-                    <div class="col-md-8 mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Giảng Viên Quản Lý</label>
-                        <input type="text" class="form-control border-light shadow-sm bg-white text-dark" name="giao_vien" value="{{ cls.giao_vien or '' }}">
+                <!-- Row 3: Teacher & Status -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="md:col-span-2">
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Giảng Viên Quản Lý</label>
+                        <input type="text" name="giao_vien" value="{{ cls.giao_vien or '' }}" class="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm">
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Trạng Thái</label>
-                        <select class="form-select border-light shadow-sm bg-white text-dark {% if cls.trang_thai == 1 %}border-success text-success{% else %}border-danger text-danger{% endif %}" name="trang_thai">
-                            <option value="1" class="text-success" {% if cls.trang_thai == 1 %}selected{% endif %}>Đang Mở Điểm Danh</option>
-                            <option value="0" class="text-danger" {% if cls.trang_thai == 0 %}selected{% endif %}>Khóa Lớp Cấm Sửa</option>
+                    <div class="md:col-span-1">
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Trạng Thái</label>
+                        <select name="trang_thai" class="w-full px-4 py-2.5 bg-surface border rounded-xl text-sm font-semibold outline-none transition-all shadow-sm cursor-pointer {% if cls.trang_thai == 1 %}border-primary/50 text-primary focus:ring-primary focus:border-primary{% else %}border-error/50 text-error focus:ring-error focus:border-error{% endif %}">
+                            <option value="1" class="text-primary font-semibold" {% if cls.trang_thai == 1 %}selected{% endif %}>Đang Mở Điểm Danh</option>
+                            <option value="0" class="text-error font-semibold" {% if cls.trang_thai == 0 %}selected{% endif %}>Khóa Lớp Cấm Sửa</option>
                         </select>
                     </div>
                 </div>
                 
-                <div class="mb-4">
-                    <label class="form-label text-muted small fw-bold text-uppercase">Ghi chú thêm</label>
-                    <textarea class="form-control border-light shadow-sm bg-white text-dark" rows="3" name="mo_ta">{{ cls.mo_ta or '' }}</textarea>
+                <!-- Row 4: Note -->
+                <div>
+                    <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Ghi chú thêm</label>
+                    <textarea name="mo_ta" rows="3" class="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm resize-none">{{ cls.mo_ta or '' }}</textarea>
                 </div>
-
-                <div class="d-flex justify-content-between pt-3 border-top border-secondary border-opacity-50">
-                    <!-- Form Xoá Lớp dán ngầm ở đây nhưng button được thiết kế tách biệt góc trái -->
-                    <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
-                        <i class="fas fa-trash me-1"></i> Khóa xóa sổ Lớp Dữ Liệu
-                    </button>
-                    
-                    <button type="submit" class="btn btn-glass-warning px-4">
-                        <i class="fas fa-save me-1"></i> Áp Dụng Thay Đổi
-                    </button>
-                </div>
-            </form>
-            
-            <form id="deleteForm" method="POST" action="{{ url_for('classes.delete', id=cls.id) }}" class="d-none">
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="row justify-content-center mt-4">
-    <div class="col-md-7">
-        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4">
-            <h5 class="fw-bold mb-4 border-bottom pb-2"><i class="fas fa-calendar-alt text-info me-2"></i> Lịch Học (Thời Khóa Biểu)</h5>
-            
-            <!-- Danh sách lịch học hiện tại -->
-            <div class="table-responsive mb-4">
-                <table class="table table-bordered table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="text-center">Thứ</th>
-                            <th>Giờ bắt đầu</th>
-                            <th>Giờ kết thúc</th>
-                            <th>Phòng học</th>
-                            <th>Ghi chú</th>
-                            <th class="text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if schedules %}
-                            {% for sch in schedules %}
-                            <tr>
-                                <td class="text-center fw-bold">
-                                    {% if sch.thu == 8 %}Chủ Nhật{% else %}Thứ {{ sch.thu }}{% endif %}
-                                </td>
-                                <td>{{ sch.gio_bat_dau }}</td>
-                                <td>{{ sch.gio_ket_thuc or '-' }}</td>
-                                <td>{{ sch.phong_hoc or '-' }}</td>
-                                <td>{{ sch.ghi_chu or '-' }}</td>
-                                <td class="text-center">
-                                    <form method="POST" action="{{ url_for('classes.schedule_delete', id=cls.id, schedule_id=sch.id) }}" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa lịch này?');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-3">Chưa có lịch học nào được cấu hình. Hệ thống sẽ tự động đoán giờ vào lớp theo thời gian thực (Sáng/Chiều/Tối).</td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
             </div>
 
-            <!-- Form thêm lịch học -->
-            <form method="POST" action="{{ url_for('classes.schedule_add', id=cls.id) }}" class="bg-light p-3 rounded border">
-                <h6 class="fw-bold mb-3"><i class="fas fa-plus-circle text-success me-1"></i> Thêm ca học mới</h6>
-                <div class="row g-2">
-                    <div class="col-md-2">
-                        <label class="form-label small fw-bold">Thứ <span class="text-danger">*</span></label>
-                        <select class="form-select form-select-sm" name="thu" required>
-                            <option value="2">Thứ 2</option>
-                            <option value="3">Thứ 3</option>
-                            <option value="4">Thứ 4</option>
-                            <option value="5">Thứ 5</option>
-                            <option value="6">Thứ 6</option>
-                            <option value="7">Thứ 7</option>
-                            <option value="8">Chủ Nhật</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small fw-bold">Bắt đầu <span class="text-danger">*</span></label>
-                        <input type="time" class="form-control form-control-sm" name="gio_bat_dau" required value="07:00">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small fw-bold">Kết thúc</label>
-                        <input type="time" class="form-control form-control-sm" name="gio_ket_thuc">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small fw-bold">Phòng</label>
-                        <input type="text" class="form-control form-control-sm" name="phong_hoc" placeholder="VD: E3.4">
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-sm btn-success w-100"><i class="fas fa-plus"></i> Thêm</button>
-                    </div>
+            <!-- Footer Actions -->
+            <div class="mt-8 pt-6 border-t border-outline-variant flex justify-between items-center">
+                <button type="button" onclick="confirmDelete()" class="px-4 py-2 bg-error/10 text-error rounded-xl text-sm font-bold shadow-sm hover:bg-error hover:text-white transition-colors flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">delete_forever</span> Khóa Xóa Lớp
+                </button>
+                
+                <button type="submit" class="px-6 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-bold shadow-md hover:bg-primary/90 transition-transform active:scale-95 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">save</span> Áp Dụng Thay Đổi
+                </button>
+            </div>
+        </form>
+        
+        <form id="deleteForm" method="POST" action="{{ url_for('classes.delete', id=cls.id) }}" class="hidden"></form>
+    </div>
+
+    <!-- Schedules Section Container -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant overflow-hidden p-8">
+        <h3 class="text-lg font-bold text-on-surface mb-6 flex items-center gap-2 border-b border-outline-variant pb-4">
+            <span class="material-symbols-outlined text-secondary text-[24px]">calendar_month</span> Lịch Học (Thời Khóa Biểu)
+        </h3>
+        
+        <!-- Schedules Table -->
+        <div class="overflow-x-auto mb-8">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-surface-container-low">
+                    <tr>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">Thứ</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giờ bắt đầu</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Giờ kết thúc</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Phòng học</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ghi chú</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant text-sm">
+                    {% if schedules %}
+                        {% for sch in schedules %}
+                        <tr class="hover:bg-surface-container-low/50 transition-colors">
+                            <td class="px-4 py-3 text-center font-bold text-on-surface">
+                                {% if sch.thu == 8 %}Chủ Nhật{% else %}Thứ {{ sch.thu }}{% endif %}
+                            </td>
+                            <td class="px-4 py-3 font-mono text-primary font-semibold">{{ sch.gio_bat_dau }}</td>
+                            <td class="px-4 py-3 font-mono text-on-surface-variant">{{ sch.gio_ket_thuc or '-' }}</td>
+                            <td class="px-4 py-3 text-on-surface-variant font-medium">{{ sch.phong_hoc or '-' }}</td>
+                            <td class="px-4 py-3 text-on-surface-variant">{{ sch.ghi_chu or '-' }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <form method="POST" action="{{ url_for('classes.schedule_delete', id=cls.id, schedule_id=sch.id) }}" class="inline" onsubmit="return confirm('Bạn có chắc muốn xóa lịch này?');">
+                                    <button type="submit" class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-md transition-colors" title="Xóa lịch">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-8 text-center">
+                                <p class="text-sm text-on-surface-variant/70 italic">Chưa có lịch học nào được cấu hình. Hệ thống sẽ tự động đoán giờ vào lớp theo thời gian thực (Sáng/Chiều/Tối).</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add Schedule Form -->
+        <div class="bg-surface-container-low/50 rounded-xl p-5 border border-outline-variant">
+            <h4 class="text-sm font-bold text-on-surface uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[18px]">add_circle</span> Thêm ca học mới
+            </h4>
+            
+            <form method="POST" action="{{ url_for('classes.schedule_add', id=cls.id) }}" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5 block">Thứ <span class="text-error">*</span></label>
+                    <select name="thu" required class="w-full px-3 py-2 bg-surface border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none shadow-sm">
+                        <option value="2">Thứ 2</option>
+                        <option value="3">Thứ 3</option>
+                        <option value="4">Thứ 4</option>
+                        <option value="5">Thứ 5</option>
+                        <option value="6">Thứ 6</option>
+                        <option value="7">Thứ 7</option>
+                        <option value="8">Chủ Nhật</option>
+                    </select>
+                </div>
+                
+                <div class="md:col-span-3">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5 block">Bắt đầu <span class="text-error">*</span></label>
+                    <input type="time" name="gio_bat_dau" required value="07:00" class="w-full px-3 py-2 bg-surface border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none shadow-sm">
+                </div>
+                
+                <div class="md:col-span-3">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5 block">Kết thúc</label>
+                    <input type="time" name="gio_ket_thuc" class="w-full px-3 py-2 bg-surface border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none shadow-sm">
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5 block">Phòng</label>
+                    <input type="text" name="phong_hoc" placeholder="VD: E3.4" class="w-full px-3 py-2 bg-surface border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none shadow-sm">
+                </div>
+                
+                <div class="md:col-span-2">
+                    <button type="submit" class="w-full py-2 bg-secondary text-on-secondary font-bold rounded-lg text-sm shadow-md hover:bg-secondary/90 transition-colors flex justify-center items-center gap-1">
+                        <span class="material-symbols-outlined text-[18px]">add</span> Thêm
+                    </button>
                 </div>
             </form>
         </div>
+        
     </div>
+
 </div>
-
-
-
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/pages/class_edit.js') }}"></script>
+<script>
+    function confirmDelete() {
+        if (confirm('CẢNH BÁO: Xóa lớp học sẽ làm mất toàn bộ danh sách sinh viên và lịch sử điểm danh của lớp này. Bạn có chắc chắn muốn xóa?')) {
+            document.getElementById('deleteForm').submit();
+        }
+    }
+</script>
 {% endblock %}

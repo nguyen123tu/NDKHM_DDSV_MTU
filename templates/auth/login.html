@@ -1,148 +1,274 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="h-full">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập Quản trị viên — MTUFace</title>
-    <!-- Favicon -->
+    <title>Đăng nhập — MTU Face AI</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/animated_favicon.svg') }}">
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
-    
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/auth_login.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        dark: '#0a0e17',
+                        card: '#111827',
+                        accent: '#4edea3',
+                        'accent-dim': '#006c49',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Animated gradient background */
+        .bg-animated {
+            background: linear-gradient(135deg, #0a0e17 0%, #111827 40%, #0d1f2d 70%, #0a0e17 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Floating orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 400px; height: 400px;
+            background: #4edea3;
+            top: -10%; left: -5%;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 300px; height: 300px;
+            background: #006c49;
+            bottom: -5%; right: -5%;
+            animation-delay: -7s;
+        }
+
+        .orb-3 {
+            width: 200px; height: 200px;
+            background: #1e40af;
+            top: 50%; left: 60%;
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(10px, -10px) scale(1.02); }
+        }
+
+        /* Glass card */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Input styling */
+        .input-field {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #fff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #4edea3;
+            box-shadow: 0 0 0 3px rgba(78, 222, 163, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Button glow */
+        .btn-glow {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .btn-glow::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-glow:hover::before {
+            left: 100%;
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 0 30px rgba(78, 222, 163, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-glow:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* Scan line on logo */
+        .scan-pulse {
+            animation: scanPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes scanPulse {
+            0%, 100% { opacity: 0.4; transform: scaleX(0.8); }
+            50% { opacity: 1; transform: scaleX(1); }
+        }
+
+        /* Subtle grid pattern */
+        .grid-pattern {
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+    </style>
 </head>
-<body>
 
-    <div class="split-layout">
-        
-        <!-- Left Panel -->
-        <div class="split-left">
-            <div class="left-content">
-                <div class="brand-header">
-                    <div class="brand-logo">
-                        <div class="logo-img-wrapper">
-                            <img src="{{ url_for('static', filename='img/logo_MTU.jpg') }}" alt="MTU Logo">
-                        </div>
-                        <span>MTUFACE</span>
-                    </div>
-                    <div class="brand-title">
-                        <h1>MTUFACE</h1>
-                        <p>Hệ thống điểm danh thông minh bằng AI</p>
-                    </div>
-                </div>
+<body class="h-full bg-animated text-white antialiased overflow-hidden">
 
-                <div class="illustration-wrapper">
-                    <!-- Abstract Tech Illustration -->
-                    <div class="tech-graphic">
-                        <div class="face-scan-box">
-                            <i class="fas fa-expand"></i>
-                            <div class="scan-line"></div>
-                            <div class="face-icon">
-                                <i class="fas fa-user-shield"></i>
-                            </div>
-                        </div>
-                        <div class="floating-badge badge-1">
-                            <i class="fas fa-check-circle"></i> AI Powered
-                        </div>
-                        <div class="floating-badge badge-2">
-                            <i class="fas fa-bolt"></i> Real-time
-                        </div>
-                    </div>
-                </div>
-
-                <div class="brand-footer">
-                    <span>AI Recognition Engine v2.0</span>
-                    <span class="mtu-copyright">© Men Tay Construction University</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Panel -->
-        <div class="split-right">
-            <div class="form-container">
-                <div class="form-header">
-                    <h2 class="form-title">Chào mừng trở lại</h2>
-                    <p class="form-subtitle">Đăng nhập để tiếp tục truy cập hệ thống</p>
-                </div>
-
-                <!-- Flash Messages -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-custom alert-{{ 'danger' if category == 'error' else category }}">
-                                <i class="fas fa-info-circle"></i> {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <form method="POST" action="{{ url_for('auth.login') }}">
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="username">Tên đăng nhập</label>
-                        <div class="input-icon-wrapper">
-                            <i class="fas fa-user icon-prefix"></i>
-                            <input type="text" name="username" id="username" class="form-control" placeholder="Nhập tên đăng nhập" required autofocus autocomplete="username">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="password">Mật khẩu</label>
-                        <div class="input-icon-wrapper">
-                            <i class="fas fa-lock icon-prefix"></i>
-                            <input type="password" name="password" id="passwordField" class="form-control" placeholder="••••••••" required autocomplete="current-password">
-                            <button type="button" class="btn-toggle-pass" onclick="togglePassword()" tabindex="-1">
-                                <i class="fas fa-eye" id="toggleIcon"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="options-row">
-                        <div class="form-check custom-checkbox">
-                            <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
-                            <label class="form-check-label" for="rememberMe">
-                                Ghi nhớ tôi
-                            </label>
-                        </div>
-                        <a href="#" class="forgot-link">Quên mật khẩu?</a>
-                    </div>
-                    
-                    <button type="submit" class="btn-primary-large">
-                        Đăng nhập
-                    </button>
-                </form>
-                
-                <div class="form-footer">
-                     <a href="{{ url_for('public.lookup') }}" class="back-link">
-                        <i class="fas fa-arrow-left"></i> Quay về Cổng sinh viên
-                    </a>
-                </div>
-            </div>
-        </div>
-
+    <!-- Background Effects -->
+    <div class="fixed inset-0 pointer-events-none">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="grid-pattern absolute inset-0"></div>
     </div>
 
-    <!-- We keep the JS file import from before if it handles any other logic, but togglePassword is below as fallback -->
-    <script src="{{ url_for('static', filename='js/pages/auth_login.js') }}"></script>
+    <!-- Main Container -->
+    <div class="relative z-10 flex items-center justify-center min-h-screen p-6">
+
+        <div class="glass-card rounded-3xl w-full max-w-md p-10 space-y-8 shadow-2xl">
+
+            <!-- Logo & Branding -->
+            <div class="text-center space-y-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-accent-dim/20 border border-accent/20 mx-auto">
+                    <span class="material-symbols-outlined text-accent text-[32px]">face</span>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">MTU Face AI</h1>
+                    <p class="text-sm text-white/40 mt-1">Hệ thống điểm danh khuôn mặt thông minh</p>
+                </div>
+                <!-- Decorative scan line -->
+                <div class="mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent via-accent to-transparent scan-pulse rounded-full"></div>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="p-3.5 rounded-xl flex items-center gap-3 text-sm font-medium border
+                {% if category == 'error' %}bg-red-500/10 border-red-500/20 text-red-400
+                {% else %}bg-accent/10 border-accent/20 text-accent{% endif %}">
+                <span class="material-symbols-outlined text-[18px]">
+                    {% if category == 'error' %}error{% else %}check_circle{% endif %}
+                </span>
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <!-- Login Form -->
+            <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-5">
+
+                <div class="space-y-1.5">
+                    <label for="username" class="block text-xs font-medium text-white/50 tracking-wide">Tên đăng nhập</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-accent/50 text-[20px]">person</span>
+                        <input type="text" name="username" id="username" required autofocus
+                            placeholder="admin"
+                            class="input-field w-full pl-11 pr-4 py-3 rounded-xl text-sm outline-none">
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="passwordField" class="block text-xs font-medium text-white/50 tracking-wide">Mật khẩu</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-accent/50 text-[20px]">lock</span>
+                        <input type="password" name="password" id="passwordField" required
+                            placeholder="••••••••"
+                            class="input-field w-full pl-11 pr-11 py-3 rounded-xl text-sm outline-none">
+                        <button type="button" onclick="togglePassword()"
+                            class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-accent transition-colors">
+                            <span class="material-symbols-outlined text-[18px]" id="toggleIcon">visibility</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" name="remember"
+                            class="w-3.5 h-3.5 rounded border-white/20 bg-transparent text-accent focus:ring-accent/30 focus:ring-offset-0 cursor-pointer">
+                        <span class="text-white/40 group-hover:text-white/60 transition-colors">Ghi nhớ</span>
+                    </label>
+                    <a href="#" class="text-white/40 hover:text-accent transition-colors">Quên mật khẩu?</a>
+                </div>
+
+                <button type="submit"
+                    class="btn-glow w-full bg-gradient-to-r from-accent-dim to-accent/80 text-white py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-lg">
+                    Đăng nhập
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
+            </form>
+
+            <!-- Footer Link -->
+            <div class="pt-4 border-t border-white/5 text-center">
+                <a href="{{ url_for('public.lookup') }}"
+                    class="inline-flex items-center gap-2 text-xs text-white/30 hover:text-accent transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                    Cổng tra cứu Sinh viên
+                </a>
+            </div>
+
+            <!-- Copyright -->
+            <p class="text-center text-[11px] text-white/20 tracking-wide">
+                © 2026 Miền Tây Construction University
+            </p>
+
+        </div>
+    </div>
+
     <script>
         function togglePassword() {
-            const passwordField = document.getElementById('passwordField');
-            const toggleIcon = document.getElementById('toggleIcon');
-            
-            if (passwordField.type === 'password') {
-                passwordField.type = 'text';
-                toggleIcon.classList.remove('fa-eye');
-                toggleIcon.classList.add('fa-eye-slash');
+            const f = document.getElementById('passwordField');
+            const i = document.getElementById('toggleIcon');
+            if (f.type === 'password') {
+                f.type = 'text';
+                i.textContent = 'visibility_off';
             } else {
-                passwordField.type = 'password';
-                toggleIcon.classList.remove('fa-eye-slash');
-                toggleIcon.classList.add('fa-eye');
+                f.type = 'password';
+                i.textContent = 'visibility';
             }
         }
     </script>
 </body>
+
 </html>

@@ -1,252 +1,276 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard — MTUFace{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}Dashboard — MTU Face AI{% endblock %}
+{% block page_title %}Tổng quan{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/dashboard_index.css') }}">
-
 {% endblock %}
 
 {% block content %}
-<!-- ═══ HERO WELCOME ═══ -->
-<div class="hero-welcome">
-    <div class="hero-illustration">🎓</div>
-    <h2>Xin chào, Admin! 👋</h2>
-    <p>Chào mừng bạn quay lại hệ thống Điểm danh Thông minh MTUFace. Hãy kiểm tra tình hình hôm nay.</p>
-    <div class="hero-actions">
-        <a href="{{ url_for('attendance.live') }}" class="btn btn-light">
-            <i class="fas fa-play me-2"></i>Bắt đầu điểm danh
-        </a>
-        <a href="{{ url_for('chatbot.chat_page') }}" class="btn btn-outline-light">
-            <i class="fas fa-robot me-2"></i>Hỏi AI Assistant
-        </a>
+<div class="max-w-container-max mx-auto space-y-xl">
+    
+    <!-- Hero Welcome -->
+    <div class="bg-surface-container-lowest border border-outline-variant shadow-sm p-lg rounded-xl flex items-center justify-between overflow-hidden relative group bg-surface-container-low border-l-4 border-secondary-fixed">
+        <div class="relative z-10">
+            <h2 class="text-2xl font-bold text-on-surface">Xin chào, Admin! 👋</h2>
+            <p class="text-sm text-on-surface-variant mt-2">Chào mừng bạn quay lại hệ thống Điểm danh Thông minh. Hãy kiểm tra tình hình hôm nay.</p>
+            <div class="mt-4 flex gap-3">
+                <a href="{{ url_for('attendance.live') }}" class="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 flex items-center gap-2 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">play_arrow</span> Bắt đầu điểm danh
+                </a>
+                <a href="{{ url_for('chatbot.chat_page') }}" class="bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-variant flex items-center gap-2 transition-colors border border-outline-variant">
+                    <span class="material-symbols-outlined text-[18px]">robot_2</span> Hỏi AI Assistant
+                </a>
+            </div>
+        </div>
+        <div class="hidden md:block absolute -bottom-10 -right-10 opacity-10 group-hover:scale-110 transition-transform duration-500">
+            <span class="material-symbols-outlined text-[200px]">monitoring</span>
+        </div>
     </div>
-</div>
 
-<!-- ═══ STAT PILLS ═══ -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-xl-3">
-        <div class="stat-pill">
-            <div class="pill-icon" style="background:var(--gradient-card-1)">
-                <i class="fas fa-chalkboard-user"></i>
-            </div>
-            <div class="pill-info">
-                <h3>{{ total_classes }}</h3>
-                <span>Lớp học</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-3">
-        <div class="stat-pill">
-            <div class="pill-icon" style="background:var(--gradient-card-2)">
-                <i class="fas fa-users"></i>
-            </div>
-            <div class="pill-info">
-                <h3>{{ total_students }}</h3>
-                <span>Sinh viên</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-xl-3">
-        <div class="stat-pill">
-            <div class="pill-icon" style="background:var(--gradient-card-3)">
-                <i class="fas fa-user-check"></i>
-            </div>
-            <div class="pill-info">
-                <h3>{{ today_stats.co_mat }}</h3>
-                <span>Điểm danh hôm nay</span>
-            </div>
-            <span class="pill-trend" style="background:rgba(0,184,148,.1);color:var(--success)">
-                <i class="fas fa-arrow-up"></i> Live
-            </span>
-        </div>
-    </div>
-    <div class="col-6 col-xl-3">
-        <a href="{{ url_for('students.pending_faces') }}" class="text-decoration-none">
-            <div class="stat-pill">
-                <div class="pill-icon" style="background:var(--gradient-card-4)">
-                    <i class="fas fa-id-card-clip"></i>
-                </div>
-                <div class="pill-info">
-                    <h3>{{ total_pending }}</h3>
-                    <span>Yêu cầu duyệt</span>
-                </div>
-                {% if total_pending > 0 %}
-                <span class="pill-trend" style="background:rgba(225,112,85,.1);color:var(--danger)">
-                    Mới!
-                </span>
-                {% endif %}
-            </div>
-        </a>
-    </div>
-</div>
-
-<!-- ═══ MAIN GRID: Chart + Actions ═══ -->
-<div class="row g-4 mb-4">
-    <!-- Chart -->
-    <div class="col-lg-8">
-        <div class="chart-card">
-            <div class="chart-header">
+    <!-- Statistics Bento Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-lg">
+        <div class="bg-surface-container-lowest border border-outline-variant shadow-sm p-lg rounded-xl flex flex-col justify-between overflow-hidden relative group">
+            <div class="flex justify-between items-start">
                 <div>
-                    <h6 class="fw-bold mb-1" style="color:var(--text-primary)">Thống kê điểm danh</h6>
-                    <small class="text-muted">7 ngày gần nhất</small>
+                    <p class="text-on-surface-variant text-xs font-semibold uppercase tracking-wider">Lớp học</p>
+                    <h2 class="text-3xl font-bold mt-2 text-on-surface">{{ total_classes }}</h2>
                 </div>
-                <button class="btn btn-sm btn-outline-primary" onclick="location.reload()" style="border-radius:10px">
-                    <i class="fas fa-sync-alt"></i>
+                <div class="bg-primary-container/10 p-2 rounded-lg text-primary">
+                    <span class="material-symbols-outlined">class</span>
+                </div>
+            </div>
+            <div class="absolute -bottom-4 -right-4 opacity-5 group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-[100px]">school</span>
+            </div>
+        </div>
+        
+        <div class="bg-surface-container-lowest border border-outline-variant shadow-sm p-lg rounded-xl flex flex-col justify-between overflow-hidden relative group">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-on-surface-variant text-xs font-semibold uppercase tracking-wider">Sinh viên</p>
+                    <h2 class="text-3xl font-bold mt-2 text-on-surface">{{ total_students }}</h2>
+                </div>
+                <div class="bg-secondary-container/20 p-2 rounded-lg text-secondary">
+                    <span class="material-symbols-outlined">group</span>
+                </div>
+            </div>
+            <div class="absolute -bottom-4 -right-4 opacity-5 group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-[100px]">diversity_3</span>
+            </div>
+        </div>
+        
+        <div class="bg-surface-container-lowest border border-outline-variant shadow-sm p-lg rounded-xl flex flex-col justify-between overflow-hidden relative group">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-on-surface-variant text-xs font-semibold uppercase tracking-wider">Điểm danh hôm nay</p>
+                    <h2 class="text-3xl font-bold mt-2 text-secondary">{{ today_stats.co_mat }}</h2>
+                </div>
+                <div class="bg-secondary/10 p-2 rounded-lg text-secondary">
+                    <span class="material-symbols-outlined">check_circle</span>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center gap-1 text-secondary font-semibold text-xs bg-secondary/10 w-fit px-2 py-1 rounded-full">
+                <span class="material-symbols-outlined text-[14px]">trending_up</span> Live
+            </div>
+        </div>
+        
+        <a href="{{ url_for('students.pending_faces') }}" class="bg-surface-container-lowest border border-outline-variant shadow-sm p-lg rounded-xl flex flex-col justify-between overflow-hidden relative group hover:border-error/50 transition-colors cursor-pointer">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-on-surface-variant text-xs font-semibold uppercase tracking-wider">Yêu cầu duyệt</p>
+                    <h2 class="text-3xl font-bold mt-2 text-error">{{ total_pending }}</h2>
+                </div>
+                <div class="bg-error/10 p-2 rounded-lg text-error">
+                    <span class="material-symbols-outlined">id_card</span>
+                </div>
+            </div>
+            {% if total_pending > 0 %}
+            <div class="mt-4 flex items-center gap-1 text-error font-semibold text-xs bg-error/10 w-fit px-2 py-1 rounded-full animate-pulse">
+                <span class="material-symbols-outlined text-[14px]">warning</span> Cần xử lý ngay!
+            </div>
+            {% endif %}
+        </a>
+    </div>
+
+    <!-- Main Interactive Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+        
+        <!-- Chart Section -->
+        <div class="lg:col-span-2 bg-surface-container-lowest border border-outline-variant shadow-sm rounded-xl p-lg flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-lg font-bold text-on-surface">Thống kê điểm danh</h3>
+                    <p class="text-xs text-on-surface-variant mt-1">7 ngày gần nhất</p>
+                </div>
+                <button onclick="location.reload()" class="p-2 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors">
+                    <span class="material-symbols-outlined text-[20px] text-on-surface-variant">sync</span>
                 </button>
             </div>
-            <div class="chart-body">
+            
+            <div class="flex-1 w-full relative min-h-[260px] flex items-center justify-center">
                 {% if today_stats.co_mat == 0 and today_stats.canh_bao == 0 %}
-                <div class="text-center py-4">
-                    <div style="font-size:4rem;margin-bottom:12px;opacity:.4">📊</div>
-                    <p class="text-muted mb-3">Chưa có dữ liệu điểm danh hôm nay</p>
-                    <a href="{{ url_for('attendance.live') }}" class="btn btn-primary btn-sm" style="border-radius:10px">
-                        <i class="fas fa-play me-1"></i> Bắt đầu ngay
+                <div class="text-center py-8">
+                    <span class="material-symbols-outlined text-[64px] text-outline-variant mb-4">bar_chart</span>
+                    <p class="text-sm font-medium text-on-surface-variant mb-4">Chưa có dữ liệu điểm danh hôm nay</p>
+                    <a href="{{ url_for('attendance.live') }}" class="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">play_arrow</span> Bắt đầu ngay
                     </a>
                 </div>
                 {% else %}
-                <div style="height:260px">
-                    <canvas id="weeklyChart"></canvas>
-                </div>
+                <canvas id="weeklyChart" class="w-full h-full"></canvas>
                 {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions & AI Status -->
+        <div class="flex flex-col gap-lg">
+            <div class="bg-surface-container-lowest border border-outline-variant shadow-sm rounded-xl p-lg bg-gradient-to-br from-primary-container to-[#1a253e] text-on-primary">
+                <h3 class="text-lg font-bold mb-4">AI Scanner Engine</h3>
+                <div class="relative h-32 bg-black/30 rounded-lg overflow-hidden flex items-center justify-center border border-secondary-fixed/30 shadow-[0_0_15px_rgba(78,222,163,0.1)]">
+                    <div class="relative z-10 text-center flex flex-col items-center">
+                        <div class="w-12 h-12 border-2 border-secondary-fixed rounded-xl flex items-center justify-center mb-2 animate-[pulse_2s_ease-in-out_infinite]">
+                            <span class="material-symbols-outlined text-secondary-fixed text-[28px]">face</span>
+                        </div>
+                        <p class="text-sm font-bold text-secondary-fixed tracking-wide">SYSTEM ONLINE</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-surface-container-lowest border border-outline-variant shadow-sm rounded-xl p-lg flex-1">
+                <h3 class="text-sm font-bold text-on-surface mb-4 uppercase tracking-wider flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-primary"></span> Tác vụ nhanh
+                </h3>
+                <div class="space-y-2">
+                    <a href="{{ url_for('attendance.live') }}" class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                <span class="material-symbols-outlined">videocam</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Camera Live</p>
+                                <p class="text-xs text-on-surface-variant">Điểm danh realtime</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary group-hover:translate-x-1 transition-all">arrow_forward</span>
+                    </a>
+
+                    <a href="{{ url_for('training.index') }}" class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+                                <span class="material-symbols-outlined">model_training</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-on-surface group-hover:text-secondary transition-colors">Training AI</p>
+                                <p class="text-xs text-on-surface-variant">Huấn luyện khuôn mặt</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary group-hover:translate-x-1 transition-all">arrow_forward</span>
+                    </a>
+
+                    <a href="{{ url_for('export.index') }}" class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-error/10 text-error flex items-center justify-center">
+                                <span class="material-symbols-outlined">file_export</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-on-surface group-hover:text-error transition-colors">Xuất báo cáo</p>
+                                <p class="text-xs text-on-surface-variant">Excel, PDF, Ma trận</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant group-hover:text-error group-hover:translate-x-1 transition-all">arrow_forward</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="col-lg-4">
-        <div class="section-header">
-            <h5><span class="badge-dot"></span> Tác vụ nhanh</h5>
+    <!-- Top Absent - Modern Table -->
+    <div class="bg-surface-container-lowest border border-outline-variant shadow-sm rounded-xl overflow-hidden mt-xl">
+        <div class="p-lg border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+            <div>
+                <h3 class="text-lg font-bold text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-error">warning</span>
+                    Top sinh viên vắng nhiều
+                </h3>
+                <p class="text-xs text-on-surface-variant mt-1">Trong 30 ngày gần nhất</p>
+            </div>
         </div>
-        <div class="d-flex flex-column gap-3">
-            <a href="{{ url_for('attendance.live') }}" class="action-card">
-                <div class="d-flex align-items-center gap-14" style="gap:14px">
-                    <div class="ac-icon" style="background:rgba(108,92,231,.1);color:var(--primary)">
-                        <i class="fas fa-video"></i>
-                    </div>
-                    <div>
-                        <div class="ac-title">Camera Live</div>
-                        <p class="ac-desc">Điểm danh realtime bằng AI</p>
-                    </div>
-                </div>
-                <div class="ac-arrow">Mở ngay <i class="fas fa-arrow-right"></i></div>
-            </a>
-            <a href="{{ url_for('training.index') }}" class="action-card">
-                <div class="d-flex align-items-center gap-14" style="gap:14px">
-                    <div class="ac-icon" style="background:rgba(0,206,201,.1);color:var(--accent)">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                    <div>
-                        <div class="ac-title">Training AI</div>
-                        <p class="ac-desc">Huấn luyện nhận diện khuôn mặt</p>
-                    </div>
-                </div>
-                <div class="ac-arrow">Mở ngay <i class="fas fa-arrow-right"></i></div>
-            </a>
-            <a href="{{ url_for('export.index') }}" class="action-card">
-                <div class="d-flex align-items-center gap-14" style="gap:14px">
-                    <div class="ac-icon" style="background:rgba(253,203,110,.15);color:#E17055">
-                        <i class="fas fa-file-export"></i>
-                    </div>
-                    <div>
-                        <div class="ac-title">Xuất báo cáo</div>
-                        <p class="ac-desc">Excel, PDF, ma trận tháng</p>
-                    </div>
-                </div>
-                <div class="ac-arrow">Mở ngay <i class="fas fa-arrow-right"></i></div>
-            </a>
-            <a href="{{ url_for('chatbot.chat_page') }}" class="action-card">
-                <div class="d-flex align-items-center gap-14" style="gap:14px">
-                    <div class="ac-icon" style="background:rgba(116,185,255,.15);color:#0984E3">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div>
-                        <div class="ac-title">AI Assistant</div>
-                        <p class="ac-desc">Hỏi đáp thông minh về hệ thống</p>
-                    </div>
-                </div>
-                <div class="ac-arrow">Mở ngay <i class="fas fa-arrow-right"></i></div>
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- ═══ TOP ABSENT - MODERN TABLE ═══ -->
-<div class="chart-card mb-4">
-    <div class="chart-header">
-        <div>
-            <h6 class="fw-bold mb-1" style="color:var(--text-primary)">
-                <i class="fas fa-user-clock me-2" style="color:var(--danger)"></i>Top sinh viên vắng nhiều
-            </h6>
-            <small class="text-muted">30 ngày gần nhất</small>
-        </div>
-    </div>
-    <div style="padding:12px 20px 24px">
-        {% if top_absent and top_absent|length > 0 %}
-        <table class="modern-table">
-            <thead>
-                <tr>
-                    <th style="width:50px">Hạng</th>
-                    <th>MSSV</th>
-                    <th>Họ tên</th>
-                    <th>Lớp</th>
-                    <th class="text-center">Vắng</th>
-                    <th style="width:180px">Tỷ lệ</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sv in top_absent %}
-                <tr>
-                    <td>
-                        {% if loop.index == 1 %}
-                            <span class="rank-badge" style="background:var(--gradient-card-3)">1</span>
-                        {% elif loop.index == 2 %}
-                            <span class="rank-badge" style="background:var(--gradient-card-4)">2</span>
-                        {% elif loop.index == 3 %}
-                            <span class="rank-badge" style="background:var(--gradient-card-2)">3</span>
-                        {% else %}
-                            <span class="rank-badge" style="background:#DFE6E9;color:var(--text-secondary)">{{ loop.index }}</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="font-monospace fw-medium" style="color:var(--primary)">{{ sv.mssv }}</span>
-                    </td>
-                    <td class="fw-bold">{{ sv.ho_ten }}</td>
-                    <td>
-                        <span style="background:rgba(108,92,231,.08);color:var(--primary);padding:5px 14px;border-radius:10px;font-size:.82rem;font-weight:600">
-                            {{ sv.ten_lop }}
-                        </span>
-                    </td>
-                    <td class="text-center">
-                        <span class="fw-bold" style="color:var(--danger);font-size:1.1rem">{{ sv.so_buoi_vang }}</span>
-                        <span class="text-muted" style="font-size:.8rem">/{{ sv.tong_buoi }}</span>
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="progress flex-grow-1" style="height:8px;border-radius:10px">
-                                <div class="progress-bar" role="progressbar"
-                                     style="width:{{ sv.ty_le_vang }}%;background:{% if sv.ty_le_vang > 50 %}linear-gradient(90deg,#E17055,#FD79A8){% elif sv.ty_le_vang > 30 %}linear-gradient(90deg,#FDCB6E,#E17055){% else %}var(--gradient-primary){% endif %} !important;border-radius:10px"></div>
-                            </div>
-                            <span class="fw-bold" style="font-size:.82rem;min-width:40px;color:{% if sv.ty_le_vang > 50 %}var(--danger){% elif sv.ty_le_vang > 30 %}#E17055{% else %}var(--primary){% endif %}">
-                                {{ sv.ty_le_vang }}%
+        
+        <div class="overflow-x-auto bg-surface-container-lowest">
+            {% if top_absent and top_absent|length > 0 %}
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-surface-container-low/50">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider w-16">Hạng</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">MSSV</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Họ tên</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Lớp</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider text-center">Vắng</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider w-48">Tỷ lệ</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant">
+                    {% for sv in top_absent %}
+                    <tr class="hover:bg-surface-container transition-colors group">
+                        <td class="px-6 py-4">
+                            {% if loop.index == 1 %}
+                                <div class="w-8 h-8 rounded-full bg-error text-white flex items-center justify-center font-bold shadow-md shadow-error/30">1</div>
+                            {% elif loop.index == 2 %}
+                                <div class="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold shadow-md shadow-orange-500/30">2</div>
+                            {% elif loop.index == 3 %}
+                                <div class="w-8 h-8 rounded-full bg-yellow-500 text-white flex items-center justify-center font-bold shadow-md shadow-yellow-500/30">3</div>
+                            {% else %}
+                                <div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-semibold">{{ loop.index }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-mono font-medium text-primary bg-primary/5 px-2 py-1 rounded">{{ sv.mssv }}</span>
+                        </td>
+                        <td class="px-6 py-4 font-semibold text-on-surface">{{ sv.ho_ten }}</td>
+                        <td class="px-6 py-4">
+                            <span class="bg-surface-container-high text-on-surface px-3 py-1 rounded-full text-xs font-semibold">
+                                {{ sv.ten_lop }}
                             </span>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="text-center py-4">
-            <div style="font-size:3.5rem;margin-bottom:12px">🎉</div>
-            <p class="text-muted fw-medium mb-0">Tất cả sinh viên đều đi học đầy đủ!</p>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="font-bold text-error text-lg">{{ sv.so_buoi_vang }}</span>
+                            <span class="text-on-surface-variant text-xs">/{{ sv.tong_buoi }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+                                    {% if sv.ty_le_vang > 50 %}
+                                        <div class="h-full bg-error rounded-full" style="width: {{ sv.ty_le_vang }}%"></div>
+                                    {% elif sv.ty_le_vang > 30 %}
+                                        <div class="h-full bg-orange-500 rounded-full" style="width: {{ sv.ty_le_vang }}%"></div>
+                                    {% else %}
+                                        <div class="h-full bg-primary rounded-full" style="width: {{ sv.ty_le_vang }}%"></div>
+                                    {% endif %}
+                                </div>
+                                <span class="text-xs font-bold w-10 text-right {% if sv.ty_le_vang > 50 %}text-error{% elif sv.ty_le_vang > 30 %}text-orange-500{% else %}text-primary{% endif %}">
+                                    {{ sv.ty_le_vang }}%
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center py-12">
+                <span class="material-symbols-outlined text-[64px] text-secondary mb-4">celebration</span>
+                <p class="text-lg font-semibold text-on-surface">Tất cả sinh viên đều đi học đầy đủ!</p>
+                <p class="text-sm text-on-surface-variant mt-1">Không có sinh viên nào vắng học quá mức cho phép.</p>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 {% endblock %}

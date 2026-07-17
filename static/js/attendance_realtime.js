@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let faceApiLoaded = false;
     let detectionInterval = null;
     let lastRecognizeTime = 0;
-    
+    let lastMatchInfo = null; // Store last match to display on bounding box
+
     // face-api.js EAR calculation
     function getEAR(eye) {
         if (!eye || eye.length !== 6) return 0;
@@ -106,9 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const doStart = async () => {
                 statusText.innerText = "Đang khởi động...";
-                
+
                 isBrowserMode = (finalCamId === 'browser');
-                
+
                 if (isBrowserMode) {
                     // Chạy bằng Webcam trình duyệt & Face-API
                     statusText.innerText = "Đang tải AI Model...";
@@ -124,28 +125,28 @@ document.addEventListener('DOMContentLoaded', () => {
                             return;
                         }
                     }
-                    
+
                     statusText.innerText = "Đang bật Camera...";
                     try {
                         const localVideo = document.getElementById('localVideo');
                         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                         localVideo.srcObject = localStream;
-                        localVideo.classList.remove('d-none');
-                        document.getElementById('videoFeed').classList.add('d-none');
-                        
+                        localVideo.classList.remove('hidden');
+                        document.getElementById('videoFeed').classList.add('hidden');
+
                         isRunning = true;
-                        startBtn.classList.add('d-none');
-                        stopBtn.classList.remove('d-none');
+                        startBtn.classList.add('hidden');
+                        stopBtn.classList.remove('hidden');
                         statusText.innerText = "Hệ thống AI đang hoạt động (Local)";
-                        
+
                         const indicatorBadge = document.getElementById('statusIndicatorBadge');
                         if (indicatorBadge) indicatorBadge.classList.replace('bg-secondary', 'bg-success');
-                        
+
                         showToast('Hệ thống đã sẵn sàng', 'AI Nhận diện trực tiếp trên trình duyệt...', 'success');
-                        
+
                         // Bắt đầu vòng lặp nhận diện
                         startBrowserDetectionLoop();
-                        
+
                     } catch (err) {
                         alert("Lỗi mở Webcam: " + err);
                         startBtn.disabled = false;
@@ -163,24 +164,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                     });
                     const data = await res.json();
-    
+
                     if (data.success) {
                         isRunning = true;
-                        startBtn.classList.add('d-none');
-                        stopBtn.classList.remove('d-none');
+                        startBtn.classList.add('hidden');
+                        stopBtn.classList.remove('hidden');
                         statusText.innerText = "Hệ thống đang hoạt động";
-    
+
                         const indicatorBadge = document.getElementById('statusIndicatorBadge');
                         if (indicatorBadge) indicatorBadge.classList.replace('bg-secondary', 'bg-success');
-    
+
                         showToast('Hệ thống đã sẵn sàng', 'Camera đang hoạt động, bắt đầu điểm danh...', 'success');
-    
+
                         videoFeed.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%231e293b'/%3E%3Ctext x='320' y='240' font-family='Arial' font-size='20' fill='%2394a3b8' text-anchor='middle'%3E%C4%90ang tr%E1%BB%A3c camera...%3C/text%3E%3C/svg%3E";
                     } else {
                         alert('Lỗi: ' + data.msg);
                         startBtn.disabled = false;
-                        startBtn.classList.remove('d-none');
-                        stopBtn.classList.add('d-none');
+                        startBtn.classList.remove('hidden');
+                        stopBtn.classList.add('hidden');
                         statusText.innerText = "Khởi động thất bại";
                     }
                 }
@@ -199,10 +200,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (checkAndStart()) {
                 await doStart();
             } else {
-                startBtn.classList.add('d-none');
-                stopBtn.classList.remove('d-none');
+                startBtn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
                 statusText.innerText = `Đang đợi đến giờ (${startTimeStr})...`;
-                
+
                 videoFeed.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%231e293b'/%3E%3Ctext x='320' y='240' font-family='Arial' font-size='20' fill='%23eab308' text-anchor='middle'%3E%C4%90ang ch%E1%BB%9D %C4%91%E1%BA%BFn gi%E1%BB%9D %C4%91i%E1%BB%83m danh...%3C/text%3E%3C/svg%3E";
 
                 window.waitStartInterval = setInterval(async () => {
@@ -224,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stopBtn.addEventListener('click', async () => {
         try {
             if (window.waitStartInterval) clearInterval(window.waitStartInterval);
-            
+
             stopBtn.disabled = true;
             statusText.innerText = "Đang dừng Camera...";
 
@@ -234,9 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStream.getTracks().forEach(t => t.stop());
                 }
                 const localVideo = document.getElementById('localVideo');
-                localVideo.classList.add('d-none');
-                document.getElementById('videoFeed').classList.remove('d-none');
-                
+                localVideo.classList.add('hidden');
+                document.getElementById('videoFeed').classList.remove('hidden');
+
                 const canvas = document.getElementById('overlayCanvas');
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -245,8 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             isRunning = false;
-            stopBtn.classList.add('d-none');
-            startBtn.classList.remove('d-none');
+            stopBtn.classList.add('hidden');
+            startBtn.classList.remove('hidden');
             startBtn.disabled = false;
 
             statusText.innerText = "Hệ thống đã dừng";
@@ -266,72 +267,89 @@ document.addEventListener('DOMContentLoaded', () => {
             stopBtn.disabled = false;
         }
     });
-    
+
     // --- BROWSER DETECTION LOOP ---
     function startBrowserDetectionLoop() {
         const localVideo = document.getElementById('localVideo');
         const canvas = document.getElementById('overlayCanvas');
         const ctx = canvas.getContext('2d');
-        
+
         localVideo.addEventListener('play', () => {
             canvas.width = localVideo.videoWidth || 640;
             canvas.height = localVideo.videoHeight || 480;
-            
+
             detectionInterval = setInterval(async () => {
                 if (!isRunning) return;
-                
+
                 // Đồng bộ kích thước canvas
                 if (canvas.width !== localVideo.videoWidth && localVideo.videoWidth > 0) {
                     canvas.width = localVideo.videoWidth;
                     canvas.height = localVideo.videoHeight;
                 }
-                
+
                 const detections = await faceapi.detectAllFaces(localVideo, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
-                
+
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
+
                 let validFaceDetected = false;
-                
+
                 for (const det of detections) {
                     const box = det.detection.box;
                     const landmarks = det.landmarks;
-                    
+
                     // Lấy tọa độ mắt
                     const leftEye = landmarks.getLeftEye();
                     const rightEye = landmarks.getRightEye();
                     const earL = getEAR(leftEye);
                     const earR = getEAR(rightEye);
                     const ear = (earL + earR) / 2.0;
-                    
+
                     // Vẽ box
                     ctx.strokeStyle = '#00FF00';
                     ctx.lineWidth = 2;
                     ctx.strokeRect(box.x, box.y, box.width, box.height);
-                    
+
                     // Liveness check (chớp mắt)
                     // Nếu EAR < 0.25 => đang nhắm mắt (blinked)
                     const isBlinking = ear < 0.25;
                     
+                    let displayText = "Nhìn thẳng & chớp mắt";
+                    let displayColor = '#00FF00';
+                    
                     if (isBlinking) {
-                        ctx.fillStyle = '#FF0000';
-                        ctx.fillText("Đã chớp mắt!", box.x, box.y - 10);
+                        displayText = "Đã chớp mắt!";
+                        displayColor = '#FF0000';
                         validFaceDetected = true;
                     } else {
-                        ctx.fillStyle = '#00FF00';
-                        ctx.fillText("Nhìn thẳng & chớp mắt", box.x, box.y - 10);
-                        // Vẫn cho phép nhận diện nếu không chớp mắt để test dễ hơn, 
-                        // nhưng lý tưởng là bắt buộc chớp mắt.
                         validFaceDetected = true; 
                     }
+                    
+                    // Show similarity if we have a recent match
+                    if (lastMatchInfo && (Date.now() - lastMatchInfo.time < 4000)) {
+                        const simPercent = (lastMatchInfo.similarity * 100).toFixed(1);
+                        displayText = `${lastMatchInfo.name} (${simPercent}%)`;
+                        displayColor = '#00FFFF'; // Cyan for successful match
+                        ctx.strokeStyle = '#00FFFF';
+                        ctx.strokeRect(box.x, box.y, box.width, box.height);
+                    }
+
+                    ctx.fillStyle = displayColor;
+                    ctx.font = "bold 16px Arial";
+                    ctx.save();
+                    ctx.translate(box.x + box.width / 2, box.y - 10);
+                    ctx.scale(-1, 1);
+                    ctx.textAlign = "center";
+                    ctx.fillText(displayText, 0, 0);
+                    ctx.restore();
                 }
-                
+
                 // Gửi ảnh lên server nếu phát hiện khuôn mặt hợp lệ
                 const now = Date.now();
                 if (validFaceDetected && (now - lastRecognizeTime > 2000)) {
                     lastRecognizeTime = now;
                     sendFrameToBackend(localVideo);
                 }
-                
+
             }, 100); // 10 FPS cho frontend detection
         });
     }
@@ -343,11 +361,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        
+
         try {
             const lopId = document.getElementById('selectLopId').value;
             const startTimeStr = document.getElementById('inputStartTime') ? document.getElementById('inputStartTime').value : "07:00";
-            
+
             const res = await fetch('/public/api/recognize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -358,15 +376,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
             const data = await res.json();
-            
+
             if (data.success && data.student) {
+                lastMatchInfo = {
+                    name: data.student.ho_ten,
+                    similarity: data.similarity,
+                    time: Date.now()
+                };
+                
                 // Giống event socket 'attendance_log'
                 addLogEntry(
-                    data.student.mssv, 
-                    data.student.ho_ten, 
-                    new Date().toLocaleTimeString('vi-VN', {hour12: false}), 
-                    data.similarity, 
-                    data.attendance ? data.attendance.action : 'checkin', 
+                    data.student.mssv,
+                    data.student.ho_ten,
+                    new Date().toLocaleTimeString('vi-VN', { hour12: false }),
+                    data.similarity,
+                    data.attendance ? data.attendance.action : 'checkin',
                     data.student.avatar
                 );
             } else if (data.msg && data.msg.includes("Giả mạo")) {
@@ -404,8 +428,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const waitState = document.getElementById('waitState');
         const successState = document.getElementById('successState');
 
-        if (waitState) waitState.classList.add('d-none');
-        if (successState) successState.classList.remove('d-none');
+        if (waitState) waitState.classList.add('hidden');
+        if (successState) successState.classList.remove('hidden');
 
         const iMssv = document.getElementById('infoMssv');
         const iName = document.getElementById('infoName');
@@ -419,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isCheckout = (action === 'checkout');
         const isLate = (action === 'late');
         const isWrongClass = (action === 'wrong_class');
-        
+
         if (isWrongClass) {
             showToast(`${name} — Khác Lớp!`, `MSSV: ${mssv} không thuộc lớp này`, 'danger');
         } else if (isCheckout) {

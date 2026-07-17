@@ -62,7 +62,7 @@ function genId() { return 'c_' + Date.now() + '_' + Math.random().toString(36).s
 // --- Theme ---
 function applyTheme(t) {
     chatApp.classList.toggle('light', t === 'light');
-    document.getElementById('btnThemeToggle').innerHTML = t === 'light' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    document.getElementById('btnThemeToggle').innerHTML = t === 'light' ? '<i class="material-symbols-outlined">light_mode</i>' : '<i class="material-symbols-outlined">dark_mode</i>';
 }
 function toggleTheme() { const n = chatApp.classList.contains('light') ? 'dark' : 'light'; localStorage.setItem('chatTheme', n); applyTheme(n); }
 
@@ -88,9 +88,9 @@ function renderList() {
         html += `<div class="history-group-label">${label}</div>`;
         items.forEach(c => {
             html += `<div class="chat-history-item${c.id === curId ? ' active' : ''}" onclick="switchChat('${c.id}')">
-                <span class="hi-icon"><i class="fas fa-message"></i></span>
+                <span class="hi-icon"><i class="material-symbols-outlined">chat</i></span>
                 <span class="hi-title">${esc(c.title)}</span>
-                <span class="hi-del" onclick="event.stopPropagation();delChat('${c.id}')"><i class="fas fa-xmark"></i></span>
+                <span class="hi-del" onclick="event.stopPropagation();delChat('${c.id}')"><i class="material-symbols-outlined">close</i></span>
             </div>`;
         });
     });
@@ -151,7 +151,7 @@ function clearUI() {
     const ws = document.getElementById('welcomeState');
     if (!ws) {
         const d = document.createElement('div'); d.className = 'welcome-state'; d.id = 'welcomeState';
-        d.innerHTML = '<div class="welcome-icon"><i class="fas fa-robot"></i></div><h2 class="welcome-title">Xin chào Admin 👋</h2><p class="welcome-sub">Tôi có thể giúp gì hôm nay?</p>';
+        d.innerHTML = '<div class="welcome-icon"><i class="material-symbols-outlined">smart_toy</i></div><h2 class="welcome-title">Xin chào Admin 👋</h2><p class="welcome-sub">Tôi có thể giúp gì hôm nay?</p>';
         messagesEl.insertBefore(d, typingEl);
     }
     const sb = document.getElementById('suggestionsBar');
@@ -183,7 +183,7 @@ async function sendMessage() {
 
         const div = document.createElement('div');
         div.className = 'msg bot';
-        div.innerHTML = `<div class="msg-avatar"><i class="fas fa-robot"></i></div><div class="msg-body"><div class="bubble"></div></div>`;
+        div.innerHTML = `<div class="msg-avatar"><i class="material-symbols-outlined">smart_toy</i></div><div class="msg-body"><div class="bubble"></div></div>`;
         messagesEl.insertBefore(div, typingEl);
         
         const bodyEl = div.querySelector('.msg-body');
@@ -214,7 +214,7 @@ async function sendMessage() {
                         } else if (parsed.type === 'tool_call') {
                             const indicator = document.createElement('div');
                             indicator.className = 'tool-indicator';
-                            indicator.innerHTML = '<i class="fas fa-cog fa-spin"></i> Đang tự động xử lý (' + parsed.tool_name + ')...';
+                            indicator.innerHTML = '<i class="material-symbols-outlined animate-spin">settings</i> Đang tự động xử lý (' + parsed.tool_name + ')...';
                             bodyEl.insertBefore(indicator, bubble); // Chèn lên trên bubble text
                             messagesEl.scrollTop = messagesEl.scrollHeight;
                         } else if (parsed.type === 'chunk') {
@@ -265,13 +265,13 @@ function addMsgDOM(text, role, sources, dur, animate = true) {
     div.className = 'msg ' + role;
     if (!animate) div.style.animation = 'none';
     const icon = role === 'bot' ? 'fa-robot' : 'fa-user';
-    let h = `<div class="msg-avatar"><i class="fas ${icon}"></i></div><div class="msg-body">`;
+    let h = `<div class="msg-avatar"><i class="material-symbols-outlined ${icon}">help</i></div><div class="msg-body">`;
     h += '<div class="bubble">' + (role === 'bot' ? marked.parse(text) : esc(text)) + '</div>';
     
     if (role === 'bot') {
         h += `<div class="msg-actions">
-                <button class="msg-action-btn" onclick="copyMsgText(this)" title="Sao chép"><i class="fas fa-copy"></i></button>
-                <button class="msg-action-btn" onclick="speakMsgText(this)" title="Đọc văn bản"><i class="fas fa-volume-up"></i></button>
+                <button class="msg-action-btn" onclick="copyMsgText(this)" title="Sao chép"><i class="material-symbols-outlined">content_copy</i></button>
+                <button class="msg-action-btn" onclick="speakMsgText(this)" title="Đọc văn bản"><i class="material-symbols-outlined">volume_up</i></button>
               </div>`;
         if (dur) h += '<div class="meta">⏱ ' + dur + 'ms</div>';
     }
@@ -322,7 +322,7 @@ function closeSettings() { document.getElementById('settingsModal').classList.re
 // --- Knowledge Builder ---
 function buildKnowledge() {
     const btn = document.getElementById('btnBuild');
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xây dựng...';
+    btn.disabled = true; btn.innerHTML = '<i class="material-symbols-outlined animate-spin">progress_activity</i> Đang xây dựng...';
     fetch('/chatbot/build-knowledge', { method: 'POST' });
     document.getElementById('kbProgress').style.display = 'block';
     const es = new EventSource('/chatbot/knowledge-progress');
@@ -330,12 +330,12 @@ function buildKnowledge() {
         const d = JSON.parse(e.data);
         document.getElementById('kbProgressBar').style.width = (d.progress * 100) + '%';
         if (d.status === 'done' || d.status === 'error') {
-            es.close(); btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrows-rotate"></i> Cập nhật KB';
+            es.close(); btn.disabled = false; btn.innerHTML = '<i class="material-symbols-outlined">sync</i> Cập nhật KB';
             if (d.status === 'done') document.getElementById('kbProgress').style.display = 'none';
             setTimeout(() => location.reload(), 1500);
         }
     };
-    es.onerror = () => { es.close(); btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrows-rotate"></i> Cập nhật KB'; };
+    es.onerror = () => { es.close(); btn.disabled = false; btn.innerHTML = '<i class="material-symbols-outlined">sync</i> Cập nhật KB'; };
 }
 
 function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
@@ -389,7 +389,7 @@ function esc(t) { const d = document.createElement('div'); d.textContent = t; re
                         setOverlayState('listening');
                         voiceStatusText.textContent = 'Đang nghe...';
                         voiceBtnMic.classList.add('active');
-                        voiceBtnMic.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                        voiceBtnMic.innerHTML = '<i class="material-symbols-outlined">mic_off</i>';
                     }
                     if (inlineMicActive) {
                         btnMic.classList.add('active');
@@ -400,7 +400,7 @@ function esc(t) { const d = document.createElement('div'); d.textContent = t; re
                     console.log('[Voice] 🎤 Listening ended');
                     if (voiceMode) {
                         voiceBtnMic.classList.remove('active');
-                        voiceBtnMic.innerHTML = '<i class="fas fa-microphone"></i>';
+                        voiceBtnMic.innerHTML = '<i class="material-symbols-outlined">mic</i>';
                     }
                     if (inlineMicActive) {
                         btnMic.classList.remove('active');

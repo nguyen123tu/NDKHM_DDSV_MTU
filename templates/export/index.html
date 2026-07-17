@@ -1,186 +1,291 @@
 {% extends "base.html" %}
 
-{% block title %}Xuất Báo Cáo — MTUFace{% endblock %}
+{% block title %}Xuất Báo Cáo — MTU Face AI{% endblock %}
 {% block page_title %}Xuất Báo Cáo{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/export_index.css') }}">
-
+<style>
+    /* Ẩn các tab không active */
+    .export-panel { display: none; }
+    .export-panel.active { display: block; animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero -->
-<div class="export-hero">
-    <span class="hero-icon">📊</span>
-    <h4>Trung tâm Xuất Báo cáo</h4>
-    <p>Xuất dữ liệu điểm danh ra Excel, PDF hoặc danh sách lớp chỉ với vài thao tác</p>
-</div>
+<div class="max-w-container-max mx-auto space-y-8">
 
-<!-- Tab Cards -->
-<div class="export-tabs">
-    <div class="export-tab active" onclick="switchTab(0)">
-        <div class="tab-icon" style="background:var(--gradient-card-1)"><i class="fas fa-calendar-day"></i></div>
-        <div>
-            <div class="tab-label">Theo ngày</div>
-            <p class="tab-desc">Báo cáo điểm danh 1 ngày</p>
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl p-8 text-white shadow-lg relative overflow-hidden flex flex-col items-start">
+        <div class="relative z-10">
+            <h2 class="text-3xl font-bold tracking-tight mb-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[36px]">monitoring</span>
+                Trung tâm Xuất Báo cáo
+            </h2>
+            <p class="text-white/80 max-w-xl">Xuất dữ liệu điểm danh ra Excel, PDF hoặc danh sách lớp chỉ với vài thao tác. Báo cáo được tự động chuẩn hóa định dạng.</p>
         </div>
-        <div class="tab-check"><i class="fas fa-check"></i></div>
-    </div>
-    <div class="export-tab" onclick="switchTab(1)">
-        <div class="tab-icon" style="background:var(--gradient-card-2)"><i class="fas fa-calendar-alt"></i></div>
-        <div>
-            <div class="tab-label">Ma trận tháng</div>
-            <p class="tab-desc">Tổng hợp X/V theo tháng</p>
+        <div class="absolute right-0 top-0 bottom-0 w-1/3 bg-white/10 skew-x-12 translate-x-16"></div>
+        <div class="absolute right-8 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none">
+            <span class="material-symbols-outlined text-[120px]">table_view</span>
         </div>
-        <div class="tab-check"><i class="fas fa-check"></i></div>
     </div>
-    <div class="export-tab" onclick="switchTab(2)">
-        <div class="tab-icon" style="background:var(--gradient-card-3)"><i class="fas fa-clipboard-list"></i></div>
-        <div>
-            <div class="tab-label">Danh sách lớp</div>
-            <p class="tab-desc">Xuất roster sinh viên</p>
-        </div>
-        <div class="tab-check"><i class="fas fa-check"></i></div>
-    </div>
-</div>
 
-<!-- ═══ PANEL 1: DAILY ═══ -->
-<div class="export-panel active" data-panel="0">
-    <div class="export-form-card">
-        <div class="form-header">
-            <div class="fh-icon" style="background:var(--gradient-card-1)"><i class="fas fa-calendar-day"></i></div>
-            <div>
-                <h5>Báo cáo Điểm danh theo Ngày</h5>
-                <p>Xuất danh sách đầy đủ: Có mặt / Vắng mặt cho 1 ngày cụ thể</p>
+    <!-- Tabs Navigation -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Tab 1 -->
+        <div class="export-tab bg-surface-container-lowest p-5 rounded-xl border-2 border-primary shadow-md cursor-pointer transition-all relative overflow-hidden group" onclick="switchTab(0)" id="tab-0">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[24px]">calendar_today</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-on-surface">Theo ngày</h4>
+                    <p class="text-xs text-on-surface-variant mt-0.5">Báo cáo điểm danh 1 ngày</p>
+                </div>
+            </div>
+            <div class="absolute top-4 right-4 text-primary tab-check opacity-100 transition-opacity">
+                <span class="material-symbols-outlined text-[20px]">check_circle</span>
             </div>
         </div>
-        <div class="form-body">
-            <form method="POST" action="{{ url_for('export.download') }}">
-                <div class="row g-4 mb-4">
-                    <div class="col-md-6">
-                        <label class="form-label">Chọn lớp <span class="text-danger">*</span></label>
-                        <select class="form-select" name="lop_id" required>
+
+        <!-- Tab 2 -->
+        <div class="export-tab bg-surface-container-lowest p-5 rounded-xl border-2 border-transparent hover:border-outline-variant shadow-sm cursor-pointer transition-all relative overflow-hidden group" onclick="switchTab(1)" id="tab-1">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[24px]">calendar_month</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-on-surface">Ma trận tháng</h4>
+                    <p class="text-xs text-on-surface-variant mt-0.5">Tổng hợp X/V theo tháng</p>
+                </div>
+            </div>
+            <div class="absolute top-4 right-4 text-secondary tab-check opacity-0 transition-opacity">
+                <span class="material-symbols-outlined text-[20px]">check_circle</span>
+            </div>
+        </div>
+
+        <!-- Tab 3 -->
+        <div class="export-tab bg-surface-container-lowest p-5 rounded-xl border-2 border-transparent hover:border-outline-variant shadow-sm cursor-pointer transition-all relative overflow-hidden group" onclick="switchTab(2)" id="tab-2">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[24px]">format_list_bulleted</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-on-surface">Danh sách lớp</h4>
+                    <p class="text-xs text-on-surface-variant mt-0.5">Xuất roster sinh viên trắng</p>
+                </div>
+            </div>
+            <div class="absolute top-4 right-4 text-tertiary tab-check opacity-0 transition-opacity">
+                <span class="material-symbols-outlined text-[20px]">check_circle</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panels Container -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant overflow-hidden">
+        
+        <!-- PANEL 1: DAILY -->
+        <div class="export-panel active p-8" id="panel-0">
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant">
+                <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined">calendar_today</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-on-surface">Báo cáo Điểm danh theo Ngày</h3>
+                    <p class="text-sm text-on-surface-variant">Xuất danh sách đầy đủ: Có mặt / Vắng mặt cho 1 ngày cụ thể</p>
+                </div>
+            </div>
+            
+            <form method="POST" action="{{ url_for('export.download') }}" class="max-w-3xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2 block">Chọn lớp <span class="text-error">*</span></label>
+                        <select name="lop_id" required class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none shadow-sm cursor-pointer">
                             <option value="">— Chọn lớp học —</option>
                             {% for lop in classes %}
                             <option value="{{ lop.id }}">{{ lop.ma_lop }} — {{ lop.ten_lop }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Ngày điểm danh</label>
-                        <input type="date" class="form-control" name="date">
-                        <div class="form-text small mt-1" style="color:var(--text-muted)">Mặc định: hôm nay</div>
+                    <div>
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2 block">Ngày điểm danh</label>
+                        <input type="date" name="date" class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none shadow-sm">
+                        <p class="text-[10px] text-on-surface-variant mt-1.5 font-semibold">Mặc định: Báo cáo của ngày hôm nay</p>
                     </div>
                 </div>
 
-                <div class="form-divider"></div>
-
-                <label class="form-label mb-3">Định dạng xuất</label>
-                <div class="format-grid mb-4">
-                    <label class="format-card selected">
-                        <input type="radio" name="format" value="excel" checked>
-                        <span class="fc-check"><i class="fas fa-check"></i></span>
-                        <span class="fc-icon">📗</span>
-                        <div class="fc-name">Excel</div>
-                        <div class="fc-ext">.xlsx</div>
-                    </label>
-                    <label class="format-card">
-                        <input type="radio" name="format" value="pdf">
-                        <span class="fc-check"><i class="fas fa-check"></i></span>
-                        <span class="fc-icon">📕</span>
-                        <div class="fc-name">PDF</div>
-                        <div class="fc-ext">.pdf</div>
-                    </label>
+                <div class="mb-8">
+                    <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-3 block">Định dạng xuất</label>
+                    <div class="flex gap-4">
+                        <label class="relative flex items-center justify-center w-32 h-24 border-2 border-primary bg-primary/5 rounded-xl cursor-pointer transition-all group" id="format-excel">
+                            <input type="radio" name="format" value="excel" checked class="hidden" onchange="updateFormatUI('excel')">
+                            <div class="text-center">
+                                <span class="material-symbols-outlined text-[32px] text-green-600 mb-1">table_view</span>
+                                <div class="font-bold text-sm text-on-surface">Excel</div>
+                                <div class="text-[10px] text-on-surface-variant font-mono">.xlsx</div>
+                            </div>
+                            <div class="absolute -top-2 -right-2 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center opacity-100 transition-opacity" id="format-check-excel">
+                                <span class="material-symbols-outlined text-[14px]">check</span>
+                            </div>
+                        </label>
+                        
+                        <label class="relative flex items-center justify-center w-32 h-24 border-2 border-outline-variant hover:border-error/50 rounded-xl cursor-pointer transition-all group" id="format-pdf">
+                            <input type="radio" name="format" value="pdf" class="hidden" onchange="updateFormatUI('pdf')">
+                            <div class="text-center">
+                                <span class="material-symbols-outlined text-[32px] text-error mb-1">picture_as_pdf</span>
+                                <div class="font-bold text-sm text-on-surface">PDF</div>
+                                <div class="text-[10px] text-on-surface-variant font-mono">.pdf</div>
+                            </div>
+                            <div class="absolute -top-2 -right-2 w-6 h-6 bg-error text-white rounded-full flex items-center justify-center opacity-0 transition-opacity" id="format-check-pdf">
+                                <span class="material-symbols-outlined text-[14px]">check</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
-                <div class="text-center">
-                    <button type="submit" class="btn-download">
-                        <i class="fas fa-cloud-arrow-down"></i> Tải xuống
-                    </button>
-                </div>
+                <button type="submit" class="bg-primary text-on-primary px-8 py-3 rounded-xl font-bold shadow-md hover:bg-primary/90 transition-transform active:scale-95 flex items-center gap-2">
+                    <span class="material-symbols-outlined">download</span> Tải báo cáo
+                </button>
             </form>
         </div>
-    </div>
-</div>
 
-<!-- ═══ PANEL 2: MONTHLY ═══ -->
-<div class="export-panel" data-panel="1">
-    <div class="export-form-card">
-        <div class="form-header">
-            <div class="fh-icon" style="background:var(--gradient-card-2)"><i class="fas fa-calendar-alt"></i></div>
-            <div>
-                <h5>Ma trận Điểm danh theo Tháng</h5>
-                <p>Mỗi cột = 1 ngày · <span style="color:var(--success);font-weight:700">X</span> = Có mặt · <span style="color:var(--danger);font-weight:700">V</span> = Vắng</p>
+        <!-- PANEL 2: MONTHLY -->
+        <div class="export-panel p-8" id="panel-1">
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant">
+                <div class="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-on-surface">Ma trận Điểm danh theo Tháng</h3>
+                    <p class="text-sm text-on-surface-variant">Mỗi cột = 1 ngày · <span class="text-secondary font-bold">X</span> = Có mặt · <span class="text-error font-bold">V</span> = Vắng</p>
+                </div>
             </div>
-        </div>
-        <div class="form-body">
-            <form method="POST" action="{{ url_for('export.monthly') }}">
-                <div class="mb-4">
-                    <label class="form-label">Chọn lớp <span class="text-danger">*</span></label>
-                    <select class="form-select" name="lop_id" required>
+            
+            <form method="POST" action="{{ url_for('export.monthly') }}" class="max-w-3xl">
+                <div class="mb-6">
+                    <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2 block">Chọn lớp <span class="text-error">*</span></label>
+                    <select name="lop_id" required class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none shadow-sm cursor-pointer">
                         <option value="">— Chọn lớp học —</option>
                         {% for lop in classes %}
                         <option value="{{ lop.id }}">{{ lop.ma_lop }} — {{ lop.ten_lop }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="row g-4 mb-4">
-                    <div class="col-6">
-                        <label class="form-label">Tháng <span class="text-danger">*</span></label>
-                        <select class="form-select" name="month" required>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2 block">Tháng <span class="text-error">*</span></label>
+                        <select name="month" required class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none shadow-sm cursor-pointer">
                             {% for m in range(1,13) %}
                             <option value="{{ m }}" {% if m == 4 %}selected{% endif %}>Tháng {{ m }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-6">
-                        <label class="form-label">Năm <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" name="year" value="2026" min="2020" max="2030" required>
+                    <div>
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2 block">Năm <span class="text-error">*</span></label>
+                        <input type="number" name="year" value="2026" min="2020" max="2030" required class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none shadow-sm">
                     </div>
                 </div>
-                <div class="text-center">
-                    <button type="submit" class="btn-download">
-                        <i class="fas fa-cloud-arrow-down"></i> Tải Ma trận Tháng
-                    </button>
-                </div>
+
+                <button type="submit" class="bg-secondary text-on-secondary px-8 py-3 rounded-xl font-bold shadow-md hover:bg-secondary/90 transition-transform active:scale-95 flex items-center gap-2">
+                    <span class="material-symbols-outlined">download</span> Tải Ma trận Tháng
+                </button>
             </form>
         </div>
-    </div>
-</div>
 
-<!-- ═══ PANEL 3: ROSTER ═══ -->
-<div class="export-panel" data-panel="2">
-    <div class="export-form-card">
-        <div class="form-header">
-            <div class="fh-icon" style="background:var(--gradient-card-3)"><i class="fas fa-clipboard-list"></i></div>
-            <div>
-                <h5>Danh sách Sinh viên theo Lớp</h5>
-                <p>Xuất file Excel trắng — danh sách sinh viên (chưa có điểm danh)</p>
+        <!-- PANEL 3: ROSTER -->
+        <div class="export-panel p-8" id="panel-2">
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant">
+                <div class="w-10 h-10 rounded-full bg-tertiary/10 text-tertiary flex items-center justify-center">
+                    <span class="material-symbols-outlined">format_list_bulleted</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-on-surface">Danh sách Sinh viên theo Lớp</h3>
+                    <p class="text-sm text-on-surface-variant">Xuất file Excel trống làm danh sách điểm danh thủ công dự phòng.</p>
+                </div>
             </div>
-        </div>
-        <div class="form-body">
-            <form method="POST" action="{{ url_for('export.roster') }}">
-                <div class="mb-4">
-                    <label class="form-label">Chọn lớp <span class="text-danger">*</span></label>
-                    <select class="form-select" name="lop_id" required>
+            
+            <form method="POST" action="{{ url_for('export.roster') }}" class="max-w-3xl">
+                <div class="mb-8">
+                    <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2 block">Chọn lớp <span class="text-error">*</span></label>
+                    <select name="lop_id" required class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-tertiary focus:border-tertiary outline-none shadow-sm cursor-pointer">
                         <option value="">— Chọn lớp học —</option>
                         {% for lop in classes %}
                         <option value="{{ lop.id }}">{{ lop.ma_lop }} — {{ lop.ten_lop }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="text-center">
-                    <button type="submit" class="btn-download">
-                        <i class="fas fa-cloud-arrow-down"></i> Tải Danh sách Lớp
-                    </button>
-                </div>
+
+                <button type="submit" class="bg-tertiary text-on-tertiary px-8 py-3 rounded-xl font-bold shadow-md hover:bg-tertiary/90 transition-transform active:scale-95 flex items-center gap-2">
+                    <span class="material-symbols-outlined">download</span> Tải Danh sách
+                </button>
             </form>
         </div>
+        
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/pages/export_index.js') }}"></script>
+<script>
+    // Xử lý chuyển tab
+    function switchTab(index) {
+        // Reset tất cả tab styles
+        document.querySelectorAll('.export-tab').forEach(tab => {
+            tab.classList.remove('border-primary', 'border-secondary', 'border-tertiary', 'shadow-md');
+            tab.classList.add('border-transparent');
+            tab.querySelector('.tab-check').classList.remove('opacity-100');
+            tab.querySelector('.tab-check').classList.add('opacity-0');
+        });
+        
+        // Hide all panels
+        document.querySelectorAll('.export-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
 
+        // Set active tab & panel
+        const activeTab = document.getElementById(`tab-${index}`);
+        const activePanel = document.getElementById(`panel-${index}`);
+        
+        activePanel.classList.add('active');
+        
+        if(index === 0) {
+            activeTab.classList.replace('border-transparent', 'border-primary');
+            activeTab.classList.add('shadow-md');
+        } else if(index === 1) {
+            activeTab.classList.replace('border-transparent', 'border-secondary');
+            activeTab.classList.add('shadow-md');
+        } else if(index === 2) {
+            activeTab.classList.replace('border-transparent', 'border-tertiary');
+            activeTab.classList.add('shadow-md');
+        }
+        activeTab.querySelector('.tab-check').classList.replace('opacity-0', 'opacity-100');
+    }
+
+    // Xử lý chọn format
+    function updateFormatUI(format) {
+        const xlLabel = document.getElementById('format-excel');
+        const pdfLabel = document.getElementById('format-pdf');
+        const xlCheck = document.getElementById('format-check-excel');
+        const pdfCheck = document.getElementById('format-check-pdf');
+
+        if(format === 'excel') {
+            xlLabel.classList.replace('border-outline-variant', 'border-primary');
+            xlLabel.classList.add('bg-primary/5');
+            xlCheck.classList.replace('opacity-0', 'opacity-100');
+
+            pdfLabel.classList.replace('border-error', 'border-outline-variant');
+            pdfLabel.classList.remove('bg-error/5');
+            pdfCheck.classList.replace('opacity-100', 'opacity-0');
+        } else {
+            pdfLabel.classList.replace('border-outline-variant', 'border-error');
+            pdfLabel.classList.add('bg-error/5');
+            pdfCheck.classList.replace('opacity-0', 'opacity-100');
+
+            xlLabel.classList.replace('border-primary', 'border-outline-variant');
+            xlLabel.classList.remove('bg-primary/5');
+            xlCheck.classList.replace('opacity-100', 'opacity-0');
+        }
+    }
+</script>
 {% endblock %}

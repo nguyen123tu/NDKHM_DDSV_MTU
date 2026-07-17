@@ -1,103 +1,169 @@
 {% extends "base.html" %}
 
-{% block title %}Quản lý Lớp Học — MTUFace{% endblock %}
-{% block page_title %}Quản lý lớp học{% endblock %}
+{% block title %}Quản lý Lớp Học — MTU Face AI{% endblock %}
+{% block page_title %}Danh sách Lớp học{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/class_list.css') }}?v=2">
-
 {% endblock %}
 
 {% block content %}
-<!-- ═══ STATS ═══ -->
-<div class="class-stats">
-    <div class="class-stat-card" style="background:var(--gradient-card-1)">
-        <span class="stat-icon"><i class="fas fa-chalkboard-user"></i></span>
-        <div class="stat-num">{{ classes|length }}</div>
-        <div class="stat-label">Tổng số lớp</div>
-    </div>
-    <div class="class-stat-card" style="background:var(--gradient-card-2)">
-        <span class="stat-icon"><i class="fas fa-users"></i></span>
-        <div class="stat-num">{{ classes|sum(attribute='si_so') }}</div>
-        <div class="stat-label">Tổng sinh viên</div>
-    </div>
-    <div class="class-stat-card" style="background:var(--gradient-card-3)">
-        <span class="stat-icon"><i class="fas fa-circle-check"></i></span>
-        <div class="stat-num">{{ classes|selectattr('trang_thai', 'equalto', 1)|list|length }}</div>
-        <div class="stat-label">Đang hoạt động</div>
-    </div>
-</div>
+<div class="max-w-container-max mx-auto space-y-xl">
 
-<!-- ═══ TOOLBAR ═══ -->
-<div class="class-toolbar">
-    <div class="search-wrap">
-        <i class="fas fa-search"></i>
-        <input type="text" id="classSearch" placeholder="Tìm kiếm lớp học..." oninput="filterClasses()">
-    </div>
-    <a href="{{ url_for('classes.add') }}" class="btn-add-class">
-        <i class="fas fa-plus"></i> Thêm lớp học
-    </a>
-</div>
-
-<!-- ═══ CLASS LIST ═══ -->
-<div class="class-grid" id="classGrid">
-    {% for cls in classes %}
-    <div class="class-card" data-search="{{ cls.ma_lop|lower }} {{ cls.ten_lop|lower }} {{ (cls.giao_vien or '')|lower }}">
-        <div class="class-icon" style="background:var(--gradient-card-{{ (loop.index % 4) + 1 }})">
-            <i class="fas fa-chalkboard"></i>
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-xl">
+        <div>
+            <p class="text-sm text-on-surface-variant">Theo dõi và quản lý các lớp học có sử dụng hệ thống điểm danh AI.</p>
         </div>
-
-        <div class="class-main">
-            <div class="class-name">{{ cls.ten_lop }}</div>
-            <div class="class-code">{{ cls.ma_lop }}</div>
-        </div>
-
-        <div class="class-meta">
-            <span class="meta-pill meta-teacher">
-                <i class="fas fa-user-tie"></i>
-                {{ cls.giao_vien or 'Chưa phân công' }}
-            </span>
-            <span class="meta-pill meta-semester">
-                <i class="fas fa-calendar"></i>
-                {{ cls.hoc_ky }} · {{ cls.nam_hoc }}
-            </span>
-            <span class="meta-pill meta-count">
-                <i class="fas fa-users"></i>
-                {{ cls.si_so }} SV
-            </span>
-            {% if cls.trang_thai == 1 %}
-            <span class="meta-pill meta-active">
-                <i class="fas fa-circle" style="font-size:.5rem"></i> Hoạt động
-            </span>
-            {% else %}
-            <span class="meta-pill meta-closed">
-                <i class="fas fa-circle" style="font-size:.5rem"></i> Đã đóng
-            </span>
-            {% endif %}
-        </div>
-
-        <div class="class-actions">
-            <a href="{{ url_for('classes.edit', id=cls.id) }}" class="ca-btn ca-btn-edit" title="Sửa">
-                <i class="fas fa-pen"></i>
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('classes.add') }}" class="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 shadow-md flex items-center gap-2 transition-transform active:scale-95">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Thêm Lớp Mới
             </a>
-            <form action="{{ url_for('classes.delete', id=cls.id) }}" method="POST" class="d-inline form-delete-class" data-name="{{ cls.ten_lop }}">
-                <button type="submit" class="ca-btn ca-btn-delete" title="Xóa">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </form>
         </div>
     </div>
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-icon">📚</div>
-        <h5 class="fw-bold mb-2" style="color:var(--text-primary)">Chưa có lớp học nào</h5>
-        <p>Bấm "Thêm lớp học" để bắt đầu</p>
+
+    <!-- Stats Bento Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-xl">
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative group">
+            <div class="flex justify-between items-start relative z-10">
+                <div>
+                    <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Tổng số lớp</span>
+                    <h2 class="text-3xl font-bold mt-2 text-on-surface">{{ classes|length }}</h2>
+                </div>
+                <div class="bg-primary-container/10 p-2 rounded-lg text-primary">
+                    <span class="material-symbols-outlined text-[24px]">class</span>
+                </div>
+            </div>
+            <div class="absolute -bottom-4 -right-4 opacity-5 group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-[100px]">meeting_room</span>
+            </div>
+        </div>
+
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative group">
+            <div class="flex justify-between items-start relative z-10">
+                <div>
+                    <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Tổng Sinh Viên</span>
+                    <h2 class="text-3xl font-bold mt-2 text-secondary">{{ classes|sum(attribute='si_so') }}</h2>
+                </div>
+                <div class="bg-secondary/10 p-2 rounded-lg text-secondary">
+                    <span class="material-symbols-outlined text-[24px]">groups</span>
+                </div>
+            </div>
+            <div class="absolute -bottom-4 -right-4 opacity-5 group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-[100px]">diversity_3</span>
+            </div>
+        </div>
+
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative group">
+            <div class="flex justify-between items-start relative z-10">
+                <div>
+                    <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Đang Hoạt Động</span>
+                    <h2 class="text-3xl font-bold mt-2 text-primary">{{ classes|selectattr('trang_thai', 'equalto', 1)|list|length }}</h2>
+                </div>
+                <div class="bg-primary-container/10 p-2 rounded-lg text-primary">
+                    <span class="material-symbols-outlined text-[24px]">task_alt</span>
+                </div>
+            </div>
+            <div class="absolute -bottom-4 -right-4 opacity-5 group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-[100px]">check_circle</span>
+            </div>
+        </div>
     </div>
-    {% endfor %}
+
+    <!-- Search Toolbar -->
+    <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant flex items-center mb-lg">
+        <div class="flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-lg border border-outline-variant flex-1 max-w-md">
+            <span class="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
+            <input type="text" id="classSearch" oninput="filterClasses()" class="bg-transparent border-none text-sm focus:ring-0 flex-1 outline-none w-full" placeholder="Tìm kiếm theo mã lớp, tên lớp, giảng viên...">
+        </div>
+    </div>
+
+    <!-- Class Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg" id="classGrid">
+        {% for cls in classes %}
+        <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden hover:shadow-md transition-shadow flex flex-col class-card" data-search="{{ cls.ma_lop|lower }} {{ cls.ten_lop|lower }} {{ (cls.giao_vien or '')|lower }}">
+            
+            <div class="p-5 flex gap-4 border-b border-outline-variant bg-gradient-to-br from-surface-container-lowest to-surface-container-low/50">
+                <div class="w-12 h-12 rounded-xl bg-primary-container/10 text-primary flex items-center justify-center flex-shrink-0 shadow-sm border border-primary-container/10">
+                    <span class="material-symbols-outlined text-[24px]">school</span>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <h3 class="text-base font-bold text-on-surface truncate" title="{{ cls.ten_lop }}">{{ cls.ten_lop }}</h3>
+                    <p class="text-sm font-mono text-on-surface-variant mt-0.5">{{ cls.ma_lop }}</p>
+                </div>
+            </div>
+
+            <div class="p-5 flex-1 grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Giảng Viên</span>
+                    <span class="font-semibold text-on-surface truncate" title="{{ cls.giao_vien or 'Chưa phân công' }}">
+                        {{ cls.giao_vien or 'Chưa phân công' }}
+                    </span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Học Kỳ</span>
+                    <span class="font-semibold text-on-surface">{{ cls.hoc_ky }} - {{ cls.nam_hoc }}</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Sĩ Số</span>
+                    <span class="font-semibold text-secondary flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">groups</span> {{ cls.si_so }}
+                    </span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Trạng thái</span>
+                    {% if cls.trang_thai == 1 %}
+                    <span class="inline-flex items-center gap-1 text-primary font-bold text-xs">
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Hoạt động
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 text-error font-bold text-xs">
+                        <span class="w-1.5 h-1.5 rounded-full bg-error"></span> Đã đóng
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-outline-variant bg-surface-container-low/50 flex justify-end gap-2">
+                <a href="{{ url_for('classes.edit', id=cls.id) }}" class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary-container/10 rounded-lg transition-colors" title="Sửa lớp học">
+                    <span class="material-symbols-outlined text-[20px]">edit</span>
+                </a>
+                <form action="{{ url_for('classes.delete', id=cls.id) }}" method="POST" class="inline form-delete-class" data-name="{{ cls.ten_lop }}" onsubmit="return confirm('Bạn có chắc muốn xóa lớp ' + this.dataset.name + '?');">
+                    <button type="submit" class="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors" title="Xóa lớp học">
+                        <span class="material-symbols-outlined text-[20px]">delete</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full py-16 flex flex-col items-center justify-center text-center bg-surface-container-lowest rounded-xl border border-outline-variant border-dashed">
+            <span class="material-symbols-outlined text-[64px] text-on-surface-variant/30 mb-4">auto_stories</span>
+            <h5 class="text-xl font-bold text-on-surface mb-2">Chưa có lớp học nào</h5>
+            <p class="text-sm text-on-surface-variant max-w-md">Hãy bắt đầu bằng cách thêm lớp học mới vào hệ thống để quản lý điểm danh.</p>
+            <a href="{{ url_for('classes.add') }}" class="mt-6 bg-primary text-on-primary px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-primary/90 shadow-md transition-colors flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Thêm Lớp Mới
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/pages/class_list.js') }}"></script>
-
+<script>
+    function filterClasses() {
+        const query = document.getElementById('classSearch').value.toLowerCase();
+        const cards = document.querySelectorAll('.class-card');
+        cards.forEach(card => {
+            const data = card.getAttribute('data-search');
+            if (data.includes(query)) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
 {% endblock %}

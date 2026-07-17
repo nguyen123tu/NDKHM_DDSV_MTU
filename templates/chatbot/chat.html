@@ -20,7 +20,7 @@
     <header class="app-header">
         <div class="header-left">
             <button class="btn-icon" id="btnSidebarToggle" title="Mở/đóng sidebar">
-                <i class="fas fa-bars"></i>
+                <i class="material-symbols-outlined">menu</i>
             </button>
             <div class="header-brand">
                 <div class="brand-dot"></div>
@@ -29,15 +29,15 @@
         </div>
         <div class="header-right">
             <button class="btn-voice-mode" id="btnVoiceMode" title="Chế độ Voice Chat">
-                <i class="fas fa-microphone"></i>
+                <i class="material-symbols-outlined">mic</i>
             </button>
             <button class="btn-icon" id="btnThemeToggle" title="Sáng / Tối">
-                <i class="fas fa-moon"></i>
+                <i class="material-symbols-outlined">dark_mode</i>
             </button>
             <div class="header-user" id="headerUser">
-                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-avatar"><i class="material-symbols-outlined">person</i></div>
                 <span>Admin</span>
-                <i class="fas fa-chevron-down" style="font-size:10px;opacity:.5"></i>
+                <i class="material-symbols-outlined" style="font-size:10px;opacity:.5">expand_more</i>
             </div>
         </div>
     </header>
@@ -47,7 +47,7 @@
         <aside class="chat-sidebar" id="chatSidebar">
             <!-- New Chat -->
             <button class="btn-new-chat" id="btnNewChat" onclick="newChat()">
-                <i class="fas fa-plus"></i>
+                <i class="material-symbols-outlined">add</i>
                 <span>Chat mới</span>
             </button>
 
@@ -62,7 +62,7 @@
             <nav class="sidebar-nav">
                 <div class="nav-divider"></div>
                 <a class="sidebar-nav-item {{ 'active' if request.endpoint == 'chatbot.chat_page' }}" href="{{ url_for('chatbot.chat_page') }}">
-                    <i class="fas fa-database"></i><span>Kho tri thức</span>
+                    <i class="material-symbols-outlined">database</i><span>Kho tri thức</span>
                     {% if kb_status.ready %}
                     <span class="nav-badge green">{{ kb_status.total_chunks }}</span>
                     {% else %}
@@ -70,13 +70,13 @@
                     {% endif %}
                 </a>
                 <a class="sidebar-nav-item" href="{{ url_for('attendance.live') }}">
-                    <i class="fas fa-video"></i><span>Camera</span>
+                    <i class="material-symbols-outlined">videocam</i><span>Camera</span>
                 </a>
                 <a class="sidebar-nav-item" href="/apidocs" target="_blank">
-                    <i class="fas fa-code"></i><span>API</span>
+                    <i class="material-symbols-outlined">code</i><span>API</span>
                 </a>
                 <a class="sidebar-nav-item" href="#" onclick="openSettings(); return false;">
-                    <i class="fas fa-gear"></i><span>Cài đặt</span>
+                    <i class="material-symbols-outlined">settings</i><span>Cài đặt</span>
                 </a>
             </nav>
         </aside>
@@ -88,7 +88,7 @@
                 <!-- Empty State -->
                 <div class="welcome-state" id="welcomeState">
                     <div class="welcome-icon">
-                        <i class="fas fa-robot"></i>
+                        <i class="material-symbols-outlined">smart_toy</i>
                     </div>
                     <h2 class="welcome-title">Xin chào Admin 👋</h2>
                     <p class="welcome-sub">Tôi có thể giúp gì hôm nay?</p>
@@ -97,7 +97,7 @@
                     <div class="welcome-cards" id="welcomeCards">
                         {% for q in suggested_questions[:4] %}
                         <div class="welcome-card" onclick="askSuggested(this)">
-                            <i class="fas fa-sparkles"></i>
+                            <i class="material-symbols-outlined">temp_preferences_custom</i>
                             <span>{{ q }}</span>
                         </div>
                         {% endfor %}
@@ -106,7 +106,7 @@
 
                 <!-- Typing Indicator -->
                 <div class="msg bot typing-indicator" id="typingIndicator">
-                    <div class="msg-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="msg-avatar"><i class="material-symbols-outlined">smart_toy</i></div>
                     <div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
                 </div>
             </div>
@@ -120,23 +120,23 @@
 
             <!-- Scroll to Bottom Button -->
             <button id="btnScrollBottom" class="btn-scroll-bottom" title="Cuộn xuống dưới cùng">
-                <i class="fas fa-arrow-down"></i>
+                <i class="material-symbols-outlined">arrow_downward</i>
             </button>
 
             <!-- Input Area (full-width bottom) -->
             <div class="chat-input-area">
                 <div class="input-wrapper">
                     <button class="btn-attach" title="Đính kèm file">
-                        <i class="fas fa-paperclip"></i>
+                        <i class="material-symbols-outlined">attach_file</i>
                     </button>
                     <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."
                               onkeydown="handleKey(event)"></textarea>
                     <button class="btn-mic" id="btnMic" title="Nhấn để nói">
-                        <i class="fas fa-microphone"></i>
+                        <i class="material-symbols-outlined">mic</i>
                         <span class="mic-wave"></span>
                     </button>
                     <button class="btn-send" onclick="sendMessage()" id="btnSend" title="Gửi tin nhắn">
-                        <i class="fas fa-paper-plane"></i>
+                        <i class="material-symbols-outlined">send</i>
                     </button>
                 </div>
             </div>
@@ -148,13 +148,13 @@
         <div class="settings-panel">
             <div class="settings-header">
                 <h3>Cài đặt</h3>
-                <button class="btn-icon" onclick="closeSettings()"><i class="fas fa-xmark"></i></button>
+                <button class="btn-icon" onclick="closeSettings()"><i class="material-symbols-outlined">close</i></button>
             </div>
             <div class="settings-body">
                 <div class="setting-row">
                     <label>Kho tri thức</label>
                     <button class="btn-setting" onclick="buildKnowledge()" id="btnBuild">
-                        <i class="fas fa-arrows-rotate"></i> Cập nhật KB
+                        <i class="material-symbols-outlined">sync</i> Cập nhật KB
                     </button>
                 </div>
                 <div class="kb-progress" id="kbProgress" style="display:none">
@@ -163,7 +163,7 @@
                 <div class="setting-row">
                     <label>Xóa dữ liệu</label>
                     <button class="btn-setting danger" onclick="clearAllHistory()">
-                        <i class="fas fa-trash-can"></i> Xóa tất cả lịch sử
+                        <i class="material-symbols-outlined">delete</i> Xóa tất cả lịch sử
                     </button>
                 </div>
             </div>
@@ -195,13 +195,13 @@
     <!-- Controls -->
     <div class="voice-controls">
         <button class="voice-btn voice-btn-stop" id="voiceBtnStop" title="Dừng AI nói">
-            <i class="fas fa-stop"></i>
+            <i class="material-symbols-outlined">stop</i>
         </button>
         <button class="voice-btn voice-btn-mic" id="voiceBtnMic" title="Bấm để nói">
-            <i class="fas fa-microphone"></i>
+            <i class="material-symbols-outlined">mic</i>
         </button>
         <button class="voice-btn voice-btn-close" id="voiceBtnClose" title="Đóng Voice Mode">
-            <i class="fas fa-xmark"></i>
+            <i class="material-symbols-outlined">close</i>
         </button>
     </div>
 </div>

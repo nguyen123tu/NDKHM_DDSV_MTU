@@ -1,138 +1,182 @@
 {% extends "base.html" %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/students_pending.css') }}">
-{% endblock %}
-
-{% block title %}Phê Duyệt Thành Viên{% endblock %}
+{% block title %}Phê Duyệt Thành Viên — MTU Face AI{% endblock %}
 {% block page_title %}Phê Duyệt Thành Viên{% endblock %}
 
+{% block extra_css %}
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="premium-header d-flex justify-content-between align-items-center p-4 animate__animated animate__fadeInDown">
+<div class="max-w-container-max mx-auto space-y-xl">
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-xl">
+        <div>
+            <p class="text-sm text-on-surface-variant max-w-2xl">Danh sách sinh viên đã tự đăng ký khuôn mặt qua ứng dụng/web và đang chờ quản trị viên phê duyệt để hệ thống AI bắt đầu nhận diện.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="bg-warning-container text-on-warning-container px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 border border-warning">
+                <span class="material-symbols-outlined text-[18px]">hourglass_top</span>
+                {{ students|length }} Chờ duyệt
+            </div>
+            
+            {% if students %}
+            <form action="{{ url_for('students.approve_all_faces') }}" method="POST" onsubmit="return confirm('CẢNH BÁO: Bạn có chắc chắn muốn PHÊ DUYỆT TẤT CẢ yêu cầu này không? Hành động này sẽ nạp hàng loạt dữ liệu vào model AI.')">
+                <button type="submit" class="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-bold hover:bg-primary/90 shadow-md transition-transform active:scale-95 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">done_all</span>
+                    Duyệt tất cả
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pending List Table -->
+    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-surface-container-low">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Sinh viên</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Mã SV</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Lớp học</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Dữ liệu FaceID</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant">
+                    {% if students %}
+                        {% for sv in students %}
+                        <tr class="hover:bg-surface-container-low/50 transition-colors group">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-full bg-surface-container-high border-2 border-outline-variant/50 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                        {% if sv.avatar %}
+                                        <img src="{{ url_for('serve_database_file', filename=sv.avatar) }}" class="w-full h-full object-cover">
+                                        {% else %}
+                                        <span class="material-symbols-outlined text-on-surface-variant text-[24px]">person</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-on-surface">{{ sv.ho_ten }}</div>
+                                        <div class="text-[10px] text-on-surface-variant uppercase mt-0.5 font-semibold">Đăng ký: {{ sv.created_at|default('Vừa mới đây') }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-block px-3 py-1 bg-surface-container-high text-on-surface font-mono text-sm font-bold rounded-lg border border-outline-variant/50">
+                                    {{ sv.mssv }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-on-surface">{{ sv.ten_lop }}</div>
+                                <div class="text-xs text-on-surface-variant mt-0.5">{{ sv.ma_lop }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <button type="button" onclick="viewAllImages('{{ sv.mssv }}')" class="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary-container/30 text-on-secondary-container hover:bg-secondary-container rounded-lg text-sm font-semibold transition-colors border border-secondary-container/50">
+                                    <span class="material-symbols-outlined text-[18px]">photo_library</span>
+                                    Xem 3 ảnh gốc
+                                </button>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex justify-end gap-2">
+                                    <form action="{{ url_for('students.approve_face', id=sv.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn PHÊ DUYỆT sinh viên này vào hệ thống AI?')">
+                                        <button type="submit" class="p-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-colors border border-primary/20" title="Chấp nhận">
+                                            <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                                        </button>
+                                    </form>
+                                    <form action="{{ url_for('students.reject_face', id=sv.id) }}" method="POST" onsubmit="return confirm('TỪ CHỐI yêu cầu này? Toàn bộ dữ liệu ảnh đăng ký sẽ bị xóa vĩnh viễn.')">
+                                        <button type="submit" class="p-2 bg-error/10 text-error hover:bg-error hover:text-white rounded-lg transition-colors border border-error/20" title="Từ chối">
+                                            <span class="material-symbols-outlined text-[20px]">cancel</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-16 text-center">
+                                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-surface-container-high mb-4">
+                                    <span class="material-symbols-outlined text-[40px] text-primary">done_all</span>
+                                </div>
+                                <h5 class="text-xl font-bold text-on-surface mb-2">Không có yêu cầu nào</h5>
+                                <p class="text-sm text-on-surface-variant">Tất cả yêu cầu đăng ký khuôn mặt đã được xử lý xong!</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal Xem Ảnh JS / HTML Layout (Tailwind Custom) -->
+<div id="imageModal" class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-surface rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden transform scale-95 transition-transform duration-300" id="imageModalContent">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
             <div>
-                <h4 class="fw-bold m-0 text-navy"><i class="fas fa-user-check me-2 text-primary"></i> Yêu cầu đang chờ xử lý</h4>
-                <p class="text-muted small m-0 mt-1">Danh sách sinh viên tự đăng ký hoặc cập nhật khuôn mặt cần phê duyệt để đưa vào AI nhận diện.</p>
+                <h3 class="text-lg font-bold text-on-surface">Dữ liệu khuôn mặt đã thu thập</h3>
+                <p class="text-sm text-on-surface-variant mt-1">Sinh viên: <span id="modalMssv" class="font-mono font-bold text-primary"></span></p>
             </div>
-            <div class="d-flex gap-3 align-items-center">
-                <div class="stat-badge bg-warning-subtle text-warning-emphasis p-2 px-3 rounded-pill border border-warning-subtle fw-bold small">
-                    <i class="fas fa-hourglass-half me-1"></i> {{ students|length }} Chờ duyệt
-                </div>
-                {% if students %}
-                <form action="{{ url_for('students.approve_all_faces') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn PHÊ DUYỆT TẤT CẢ yêu cầu này không?')">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
-                        <i class="fas fa-check-double me-1"></i> Duyệt tất cả
-                    </button>
-                </form>
-                {% endif %}
+            <button type="button" onclick="closeImageModal()" class="w-8 h-8 rounded-full bg-surface-container-high hover:bg-surface-variant flex items-center justify-center text-on-surface-variant transition-colors">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <div class="p-6 bg-surface-container-lowest">
+            <div id="imageGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Images will be injected here by JS -->
             </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-outline-variant bg-surface-container-low flex justify-between items-center">
+            <p class="text-xs font-semibold text-on-surface-variant flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">info</span> Đảm bảo ảnh rõ nét và không bị lóa sáng trước khi duyệt.
+            </p>
+            <button type="button" onclick="closeImageModal()" class="px-5 py-2 bg-surface-container-high text-on-surface rounded-lg text-sm font-bold hover:bg-surface-variant transition-colors shadow-sm">
+                Đóng
+            </button>
         </div>
     </div>
 </div>
-
-<div class="premium-card p-0 overflow-hidden shadow-sm">
-    <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle custom-table">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="ps-4 py-3">Sinh viên</th>
-                    <th class="py-3">MSSV</th>
-                    <th class="py-3">Lớp học</th>
-                    <th class="py-3">Ảnh đăng ký</th>
-                    <th class="py-3 text-end pe-4">Thao tác phê duyệt</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if students %}
-                    {% for sv in students %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-sm rounded-circle shadow-sm me-3 bg-light d-flex align-items-center justify-content-center overflow-hidden" style="width: 48px; height: 48px; border: 2px solid #fff;">
-                                    {% if sv.avatar %}
-                                    <img src="/{{ sv.avatar }}" class="w-100 h-100 object-fit-cover">
-                                    {% else %}
-                                    <i class="fas fa-user text-muted"></i>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <div class="fw-bold text-navy">{{ sv.ho_ten }}</div>
-                                    <div class="text-muted extra-small">Đăng ký lúc: {{ sv.created_at|default('Vừa mới đây') }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td><span class="badge bg-navy-subtle text-navy border border-navy-subtle fw-600 px-3">{{ sv.mssv }}</span></td>
-                        <td>
-                            <div class="text-dark fw-500">{{ sv.ten_lop }}</div>
-                            <div class="text-muted small">{{ sv.ma_lop }}</div>
-                        </td>
-                        <td>
-                            <button type="button" class="btn btn-image-view" onclick="viewAllImages('{{ sv.mssv }}')">
-                                <i class="fas fa-images me-2"></i>Xem dữ liệu ảnh
-                            </button>
-                        </td>
-                        <td class="text-end pe-4">
-                            <div class="d-flex justify-content-end gap-2">
-                                <form action="{{ url_for('students.approve_face', id=sv.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn PHÊ DUYỆT sinh viên này vào hệ thống?')">
-                                    <button type="submit" class="btn-action btn-approve" title="Chấp nhận">
-                                        <i class="fas fa-check"></i> Phê Duyệt
-                                    </button>
-                                </form>
-                                <form action="{{ url_for('students.reject_face', id=sv.id) }}" method="POST" onsubmit="return confirm('TỪ CHỐI yêu cầu này? Dữ liệu ảnh sẽ bị xóa.')">
-                                    <button type="submit" class="btn-action btn-reject" title="Từ chối">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="py-5 text-center">
-                            <div class="empty-state">
-                                <div class="empty-icon"><i class="fas fa-check-double"></i></div>
-                                <h6 class="fw-bold text-navy mt-3">Hiện đang trống</h6>
-                                <p class="text-muted small">Tất cả yêu cầu đã được xử lý xong!</p>
-                            </div>
-                        </td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Modal xem chi tiết ảnh -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header border-0 pb-0">
-                <div>
-                    <h5 class="modal-title fw-bold text-navy">Bộ mẫu khuôn mặt</h5>
-                    <p class="text-muted small m-0">Sinh viên: <span id="modalMssv" class="fw-bold text-primary"></span></p>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div id="imageGrid" class="row g-3">
-                    <!-- Ảnh sẽ được nạp bằng JS -->
-                </div>
-            </div>
-            <div class="modal-footer border-0 pt-0">
-                 <p class="small text-muted me-auto"><i class="fas fa-info-circle me-1"></i> Kiểm tra xem ảnh có rõ nét và đúng người không trước khi duyệt.</p>
-                 <button type="button" class="btn btn-light-soft rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-
 {% endblock %}
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/pages/students_pending.js') }}"></script>
+<script>
+    // Simple custom modal logic if Bootstrap modal fails
+    function openCustomModal() {
+        const modal = document.getElementById('imageModal');
+        const content = document.getElementById('imageModalContent');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // Trigger reflow
+        void modal.offsetWidth;
+        
+        modal.classList.replace('opacity-0', 'opacity-100');
+        content.classList.replace('scale-95', 'scale-100');
+    }
+
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        const content = document.getElementById('imageModalContent');
+        
+        modal.classList.replace('opacity-100', 'opacity-0');
+        content.classList.replace('scale-100', 'scale-95');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+    
+    // Override Bootstrap viewAllImages from external JS if needed, but normally keeping the ID structure allows it to work.
+    // If you rewrote JS to not use jQuery/Bootstrap, just fetch and inject.
+</script>
 {% endblock %}

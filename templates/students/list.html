@@ -1,252 +1,511 @@
 {% extends "base.html" %}
 
-{% block title %}Quản lý Sinh Viên — MTUFace{% endblock %}
+{% block title %}Quản lý Sinh Viên — MTU Face AI{% endblock %}
 {% block page_title %}Quản lý sinh viên{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/student_list.css') }}?v=2">
-
 {% endblock %}
 
 {% block content %}
-<!-- Search & Filter Bar -->
-<form method="GET" action="{{ url_for('students.list_students') }}">
-    <div class="search-bar">
-        <div class="position-relative flex-grow-1" style="min-width:200px">
-            <span class="search-icon"><i class="fas fa-search"></i></span>
-            <input type="text" class="search-input w-100" name="search"
-                   placeholder="Tìm kiếm sinh viên..." value="{{ current_search }}">
+<div class="max-w-container-max mx-auto space-y-xl">
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-xl">
+        <div>
+            <p class="text-sm text-on-surface-variant">Theo dõi và đăng ký dữ liệu khuôn mặt cho hệ thống điểm danh AI.</p>
         </div>
-        <select class="filter-select" name="lop_id" onchange="this.form.submit()">
-            <option value="">Tất cả lớp học</option>
-            {% for lop in classes %}
-            <option value="{{ lop.id }}" {% if current_lop_id == lop.id %}selected{% endif %}>{{ lop.ma_lop }}</option>
-            {% endfor %}
-        </select>
-        <button type="button" class="btn-add-student me-2" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-            <i class="fas fa-plus"></i> Thêm sinh viên
-        </button>
-        <button type="button" class="btn btn-warning fw-bold text-white shadow-sm" style="border-radius:10px; display: flex; align-items: center; gap: 8px; padding: 0 16px; font-size: 0.9rem;" data-bs-toggle="modal" data-bs-target="#sendNotificationModal" id="btnOpenNotificationModal">
-            <i class="fas fa-bell"></i> Gửi Thông Báo
-        </button>
-    </div>
-</form>
-
-<!-- Stats -->
-<div class="stats-mini">
-    <h6>
-        <i class="fas fa-user-graduate" style="color:var(--primary)"></i>
-        Danh sách sinh viên
-    </h6>
-    <span class="count-badge">
-        {{ pagination.total if pagination else students|length }} sinh viên
-    </span>
-</div>
-
-<!-- Student List -->
-<div class="student-list">
-    {% for sv in students %}
-    <div class="student-row align-items-center">
-        <div class="form-check ms-3 me-2 mb-0">
-            <input class="form-check-input student-checkbox" type="checkbox" value="{{ sv.mssv }}" style="transform: scale(1.2); cursor: pointer;">
-        </div>
-        {% if sv.avatar %}
-        <img src="{{ url_for('serve_database_file', filename=sv.avatar) }}" class="student-avatar" alt="Avatar">
-        {% else %}
-        <div class="student-avatar-placeholder" style="background:var(--gradient-card-{{ (loop.index % 4) + 1 }})">
-            {{ sv.ho_ten[0] }}
-        </div>
-        {% endif %}
-
-        <div class="student-info">
-            <div class="name">{{ sv.ho_ten }}</div>
-            <div class="mssv">{{ sv.mssv }}</div>
-        </div>
-
-        <span class="student-class">{{ sv.ma_lop }}</span>
-
-        {% if sv.da_train == 1 %}
-        <span class="student-status status-trained">
-            <i class="fas fa-check-circle"></i> Đã Train
-        </span>
-        {% else %}
-        <span class="student-status status-untrained">
-            <i class="fas fa-exclamation-circle"></i> Chưa Train
-        </span>
-        {% endif %}
-
-        <div class="student-actions">
-            <button class="act-btn act-btn-view btn-manage-images"
-                    data-mssv="{{ sv.mssv }}" data-name="{{ sv.ho_ten }}" data-lop="{{ sv.ma_lop }}"
-                    title="Xem ảnh">
-                <i class="fas fa-images"></i>
+        <div class="flex items-center gap-3">
+            <button type="button" class="bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-variant flex items-center gap-2 transition-colors border border-outline-variant shadow-sm" data-bs-toggle="modal" data-bs-target="#sendNotificationModal">
+                <span class="material-symbols-outlined text-[18px]">notifications_active</span>
+                Gửi thông báo
             </button>
-            <a href="{{ url_for('students.edit', id=sv.id) }}" class="act-btn act-btn-edit" title="Sửa">
-                <i class="fas fa-pen"></i>
-            </a>
-            <form action="{{ url_for('students.delete', id=sv.id) }}" method="POST" class="d-inline form-delete-student" data-name="{{ sv.ho_ten }}">
-                <button type="submit" class="act-btn act-btn-delete" title="Xóa">
-                    <i class="fas fa-trash-alt"></i>
+            <button type="button" class="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 shadow-md flex items-center gap-2 transition-transform active:scale-95" onclick="openRegistrationModal()">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
+                Đăng ký mới
+            </button>
+        </div>
+    </div>
+
+    <!-- Dashboard Stats (Bento Style) -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-lg mb-xl">
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between">
+            <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Tổng sinh viên hiển thị</span>
+            <div class="flex items-baseline gap-2 mt-3">
+                <span class="text-3xl font-bold">{{ pagination.total if pagination else students|length }}</span>
+            </div>
+        </div>
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between">
+            <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Đã đăng ký FaceID</span>
+            <div class="flex items-baseline gap-2 mt-3">
+                <span class="text-3xl font-bold text-secondary">{{ students|selectattr('da_train', 'equalto', 1)|list|length }}</span>
+                <span class="text-xs text-on-surface-variant">trên trang này</span>
+            </div>
+        </div>
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between">
+            <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Chưa đăng ký</span>
+            <div class="flex items-baseline gap-2 mt-3">
+                <span class="text-3xl font-bold text-error">{{ students|selectattr('da_train', 'equalto', 0)|list|length }}</span>
+                <span class="text-xs text-on-surface-variant">Yêu cầu bổ sung</span>
+            </div>
+        </div>
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative">
+            <div class="z-10 relative">
+                <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Độ chính xác AI</span>
+                <div class="flex items-baseline gap-2 mt-3">
+                    <span class="text-3xl font-bold">99.8%</span>
+                </div>
+            </div>
+            <div class="absolute -bottom-6 -right-4 opacity-5">
+                <span class="material-symbols-outlined text-[120px]">psychology</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Table -->
+    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+        
+        <form method="GET" action="{{ url_for('students.list_students') }}" class="p-4 border-b border-outline-variant flex flex-wrap items-center justify-between gap-4 bg-surface/50">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <div class="flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-lg border border-outline-variant flex-1 min-w-[250px]">
+                    <span class="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
+                    <input type="text" name="search" value="{{ current_search }}" class="bg-transparent border-none text-sm focus:ring-0 flex-1 outline-none w-full" placeholder="Tìm kiếm sinh viên...">
+                </div>
+                
+                <div class="flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-lg border border-outline-variant">
+                    <span class="material-symbols-outlined text-on-surface-variant text-[20px]">filter_list</span>
+                    <select name="lop_id" onchange="this.form.submit()" class="bg-transparent border-none text-sm focus:ring-0 cursor-pointer outline-none">
+                        <option value="">Tất cả lớp học</option>
+                        {% for lop in classes %}
+                        <option value="{{ lop.id }}" {% if current_lop_id == lop.id %}selected{% endif %}>{{ lop.ma_lop }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <button type="button" class="text-sm font-semibold text-on-primary-container hover:text-primary flex items-center gap-1 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">download</span>
+                Xuất danh sách (CSV)
+            </button>
+        </form>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-surface-container-low">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Sinh viên</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Lớp</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Trạng thái FaceID</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant">
+                    {% for sv in students %}
+                    <tr class="hover:bg-surface-container-low transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                {% if sv.avatar %}
+                                <img src="{{ url_for('serve_database_file', filename=sv.avatar) }}" class="w-10 h-10 rounded-full object-cover border border-outline-variant group-hover:scale-110 transition-transform">
+                                {% else %}
+                                <div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center border border-outline-variant text-primary font-bold group-hover:scale-110 transition-transform">
+                                    {{ sv.ho_ten[0] }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <p class="text-sm font-bold text-on-surface">{{ sv.ho_ten }}</p>
+                                    <p class="text-xs text-on-surface-variant font-mono">MSSV: {{ sv.mssv }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="bg-surface-container-high text-on-surface px-3 py-1 rounded-full text-xs font-semibold">
+                                {{ sv.ma_lop }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if sv.da_train == 1 %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-bold border border-secondary/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                                Đã đăng ký
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error/10 text-error text-xs font-bold border border-error/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
+                                Chưa đăng ký
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                <button class="p-2 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant" title="Xem ảnh">
+                                    <span class="material-symbols-outlined text-[20px]">photo_library</span>
+                                </button>
+                                <a href="{{ url_for('students.edit', id=sv.id) }}" class="p-2 hover:bg-surface-container-high rounded-full transition-colors text-primary" title="Sửa thông tin">
+                                    <span class="material-symbols-outlined text-[20px]">edit</span>
+                                </a>
+                                <form action="{{ url_for('students.delete', id=sv.id) }}" method="POST" class="inline" onsubmit="return confirm('Bạn có chắc muốn xóa sinh viên này?');">
+                                    <button type="submit" class="p-2 hover:bg-error/10 hover:text-error rounded-full transition-colors text-on-surface-variant" title="Xóa">
+                                        <span class="material-symbols-outlined text-[20px]">delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-surface-container-high mb-4">
+                                <span class="material-symbols-outlined text-[32px] text-on-surface-variant">person_off</span>
+                            </div>
+                            <h5 class="text-lg font-bold text-on-surface mb-2">Chưa có sinh viên nào</h5>
+                            <p class="text-sm text-on-surface-variant">Bấm "Đăng ký mới" để thêm sinh viên vào hệ thống.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="p-4 border-t border-outline-variant flex items-center justify-between bg-surface/50">
+            <span class="text-xs font-semibold text-on-surface-variant">Trang {{ pagination.current }} / {{ pagination.pages }}</span>
+            <div class="flex items-center gap-1">
+                <a href="?page={{ pagination.current - 1 }}&search={{ current_search }}&lop_id={{ current_lop_id }}" class="p-2 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors {% if pagination.current <= 1 %}opacity-50 pointer-events-none{% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">chevron_left</span>
+                </a>
+                
+                {% for p in range(1, pagination.pages + 1) %}
+                <a href="?page={{ p }}&search={{ current_search }}&lop_id={{ current_lop_id }}" class="w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-colors {% if p == pagination.current %}bg-primary text-on-primary{% else %}hover:bg-surface-container-low text-on-surface{% endif %}">
+                    {{ p }}
+                </a>
+                {% endfor %}
+                
+                <a href="?page={{ pagination.current + 1 }}&search={{ current_search }}&lop_id={{ current_lop_id }}" class="p-2 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors {% if pagination.current >= pagination.pages %}opacity-50 pointer-events-none{% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">chevron_right</span>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- ==========================================
+     Face Registration Modal (HTML/CSS Thuần) 
+     ========================================== -->
+<div class="fixed inset-0 bg-primary-container/80 backdrop-blur-md z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" id="registrationModal">
+    <div class="bg-surface-container-lowest w-full max-w-5xl rounded-[24px] shadow-2xl overflow-hidden scale-95 transition-transform duration-300 transform" id="modalContainer">
+        
+        <div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low/50">
+            <div>
+                <h3 class="text-xl font-bold text-on-surface tracking-tight">Đăng ký khuôn mặt AI</h3>
+                <p class="text-sm text-on-surface-variant mt-1">Cập nhật hồ sơ sinh viên và trích xuất đặc trưng sinh trắc học.</p>
+            </div>
+            <button class="p-2 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant hover:text-error" onclick="closeRegistrationModal()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left: Form Information -->
+            <div class="space-y-6">
+                
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-on-surface uppercase tracking-wider">Họ và Tên <span class="text-error">*</span></label>
+                    <input type="text" id="regHoTen" class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm" placeholder="VD: Nguyễn Văn A">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider">Mã SV <span class="text-error">*</span></label>
+                        <div class="relative">
+                            <input type="text" id="regMssv" class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm font-mono uppercase pr-10" placeholder="2021XXXX" onblur="lookupStudent(this.value)">
+                            <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-on-surface-variant hover:text-secondary hover:bg-secondary/10 rounded-lg transition-colors" onclick="lookupStudent(document.getElementById('regMssv').value)" title="Kiểm tra CSDL">
+                                <span class="material-symbols-outlined text-[20px]">search</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider">Lớp học</label>
+                        <select id="regLopId" class="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm cursor-pointer">
+                            {% for lop in classes %}
+                            <option value="{{ lop.id }}">{{ lop.ma_lop }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-secondary/5 rounded-xl border border-secondary/20">
+                    <h4 class="text-sm font-bold text-secondary mb-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">info</span>
+                        Hướng dẫn thu thập sinh trắc
+                    </h4>
+                    <ul class="text-xs text-on-surface-variant space-y-1.5 list-disc ml-5 leading-relaxed font-medium">
+                        <li>Khuôn mặt nằm trọn trong khung màu xanh.</li>
+                        <li>Tránh đeo kính râm hoặc khẩu trang.</li>
+                        <li>Đảm bảo ánh sáng đồng đều trên khuôn mặt.</li>
+                        <li>Chụp đủ 3 tư thế: <strong>Thẳng, Trái, Phải</strong> để AI lập bản đồ 3D.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Right: Face Scanner & Camera -->
+            <div class="space-y-4">
+                <div class="relative w-full aspect-square md:aspect-[4/3] rounded-[20px] bg-[#0b1c30] border border-outline-variant overflow-hidden shadow-inner group" id="cameraFrame">
+                    
+                    <!-- WebCam Video Element -->
+                    <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover scale-x-[-1]"></video>
+                    
+                    <!-- Scan Brackets overlay -->
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 p-8">
+                        <div class="w-full h-full relative max-w-[280px] max-h-[350px]">
+                            <!-- 4 corners -->
+                            <div class="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-secondary/50 rounded-tl-xl transition-colors duration-300" id="bracket-tl"></div>
+                            <div class="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-secondary/50 rounded-tr-xl transition-colors duration-300" id="bracket-tr"></div>
+                            <div class="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-secondary/50 rounded-bl-xl transition-colors duration-300" id="bracket-bl"></div>
+                            <div class="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-secondary/50 rounded-br-xl transition-colors duration-300" id="bracket-br"></div>
+                            
+                            <!-- Scanning Laser Line -->
+                            <div class="scan-anim hidden" id="scanLine"></div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden Canvas for capturing -->
+                    <canvas id="captureCanvas" class="hidden"></canvas>
+                    
+                    <div class="absolute inset-0 bg-primary-container/80 flex flex-col items-center justify-center text-on-primary z-20" id="cameraOffOverlay">
+                        <span class="material-symbols-outlined text-[48px] mb-2 opacity-50">videocam_off</span>
+                        <p class="text-sm font-semibold">Camera đang tắt</p>
+                        <button onclick="startCamera()" class="mt-4 px-4 py-2 bg-secondary text-on-secondary rounded-lg text-sm font-bold shadow-md hover:bg-secondary/90 transition-colors">
+                            Bật Camera
+                        </button>
+                    </div>
+                    
+                    <!-- Big Capture Button Overlay -->
+                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 hidden" id="captureBtnContainer">
+                        <button onclick="autoCapture()" class="bg-secondary text-on-secondary w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(78,222,163,0.5)] border-4 border-white/20 hover:scale-105 active:scale-95 transition-all group">
+                            <span class="material-symbols-outlined text-[32px] group-hover:animate-pulse">photo_camera</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 3 Steps Capture Buttons -->
+                <div class="grid grid-cols-3 gap-3">
+                    <button class="flex flex-col items-center gap-1 p-3 border-2 border-outline-variant bg-surface rounded-xl transition-all hover:bg-surface-container-low" id="btnCap1" onclick="takeSnapshot(1)">
+                        <span class="material-symbols-outlined text-[28px] text-on-surface-variant">face</span>
+                        <span class="text-xs font-bold text-on-surface">1. Thẳng</span>
+                    </button>
+                    <button class="flex flex-col items-center gap-1 p-3 border-2 border-outline-variant bg-surface rounded-xl transition-all grayscale opacity-50 pointer-events-none" id="btnCap2" onclick="takeSnapshot(2)">
+                        <span class="material-symbols-outlined text-[28px] text-on-surface-variant">face_6</span>
+                        <span class="text-xs font-bold text-on-surface">2. Trái</span>
+                    </button>
+                    <button class="flex flex-col items-center gap-1 p-3 border-2 border-outline-variant bg-surface rounded-xl transition-all grayscale opacity-50 pointer-events-none" id="btnCap3" onclick="takeSnapshot(3)">
+                        <span class="material-symbols-outlined text-[28px] text-on-surface-variant">face_5</span>
+                        <span class="text-xs font-bold text-on-surface">3. Phải</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-4 bg-surface-container-low border-t border-outline-variant flex justify-between items-center">
+            <span class="text-xs font-semibold text-secondary flex items-center gap-1" id="regStatusMsg"></span>
+            <div class="flex gap-3">
+                <button class="px-5 py-2.5 rounded-lg font-semibold text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="closeRegistrationModal()">Hủy bỏ</button>
+                <button class="px-6 py-2.5 rounded-lg font-bold text-sm bg-primary text-on-primary shadow-md hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed" id="btnSubmitReg" disabled onclick="submitRegistration()">
+                    Lưu Hồ Sơ
                 </button>
-            </form>
+            </div>
         </div>
     </div>
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-icon">👨‍🎓</div>
-        <h5 class="fw-bold mb-2" style="color:var(--text-primary)">Chưa có sinh viên nào</h5>
-        <p>Bấm "Thêm sinh viên" để bắt đầu</p>
-    </div>
-    {% endfor %}
 </div>
 
-<!-- Pagination -->
-{% if pagination and pagination.pages > 1 %}
-<div class="modern-pagination">
-    <a href="?page={{ pagination.current - 1 }}&search={{ current_search }}&lop_id={{ current_lop_id }}"
-       class="pg-btn {% if pagination.current <= 1 %}disabled{% endif %}">
-        <i class="fas fa-chevron-left"></i>
-    </a>
-    {% for p in range(1, pagination.pages + 1) %}
-    <a href="?page={{ p }}&search={{ current_search }}&lop_id={{ current_lop_id }}"
-       class="pg-btn {% if p == pagination.current %}active{% endif %}">{{ p }}</a>
-    {% endfor %}
-    <a href="?page={{ pagination.current + 1 }}&search={{ current_search }}&lop_id={{ current_lop_id }}"
-       class="pg-btn {% if pagination.current >= pagination.pages %}disabled{% endif %}">
-        <i class="fas fa-chevron-right"></i>
-    </a>
-</div>
-{% endif %}
-
-<!-- ═══ MODAL: Thêm sinh viên ═══ -->
-<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0" style="overflow:hidden">
-      <div class="modal-modern-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5><i class="fas fa-user-plus me-2"></i>Thêm sinh viên mới</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-      </div>
-      <div class="modal-modern-body">
-          <div class="mb-3">
-              <label class="form-label" style="font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;">
-                  Mã sinh viên <span class="text-danger">*</span>
-              </label>
-              <input type="text" class="form-control" id="addMssv" placeholder="VD: 22D14801030000">
-          </div>
-          <div class="mb-3">
-              <label class="form-label" style="font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;">
-                  Họ và tên <span class="text-danger">*</span>
-              </label>
-              <input type="text" class="form-control" id="addHoTen" placeholder="VD: Nguyễn Văn A">
-          </div>
-          <div class="mb-3">
-              <label class="form-label" style="font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;">
-                  Lớp học
-              </label>
-              <select class="form-select" id="addLopId">
-                  {% for lop in classes %}
-                  <option value="{{ lop.id }}">{{ lop.ma_lop }} — {{ lop.ten_lop }}</option>
-                  {% endfor %}
-              </select>
-          </div>
-          <div class="form-check mt-3">
-              <input class="form-check-input" type="checkbox" id="chkGoCapture" checked>
-              <label class="form-check-label small" for="chkGoCapture" style="color:var(--text-secondary)">
-                  <i class="fas fa-camera me-1" style="color:var(--accent)"></i>
-                  Chuyển sang <strong>chụp ảnh khuôn mặt</strong> sau khi thêm
-              </label>
-          </div>
-      </div>
-      <div class="modal-modern-footer d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-light px-4" style="border-radius:10px" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn px-4" id="btnSaveStudent"
-                style="background:var(--gradient-primary);color:white;border-radius:10px;font-weight:600;box-shadow:0 4px 12px rgba(108,92,231,.25)">
-            <i class="fas fa-check me-1"></i> Thêm
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: Quản lý ảnh ═══ -->
-<div class="modal fade" id="imageManagerModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content border-0" style="overflow:hidden">
-      <div class="modal-modern-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5><i class="fas fa-images me-2"></i>Quản lý ảnh sinh viên</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-      </div>
-      <div class="modal-modern-body">
-          <div class="modal-header-gradient">
-              <h4 class="mb-2 fw-bold"><i class="fas fa-user-graduate me-2"></i><span id="imgMgrName">—</span></h4>
-              <div class="d-flex justify-content-center gap-3 small" style="opacity:.8">
-                  <span><i class="fas fa-id-card me-1"></i><span id="imgMgrMssv">—</span></span>
-                  <span><i class="fas fa-chalkboard me-1"></i><span id="imgMgrLop">—</span></span>
-              </div>
-          </div>
-          <div class="row g-3" id="imgMgrGallery">
-              <div class="col-12 text-center text-muted py-5" id="imgMgrLoading">
-                  <i class="fas fa-spinner fa-spin fs-2 mb-2"></i>
-                  <p>Đang tải ảnh...</p>
-              </div>
-          </div>
-      </div>
-      <div class="modal-modern-footer d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-light px-4" style="border-radius:10px" data-bs-dismiss="modal">Đóng</button>
-        <button type="button" class="btn px-4" id="btnEditInfoLink"
-                style="background:var(--gradient-card-2);color:white;border-radius:10px;font-weight:600">
-            <i class="fas fa-pen me-1"></i> Sửa thông tin
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: Gửi Thông Báo ═══ -->
-<div class="modal fade" id="sendNotificationModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0" style="overflow:hidden">
-      <div class="modal-modern-header" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
-        <div class="d-flex justify-content-between align-items-center text-white">
-            <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Gửi Thông Báo (Push Notification)</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-      </div>
-      <div class="modal-modern-body">
-          <div class="alert alert-info mb-3" style="border-radius: 8px; font-size: 0.9rem;">
-              <i class="fas fa-info-circle me-1"></i>
-              <span id="notificationTargetText">Bạn đang chọn gửi thông báo cho <strong>TẤT CẢ</strong> sinh viên.</span>
-          </div>
-          <div class="mb-3">
-              <label class="form-label" style="font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;">
-                  Tiêu đề <span class="text-danger">*</span>
-              </label>
-              <input type="text" class="form-control" id="notiTitle" placeholder="VD: Thông báo nghỉ học">
-          </div>
-          <div class="mb-3">
-              <label class="form-label" style="font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;">
-                  Nội dung <span class="text-danger">*</span>
-              </label>
-              <textarea class="form-control" id="notiBody" rows="4" placeholder="VD: Lớp Đồ án tháng 9 hôm nay nghỉ do..."></textarea>
-          </div>
-      </div>
-      <div class="modal-modern-footer d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-light px-4" style="border-radius:10px" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn px-4" id="btnSubmitNotification"
-                style="background:var(--gradient-primary);color:white;border-radius:10px;font-weight:600;box-shadow:0 4px 12px rgba(108,92,231,.25)">
-            <i class="fas fa-paper-plane me-1"></i> Gửi Ngay
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/pages/student_list.js') }}"></script>
+<script>
+    // Registration Modal Logic
+    const regModal = document.getElementById('registrationModal');
+    const regContainer = document.getElementById('modalContainer');
+    let stream = null;
+    let imagesData = { 1: null, 2: null, 3: null };
+    let currentStep = 1;
 
+    function openRegistrationModal() {
+        regModal.classList.remove('opacity-0', 'pointer-events-none');
+        regContainer.classList.remove('scale-95');
+        // Reset form
+        document.getElementById('regMssv').value = '';
+        document.getElementById('regHoTen').value = '';
+        imagesData = { 1: null, 2: null, 3: null };
+        currentStep = 1;
+        document.getElementById('btnSubmitReg').disabled = true;
+        document.getElementById('regStatusMsg').innerHTML = '';
+        // Reset buttons
+        for(let i=1; i<=3; i++) {
+            const btn = document.getElementById(`btnCap${i}`);
+            btn.className = 'flex flex-col items-center gap-1 p-3 border-2 border-outline-variant bg-surface rounded-xl transition-all grayscale opacity-50 pointer-events-none';
+            btn.querySelector('span').classList.replace('text-on-secondary', 'text-on-surface-variant');
+            btn.querySelector('span').classList.replace('text-secondary', 'text-on-surface-variant');
+        }
+    }
+
+    function closeRegistrationModal() {
+        regModal.classList.add('opacity-0', 'pointer-events-none');
+        regContainer.classList.add('scale-95');
+        stopCamera();
+    }
+    
+    async function lookupStudent(mssv) {
+        if (!mssv) return;
+        try {
+            const res = await fetch(`/students/api/student/${mssv}`);
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('regHoTen').value = data.data.ho_ten;
+                document.getElementById('regLopId').value = data.data.lop_id;
+                document.getElementById('regStatusMsg').innerHTML = '<span class="text-secondary"><span class="material-symbols-outlined text-[16px] align-middle">check_circle</span> Đã tìm thấy sinh viên trong CSDL</span>';
+            } else {
+                document.getElementById('regStatusMsg').innerHTML = '<span class="text-on-surface-variant"><span class="material-symbols-outlined text-[16px] align-middle">info</span> Sinh viên mới</span>';
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const video = document.getElementById('webcamVideo');
+            video.srcObject = stream;
+            document.getElementById('cameraOffOverlay').style.display = 'none';
+            document.getElementById('scanLine').classList.remove('hidden');
+            document.getElementById('captureBtnContainer').classList.remove('hidden');
+            
+            // Highlight brackets
+            document.querySelectorAll('[id^="bracket-"]').forEach(el => {
+                el.classList.remove('border-secondary/50');
+                el.classList.add('border-secondary-fixed');
+            });
+            
+            // Enable first capture button
+            currentStep = 1;
+            const btn1 = document.getElementById('btnCap1');
+            btn1.classList.remove('grayscale', 'opacity-50', 'pointer-events-none');
+            btn1.classList.add('border-secondary-fixed', 'bg-secondary/10');
+            btn1.querySelector('span').classList.add('text-secondary');
+        } catch (err) {
+            alert('Không thể truy cập camera. Vui lòng kiểm tra quyền trên trình duyệt.');
+        }
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        document.getElementById('cameraOffOverlay').style.display = 'flex';
+        document.getElementById('scanLine').classList.add('hidden');
+        document.getElementById('captureBtnContainer').classList.add('hidden');
+    }
+    
+    function autoCapture() {
+        if (currentStep <= 3) {
+            takeSnapshot(currentStep);
+        }
+    }
+
+    function takeSnapshot(step) {
+        if (!stream) return;
+        
+        const video = document.getElementById('webcamVideo');
+        const canvas = document.getElementById('captureCanvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw flipped image to canvas to match mirror view
+        const ctx = canvas.getContext('2d');
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Save base64
+        imagesData[step] = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // UI Feedback
+        const frame = document.getElementById('cameraFrame');
+        frame.classList.add('face-scan-active');
+        setTimeout(() => frame.classList.remove('face-scan-active'), 400);
+
+        // Update button states
+        const currentBtn = document.getElementById(`btnCap${step}`);
+        currentBtn.classList.remove('bg-secondary/10', 'border-secondary-fixed');
+        currentBtn.classList.add('bg-secondary', 'text-on-secondary');
+        currentBtn.querySelector('span').classList.remove('text-on-surface-variant', 'text-secondary');
+        currentBtn.querySelector('span').classList.add('text-on-secondary');
+
+        // Move to next step
+        if (step < 3) {
+            currentStep = step + 1;
+            const nextBtn = document.getElementById(`btnCap${currentStep}`);
+            nextBtn.classList.remove('grayscale', 'opacity-50', 'pointer-events-none');
+            nextBtn.classList.add('border-secondary-fixed', 'bg-secondary/10');
+            nextBtn.querySelector('span').classList.remove('text-on-surface-variant');
+            nextBtn.querySelector('span').classList.add('text-secondary');
+        } else {
+            currentStep = 4; // Done
+        }
+
+        // Enable submit if all done
+        if (imagesData[1] && imagesData[2] && imagesData[3]) {
+            document.getElementById('btnSubmitReg').disabled = false;
+            document.getElementById('regStatusMsg').innerHTML = '<span class="material-symbols-outlined text-[18px]">verified</span> Đã quét đủ 3 góc độ.';
+            stopCamera();
+        }
+    }
+    
+    async function submitRegistration() {
+        const mssv = document.getElementById('regMssv').value.trim();
+        const ho_ten = document.getElementById('regHoTen').value.trim();
+        const lop_id = document.getElementById('regLopId').value;
+        
+        if(!mssv || !ho_ten || !lop_id) {
+            alert('Vui lòng điền đầy đủ thông tin Họ Tên, MSSV và Lớp.');
+            return;
+        }
+        
+        if(!imagesData[1] || !imagesData[2] || !imagesData[3]) {
+            alert('Vui lòng chụp đủ 3 góc độ khuôn mặt.');
+            return;
+        }
+        
+        const btn = document.getElementById('btnSubmitReg');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> Đang lưu...';
+        
+        try {
+            const res = await fetch('{{ url_for("students.api_add") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    mssv: mssv,
+                    ho_ten: ho_ten,
+                    lop_id: lop_id,
+                    images: [imagesData[1], imagesData[2], imagesData[3]]
+                })
+            });
+            const data = await res.json();
+            if(data.success) {
+                location.reload();
+            } else {
+                alert('Lỗi: ' + data.msg);
+                btn.disabled = false;
+                btn.innerHTML = 'Lưu Hồ Sơ';
+            }
+        } catch(e) {
+            alert('Lỗi kết nối máy chủ');
+            btn.disabled = false;
+            btn.innerHTML = 'Lưu Hồ Sơ';
+        }
+    }
+</script>
 {% endblock %}

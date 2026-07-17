@@ -1,154 +1,298 @@
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/kiosk.css') }}">
-{% endblock %}
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MTU FACE — Kiosk Mode</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>MTU Face AI - Live Attendance Terminal (Kiosk Mode)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-background": "#0b1c30",
+                        "primary-container": "#131b2e",
+                        "surface-tint": "#565e74",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary-fixed-variant": "#783200",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-primary-fixed": "#131b2e",
+                        "on-primary": "#ffffff",
+                        "surface-container-high": "#dce9ff",
+                        "primary": "#000000",
+                        "on-secondary-fixed-variant": "#005236",
+                        "on-primary-container": "#7c839b",
+                        "inverse-primary": "#bec6e0",
+                        "secondary-fixed-dim": "#4edea3",
+                        "tertiary": "#000000",
+                        "secondary-container": "#6cf8bb",
+                        "outline": "#76777d",
+                        "on-surface": "#0b1c30",
+                        "on-tertiary-fixed": "#341100",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#00714d",
+                        "surface": "#f8f9ff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-highest": "#d3e4fe",
+                        "tertiary-container": "#341100",
+                        "primary-fixed-dim": "#bec6e0",
+                        "surface-container": "#e5eeff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#45464d",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#6ffbbe",
+                        "secondary": "#006c49",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#002113",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "background": "#f8f9ff",
+                        "outline-variant": "#c6c6cd",
+                        "on-tertiary-container": "#d95f00",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#213145",
+                        "primary-fixed": "#dae2fd",
+                        "tertiary-fixed-dim": "#ffb690"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: theme('colors.background'); }
+        /* Scanning Frame Animation */
+        .scan-bracket {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 4px solid theme('colors.secondary-fixed-dim');
+            filter: drop-shadow(0 0 10px theme('colors.secondary-fixed-dim'));
+            transition: all 0.3s ease;
+        }
+        .bracket-tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+        .bracket-tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+        .bracket-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+        .bracket-br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+
+        .scanning-line {
+            height: 2px;
+            width: 100%;
+            background: linear-gradient(90deg, transparent, theme('colors.secondary-fixed-dim'), transparent);
+            position: absolute;
+            top: 0;
+            animation: scan 2.5s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px 2px rgba(78, 222, 163, 0.1); }
+            50% { box-shadow: 0 0 40px 8px rgba(78, 222, 163, 0.3); }
+        }
+        
+        /* Custom scrollbar for logs */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: theme('colors.outline-variant'); border-radius: 10px; }
+        
+        /* Animation cho badge */
+        .res-badge-ok { color: theme('colors.secondary'); }
+        .res-badge-err { color: theme('colors.error'); }
+        
+        /* Cần ghi đè các class bootstrap d-none, badge từ logic kiosk.js */
+        .d-none { display: none !important; }
+        .d-flex { display: flex !important; }
+        .bg-success { background-color: theme('colors.secondary') !important; color: white !important; }
+        .bg-danger { background-color: theme('colors.error') !important; color: white !important; }
+        .bg-warning { background-color: #f59e0b !important; color: black !important; }
+        .badge { padding: 4px 8px; border-radius: 9999px; font-size: 12px; font-weight: bold; }
+        .text-danger { color: theme('colors.error') !important; }
+        .text-warning { color: #f59e0b !important; }
+    </style>
 </head>
-<body>
-    <div id="video-container">
-        <video id="webcam" autoplay playsinline></video>
-        <img id="rtspVideo" style="display:none; width:100%; height:100%; object-fit:cover; transform:scaleX(1);">
-        <canvas id="canvas-capture" style="display:none;"></canvas>
-    </div>
-    <!-- Overlay Dot Matrix / Grid -->
-    <div class="overlay"></div>
-    <div class="cyber-grid"></div>
+<body class="h-screen w-screen overflow-hidden text-on-surface">
 
-    <!-- Header -->
-    <div class="hud-header">
-        <div class="hud-brand">
-            <img src="/static/img/logo_MTU.png" onerror="this.style.display='none'" style="border-radius: 8px;">
-            <div>
-                <div class="hud-title">MTUFACE KIOSK</div>
-                <div class="hud-badges mt-2">
-                    <span class="hb hb-system"><i class="fas fa-circle me-1" style="font-size:5px"></i>System Active</span>
-                    <span class="hb hb-shield"><i class="fas fa-shield-halved me-1"></i>Anti-Fraud</span>
-                    <button id="btnUnlockAudio" class="btn btn-sm btn-outline-info rounded-pill ms-2" style="font-size: 0.7rem;" title="Bật âm thanh">
-                        <i class="fas fa-volume-up"></i> Bật Loa
-                    </button>
-                    <audio id="ttsAudio" style="display:none;"></audio>
-                </div>
-            </div>
-        </div>
-        <div class="hud-stats d-none d-md-flex align-items-center">
-            <div class="hs-item me-3">
-                <button id="btnShowConfig" class="btn btn-outline-info rounded-pill" style="font-size: 0.8rem;">
-                    <i class="fas fa-cog"></i> Setup Kiosk
+    <audio id="ttsAudio" style="display:none;"></audio>
+
+    <!-- MAIN KIOSK UI -->
+    <div class="h-full w-full p-4 flex flex-col gap-4 relative">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
+            
+            <!-- Left: Camera & HUD (Col span 8) -->
+            <div class="lg:col-span-8 flex flex-col h-full rounded-[24px] overflow-hidden bg-primary-container relative border border-outline-variant shadow-2xl group">
+                
+                <!-- Settings Button (Hidden initially, shows on hover/top-right) -->
+                <button id="btnShowConfig" class="absolute top-4 right-4 z-40 bg-surface/20 hover:bg-surface/40 backdrop-blur-md text-white p-2 rounded-full transition-all opacity-0 group-hover:opacity-100">
+                    <span class="material-symbols-outlined">settings</span>
                 </button>
-            </div>
-            <div class="hs-divider"></div>
-            <div class="hs-item">
-                <div class="hs-label">Local Time</div>
-                <div class="hs-value" id="clock">--:--:--</div>
-            </div>
-            <div class="hs-divider"></div>
-            <div class="hs-item">
-                <div class="hs-label">Recognized</div>
-                <div class="hs-value"><span id="stat-count">0</span></div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Scanner -->
-    <div id="scanner-frame">
-        <div class="frame-glow"></div>
-        <div class="sf-corner sf-tl"></div>
-        <div class="sf-corner sf-tr"></div>
-        <div class="sf-corner sf-bl"></div>
-        <div class="sf-corner sf-br"></div>
-        <div id="scan-line"></div>
-    </div>
+                <div class="absolute top-4 left-4 z-40">
+                    <button id="btnUnlockAudio" class="bg-surface/20 hover:bg-surface/40 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border border-white/10">
+                        <span class="material-symbols-outlined text-[16px]">volume_up</span> Bật Loa
+                    </button>
+                </div>
 
-    <!-- Result -->
-    <div id="result-panel">
-        <div class="d-flex align-items-center gap-3 position-relative" style="z-index:1">
-            <img id="res-avatar" src="" class="res-avatar" onerror="this.onerror=null; this.src='/static/img/logo_MTU.jpg'">
-            <div class="flex-grow-1">
-                <div id="res-status" class="res-badge res-badge-ok"><i class="fas fa-shield-check"></i> Access Granted</div>
-                <div id="res-name" class="res-name">—</div>
-                <div id="res-mssv" class="res-mssv">MSSV: —</div>
-                <div id="res-time" class="res-time" style="font-size: 0.95rem; color: #94a3b8; margin-top: 4px; font-weight: 500;"><i class="fas fa-clock"></i> Thời gian: <span id="res-time-val">—</span></div>
-                <div id="res-msg" class="res-msg" style="margin-top: 4px;">—</div>
-            </div>
-        </div>
-    </div>
+                <!-- Video Feed Container -->
+                <div class="absolute inset-0 w-full h-full bg-black flex items-center justify-center">
+                    <img id="videoPlaceholder" class="w-full h-full object-cover opacity-50" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%230b1c30'/%3E%3Ctext x='320' y='240' font-family='sans-serif' font-size='18' fill='%2345464d' text-anchor='middle'%3ESYSTEM OFFLINE%3C/text%3E%3C/svg%3E">
+                    
+                    <video id="webcam" autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover scale-x-[-1]" style="display:none;"></video>
+                    <img id="rtspVideo" crossorigin="anonymous" class="absolute inset-0 w-full h-full object-cover" style="display:none;">
+                    
+                    <!-- Ẩn canvas capture của Kiosk -->
+                    <canvas id="canvas-capture" class="hidden"></canvas>
 
-    <!-- Logs -->
-    <div class="logs-panel d-none d-lg-flex">
-        <div class="logs-header">
-            <span><span class="pulse"></span> Live Feed</span>
-        </div>
-        <div id="log-container">
-            <div class="log-item text-center py-5 d-block" style="color:rgba(255,255,255,.2)">
-                <i class="fas fa-fingerprint d-block fs-1 mb-3"></i>
-                Đang chờ nhận diện...
-            </div>
-        </div>
-    </div>
-
-    <div class="hud-footer">MTUFACE · "Trí tuệ xây dựng — Công nghệ tương lai"</div>
-
-<!-- ===== Pre-Livestream Setup Screen ===== -->
-<div id="setupScreen" class="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column setup-screen-bg" style="z-index: 9999; overflow-y: auto;">
-    <div class="container flex-grow-1 d-flex flex-column justify-content-center py-5 setup-container">
-        <div class="text-center mb-5 setup-header-anim">
-            <h1 class="fw-bold text-info mb-3" style="font-family: 'Orbitron', sans-serif; text-shadow: 0 0 20px rgba(6, 182, 212, 0.5);">
-                <i class="fas fa-satellite-dish me-3"></i>MTUFace Dashboard Kiosk
-            </h1>
-            <p class="fs-5" style="color: #94A3B8; letter-spacing: 1px;">Kiểm tra kết nối và cấu hình phiên điểm danh <span class="text-info opacity-75">(Dành cho Giảng Viên / Admin)</span></p>
-        </div>
-
-        <div class="row g-5 align-items-center">
-            <!-- Left: Preview -->
-            <div class="col-lg-7 slide-in-left">
-                <div class="cyber-panel">
-                    <div class="cyber-panel-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 text-info" style="font-family: 'Orbitron', sans-serif; letter-spacing: 1.5px;">
-                            <i class="fas fa-video me-2"></i>CAMERA PREVIEW
-                        </h6>
-                        <span class="badge bg-dark border border-info text-info px-3 py-2" id="previewStatus" style="font-family: 'Orbitron', sans-serif;">Chưa kết nối</span>
+                    <!-- Scanning HUD (Center) -->
+                    <div class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                        <div class="relative w-80 h-96 transition-all duration-700 ease-in-out pulse-glow" id="scanning-frame" style="border-color: transparent;">
+                            <div class="scan-bracket bracket-tl"></div>
+                            <div class="scan-bracket bracket-tr"></div>
+                            <div class="scan-bracket bracket-bl"></div>
+                            <div class="scan-bracket bracket-br"></div>
+                            <div class="scanning-line" id="scanLineAnim" style="opacity: 1;"></div>
+                        </div>
                     </div>
-                    <div class="card-body p-0 position-relative bg-black camera-preview-box" style="aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;">
-                        <video id="previewWebcam" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
-                        <img id="previewRtsp" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-                        <div class="corner-br"></div>
-                        <div id="previewPlaceholder" class="text-center" style="color: rgba(6, 182, 212, 0.4);">
-                            <div class="spinner-border text-info mb-3 d-none" id="previewLoading" role="status" style="width: 3rem; height: 3rem;"></div>
-                            <i class="fas fa-camera-slash mb-3" id="previewIcon" style="font-size: 4rem; filter: drop-shadow(0 0 10px rgba(6,182,212,0.2));"></i>
-                            <p id="previewText" style="font-family: 'Orbitron', sans-serif; letter-spacing: 1px;">Chờ tín hiệu Camera...</p>
+                </div>
+
+                <!-- Bottom Status Bar -->
+                <div class="absolute bottom-0 left-0 right-0 p-6 flex justify-between items-end bg-gradient-to-t from-primary-container to-transparent z-20 pointer-events-none">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2" id="statusIndicatorBadge">
+                            <span class="w-3 h-3 rounded-full bg-secondary animate-pulse" id="statusIndicator"></span>
+                            <span class="text-white font-semibold text-sm" id="statusText">System Active</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-white/70 text-xs font-bold uppercase tracking-wider mb-1" id="clock">--:--:--</div>
+                        <div class="flex items-center gap-2 justify-end">
+                            <span class="text-white font-mono text-sm">Processing Feed</span>
+                            <span class="material-symbols-outlined text-white animate-spin text-[18px]">refresh</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right: Config -->
-            <div class="col-lg-5 slide-in-right">
-                <div class="cyber-panel p-4 p-md-5">
-                    <h4 class="text-info mb-4 pb-3" style="font-family: 'Orbitron', sans-serif; border-bottom: 1px solid rgba(6, 182, 212, 0.3); text-shadow: 0 0 10px rgba(6,182,212,0.3);">
-                        <i class="fas fa-sliders-h me-2"></i> SYSTEM SETUP
-                    </h4>
+            <!-- Right: Current Match & Logs (Col span 4) -->
+            <div class="lg:col-span-4 flex flex-col gap-4 h-full">
+                
+                <!-- Current Student Matched -->
+                <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-5 h-[220px] flex flex-col justify-center relative overflow-hidden group">
+                    <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wider absolute top-4 left-5">Kết quả nhận diện</h3>
                     
-                    <div class="mb-4">
-                        <label class="form-label text-info fw-semibold" style="letter-spacing: 1px;"><i class="fas fa-signal me-2"></i>Nguồn Camera</label>
-                        <select id="setupCamSource" class="form-select form-select-lg cyber-select">
-                            <option value="webcam">Webcam Nội Bộ (Local)</option>
-                            <option value="rtsp_lan">Camera IMOU (LAN - 1.108)</option>
-                            <option value="rtsp_wan">Camera IMOU (WAN - 1.80)</option>
-                            <option value="rtsp_custom">RTSP Tùy Chỉnh Khác</option>
+                    <div class="w-full h-full flex flex-col items-center justify-center mt-4">
+                        <!-- Wait State -->
+                        <div id="waitState" class="text-center w-full animate-pulse">
+                            <span class="material-symbols-outlined text-[48px] text-on-surface-variant/30 mb-2">face_retouching_natural</span>
+                            <p class="text-sm font-semibold text-on-surface-variant">Đang chờ quét khuôn mặt...</p>
+                        </div>
+
+                        <!-- Success State (result-panel maps to this) -->
+                        <div id="result-panel" class="w-full h-full flex items-center gap-4 animate-[slideInRight_0.3s_ease-out]" style="display:none;">
+                            <div class="w-20 h-20 rounded-full bg-secondary/20 flex items-center justify-center border-2 border-secondary-fixed flex-shrink-0 text-secondary overflow-hidden">
+                                <img id="res-avatar" src="" class="w-full h-full object-cover" onerror="this.src='/static/img/logo_MTU.jpg'">
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-lg font-bold text-on-surface" id="res-name">—</h4>
+                                <p class="text-sm text-on-surface-variant font-mono mt-1 mb-2" id="res-mssv">MSSV: —</p>
+                                <div class="flex flex-wrap gap-2 text-xs font-bold">
+                                    <span class="bg-secondary/10 px-2 py-1 rounded flex items-center gap-1" id="res-status">
+                                        Đã điểm danh
+                                    </span>
+                                </div>
+                                <p class="text-[10px] text-on-surface-variant mt-2 font-semibold text-secondary" id="res-msg">—</p>
+                                <p class="text-[10px] text-on-surface-variant mt-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px]">schedule</span> <span id="res-time-val">—</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Log Table -->
+                <div class="flex-1 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
+                    <div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low/30">
+                        <h3 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">history</span>
+                            Lịch sử điểm danh
+                        </h3>
+                        <span class="bg-primary text-on-primary text-xs font-bold px-2 py-1 rounded-full" id="stat-count">0</span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto custom-scrollbar p-2" id="log-container">
+                        <div class="text-center py-12 text-on-surface-variant">
+                            <span class="material-symbols-outlined text-[48px] opacity-30 mb-2">receipt_long</span>
+                            <p class="font-semibold text-sm">Chưa có dữ liệu điểm danh</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRE-LIVESTREAM SETUP SCREEN -->
+    <div id="setupScreen" class="absolute inset-0 z-50 bg-background/95 backdrop-blur-xl flex items-center justify-center">
+        <div class="max-w-4xl w-full bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl p-8 mx-4">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-black text-on-surface mb-2 flex justify-center items-center gap-3">
+                    <span class="material-symbols-outlined text-[36px] text-primary">satellite_alt</span>
+                    Dashboard Kiosk Setup
+                </h1>
+                <p class="text-on-surface-variant">Cấu hình phiên điểm danh Kiosk trước khi bắt đầu</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Left: Preview -->
+                <div class="bg-surface-container border border-outline-variant rounded-xl overflow-hidden relative" style="aspect-ratio: 16/9;">
+                    <div class="absolute top-2 right-2 z-10">
+                        <span id="previewStatus" class="badge bg-warning">Chưa kết nối</span>
+                    </div>
+                    
+                    <video id="previewWebcam" autoplay playsinline muted class="w-full h-full object-cover scale-x-[-1]" style="display:none;"></video>
+                    <img id="previewRtsp" crossorigin="anonymous" class="w-full h-full object-cover" style="display:none;">
+                    
+                    <div id="previewPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-black/5 text-on-surface-variant">
+                        <div id="previewLoading" class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3 d-none"></div>
+                        <span id="previewIcon" class="material-symbols-outlined text-[48px] opacity-50 mb-2">videocam_off</span>
+                        <p id="previewText" class="text-sm font-semibold">Chờ tín hiệu Camera...</p>
+                    </div>
+                </div>
+
+                <!-- Right: Config Form -->
+                <div class="flex flex-col gap-5 justify-center">
+                    <div>
+                        <label class="block text-sm font-bold text-on-surface uppercase tracking-wider mb-2">
+                            Nguồn Camera
+                        </label>
+                        <select id="setupCamSource" class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-4 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                            <option value="webcam">📸 Webcam Trình Duyệt</option>
+                            <option value="rtsp_lan">🌐 Camera IMOU (LAN - 1.108)</option>
+                            <option value="rtsp_wan">🌐 Camera IMOU (WAN - 1.80)</option>
+                            <option value="rtsp_custom">⚙️ RTSP Tùy Chỉnh Khác</option>
                         </select>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label text-info fw-semibold" style="letter-spacing: 1px;"><i class="fas fa-users-viewfinder me-2"></i>Lớp Điểm Danh</label>
-                        <select id="setupLopId" class="form-select form-select-lg cyber-select">
+                    <div>
+                        <label class="block text-sm font-bold text-on-surface uppercase tracking-wider mb-2">
+                            Lớp Điểm Danh
+                        </label>
+                        <select id="setupLopId" class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-4 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
                             <option value="">-- Chọn lớp học --</option>
                             {% for c in classes %}
                             <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
@@ -156,58 +300,99 @@
                         </select>
                     </div>
 
-                    <div class="mb-5">
-                        <label class="form-label text-info fw-semibold" style="letter-spacing: 1px;"><i class="fas fa-clock me-2"></i>Ca Học</label>
-                        <select id="setupStartTime" class="form-select form-select-lg cyber-select">
-                            <option value="auto">Tự động (Theo lịch học của lớp)</option>
+                    <div>
+                        <label class="block text-sm font-bold text-on-surface uppercase tracking-wider mb-2">
+                            Ca Học
+                        </label>
+                        <select id="setupStartTime" class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-4 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                            <option value="auto">Tự động (Theo lịch học)</option>
                             <option value="07:00">Ca Sáng (07:00 - 11:30)</option>
                             <option value="13:00">Ca Chiều (13:00 - 17:30)</option>
                             <option value="18:00">Ca Tối (18:00 - 21:00)</option>
                         </select>
                     </div>
 
-                    <button id="btnGoLive" class="btn btn-cyber btn-lg w-100 rounded-pill py-3">
-                        <i class="fas fa-power-off me-2 pulse-icon"></i> INITIALIZE SYSTEM
+                    <button id="btnGoLive" class="mt-2 w-full bg-primary text-on-primary font-bold py-4 rounded-xl shadow-lg hover:bg-primary/90 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">power_settings_new</span> KHỞI ĐỘNG HỆ THỐNG
                     </button>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<!-- Global: Bypass ngrok warning cho tất cả fetch request -->
-<script>
-(function() {
-    const _f = window.fetch;
-    window.fetch = function(u, o) {
-        let isLocal = true;
-        try {
-            const urlStr = (typeof u === 'string') ? u : (u && u.url ? u.url : String(u));
-            if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {
-                if (new URL(urlStr).origin !== window.location.origin) isLocal = false;
-            }
-        } catch(e) {}
+
+    <!-- UI Bridge Script -->
+    <script>
+        // Bridge between kiosk.js logic and Tailwind UI
+        const resultPanel = document.getElementById('result-panel');
+        const waitState = document.getElementById('waitState');
         
-        if (isLocal) {
-            let newO = o ? { ...o } : {};
-            let newH = newO.headers ? newO.headers : {};
-            if (newH instanceof Headers) {
-                const h = new Headers(newH);
-                h.set('ngrok-skip-browser-warning', '1');
-                newO.headers = h;
-            } else {
-                newO.headers = { ...newH, 'ngrok-skip-browser-warning': '1' };
-            }
-            return _f.call(this, u, newO);
+        // Use MutationObserver to toggle waitState based on resultPanel visibility
+        const resObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'style') {
+                    if (resultPanel.style.display === 'none') {
+                        waitState.style.display = 'block';
+                    } else {
+                        waitState.style.display = 'none';
+                    }
+                }
+            });
+        });
+        resObserver.observe(resultPanel, { attributes: true });
+
+        // Overwrite addLog CSS slightly to match Tailwind via JS hook
+        const originalAddLog = window.addLog;
+        // We will define this after kiosk.js loads, or just style `.log-item` in css.
+    </script>
+    <style>
+        /* Styles for dynamic log items created by kiosk.js */
+        .log-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid theme('colors.outline-variant');
+            gap: 12px;
         }
-        
-        if (o === undefined) return _f.call(this, u);
-        return _f.call(this, u, o);
-    };
-})();
-</script>
+        .log-item:last-child { border-bottom: none; }
+        .log-time { font-family: monospace; font-size: 12px; color: theme('colors.on-surface-variant'); font-weight: 600; width: 45px; }
+        .log-name { font-weight: 700; font-size: 14px; color: theme('colors.on-surface'); }
+        .log-mssv { font-family: monospace; font-size: 12px; color: theme('colors.on-surface-variant'); }
+        .flex-grow-1 { flex-grow: 1; }
+        .log-check { color: theme('colors.secondary'); display: flex; align-items: center; }
+    </style>
+
+    <!-- Global: Bypass ngrok warning -->
+    <script>
+    (function() {
+        const _f = window.fetch;
+        window.fetch = function(u, o) {
+            let isLocal = true;
+            try {
+                const urlStr = (typeof u === 'string') ? u : (u && u.url ? u.url : String(u));
+                if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {
+                    if (new URL(urlStr).origin !== window.location.origin) isLocal = false;
+                }
+            } catch(e) {}
+            
+            if (isLocal) {
+                let newO = o ? { ...o } : {};
+                let newH = newO.headers ? newO.headers : {};
+                if (newH instanceof Headers) {
+                    const h = new Headers(newH);
+                    h.set('ngrok-skip-browser-warning', '1');
+                    newO.headers = h;
+                } else {
+                    newO.headers = { ...newH, 'ngrok-skip-browser-warning': '1' };
+                }
+                return _f.call(this, u, newO);
+            }
+            
+            if (o === undefined) return _f.call(this, u);
+            return _f.call(this, u, o);
+        };
+    })();
+    </script>
+    
+    <script src="{{ url_for('static', filename='js/pages/kiosk.js') }}?v=4"></script>
 </body>
 </html>
-
-{% block extra_js %}
-<script src="{{ url_for('static', filename='js/pages/kiosk.js') }}"></script>
-{% endblock %}

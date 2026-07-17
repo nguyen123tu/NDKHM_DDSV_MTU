@@ -1,123 +1,155 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
+{% block title %}Cảnh báo gian lận — MTU Face AI{% endblock %}
+{% block page_title %}Cảnh báo gian lận{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/fraud.css') }}">
 {% endblock %}
 
-{% block title %}Cảnh báo gian lận{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-exclamation-triangle text-danger me-2"></i>Cảnh báo gian lận điểm danh
-        </h1>
-    </div>
+<div class="max-w-container-max mx-auto space-y-xl">
 
-    <div class="card shadow mb-4 border-left-danger">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-danger">Danh sách các vi phạm phát hiện bởi hệ thống</h6>
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-xl">
+        <div>
+            <p class="text-sm text-on-surface-variant max-w-2xl">Danh sách các vi phạm hoặc nghi ngờ gian lận điểm danh được phát hiện tự động bởi hệ thống AI InsightFace (Fake GPS, Tráo ảnh, Nhận diện sai khuôn mặt).</p>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-light-flat table-hover" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Thời gian</th>
-                            <th>Sinh viên</th>
-                            <th>Lớp học</th>
-                            <th>Loại gian lận</th>
-                            <th>Bằng chứng</th>
-                            <th>Chi tiết</th>
-                            <th>Trạng thái</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for alert in alerts %}
-                        <tr id="row-{{ alert.id }}" class="{% if not alert.da_xu_ly %}bg-light-danger{% endif %} align-middle">
-                            <td>{{ alert.thoi_gian.strftime('%d/%m/%Y %H:%M:%S') if alert.thoi_gian else '' }}</td>
-                            <td>
-                                {% if alert.ho_ten %}
-                                <strong>{{ alert.ho_ten }}</strong><br>
-                                <small class="text-muted">{{ alert.mssv }}</small>
-                                {% else %}
-                                <span class="text-muted">Không xác định</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ alert.ma_lop or 'N/A' }}</td>
-                            <td>
-                                {% if alert.loai_gian_lan == 'Fake GPS' %}
-                                <span class="badge bg-warning text-dark"><i class="fas fa-map-marker-alt me-1"></i>{{ alert.loai_gian_lan }}</span>
-                                {% elif alert.loai_gian_lan == 'Spoofing' %}
-                                <span class="badge bg-danger"><i class="fas fa-mask me-1"></i>{{ alert.loai_gian_lan }}</span>
-                                {% else %}
-                                <span class="badge bg-secondary">{{ alert.loai_gian_lan }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                {% if alert.hinh_anh %}
-                                <a href="/{{ alert.hinh_anh }}" target="_blank">
-                                    <img src="/{{ alert.hinh_anh }}" alt="Bằng chứng" class="img-thumbnail" style="height: 60px; object-fit: cover; cursor: pointer;" onerror="let a=this.closest('a'); if(a){a.outerHTML=`<span class='text-muted small' title='File ảnh đã bị xóa khỏi ổ cứng'>[Ảnh đã xóa]</span>`;}">
-                                </a>
-                                {% else %}
-                                <span class="text-muted small">Không có</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="fraud-details">
-                                    {{ alert.chi_tiet }}
-                                </div>
-                            </td>
-                            <td id="status-{{ alert.id }}">
-                                {% if alert.da_xu_ly %}
-                                <span class="badge bg-success">Đã xử lý</span>
-                                {% else %}
-                                <span class="badge bg-danger">Chưa xử lý</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if not alert.da_xu_ly %}
-                                <button class="btn btn-sm btn-success mb-1" onclick="markResolved({{ alert.id }})" title="Đánh dấu đã xử lý">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                                {% endif %}
-                                {% if alert.ho_ten %}
-                                <button class="btn btn-sm btn-warning mb-1" onclick="cancelAttendance({{ alert.id }})" title="Hủy điểm danh ngày này">
-                                    <i class="fas fa-calendar-times"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger mb-1" onclick="lockAccount({{ alert.id }}, '{{ alert.ho_ten }}')" title="Khóa/Mở tài khoản">
-                                    <i class="fas fa-user-lock"></i>
-                                </button>
-                                {% endif %}
-                                <button class="btn btn-sm btn-outline-danger mb-1" onclick="deleteAlert({{ alert.id }})" title="Xóa log">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="8" class="text-center py-4">
-                                <img src="{{ url_for('static', filename='img/empty.svg') }}" alt="No alerts" style="max-height: 150px; opacity: 0.5;" onerror="this.style.display='none'">
-                                <p class="text-muted mt-3 mb-0">Tuyệt vời! Chưa phát hiện hành vi gian lận nào.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="flex items-center gap-3">
+            <div class="bg-error-container text-on-error-container px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 border border-error/50 shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">warning</span>
+                {{ alerts|length }} Cảnh báo
             </div>
         </div>
     </div>
+
+    <!-- Fraud Alerts Table -->
+    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+        
+        <!-- Toolbar -->
+        <div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low/30">
+            <h3 class="text-sm font-bold text-error flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">list_alt</span>
+                Chi tiết Vi phạm
+            </h3>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-surface-container-low">
+                    <tr>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Thời gian</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Sinh viên</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Lớp học</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Loại gian lận</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">Bằng chứng</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chi tiết / IP</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái</th>
+                        <th class="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant">
+                    {% if alerts %}
+                        {% for alert in alerts %}
+                        <tr id="row-{{ alert.id }}" class="transition-colors group {% if not alert.da_xu_ly %}bg-error/5 hover:bg-error/10{% else %}hover:bg-surface-container-low/50{% endif %}">
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-container-high text-on-surface rounded-lg text-xs font-mono font-bold shadow-sm">
+                                    <span class="material-symbols-outlined text-[14px]">schedule</span>
+                                    {{ alert.thoi_gian.strftime('%d/%m/%Y %H:%M') if alert.thoi_gian else '--/--' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if alert.ho_ten %}
+                                <div class="font-bold text-on-surface">{{ alert.ho_ten }}</div>
+                                <div class="text-xs text-on-surface-variant font-mono mt-0.5">{{ alert.mssv }}</div>
+                                {% else %}
+                                <span class="text-sm font-medium text-on-surface-variant/70 italic">Không xác định</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 font-semibold text-on-surface text-sm">{{ alert.ma_lop or 'N/A' }}</td>
+                            <td class="px-4 py-3">
+                                {% if alert.loai_gian_lan == 'Fake GPS' %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-500/10 text-orange-600 text-xs font-bold border border-orange-500/30">
+                                    <span class="material-symbols-outlined text-[14px]">location_off</span> {{ alert.loai_gian_lan }}
+                                </span>
+                                {% elif alert.loai_gian_lan == 'Spoofing' %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-error/10 text-error text-xs font-bold border border-error/30">
+                                    <span class="material-symbols-outlined text-[14px]">face_retouching_off</span> {{ alert.loai_gian_lan }}
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface-variant text-xs font-bold border border-outline-variant">
+                                    <span class="material-symbols-outlined text-[14px]">warning</span> {{ alert.loai_gian_lan }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                {% if alert.hinh_anh %}
+                                <a href="/{{ alert.hinh_anh }}" target="_blank" class="inline-block relative group/img cursor-zoom-in">
+                                    <img src="/{{ alert.hinh_anh }}" alt="Bằng chứng" class="h-12 w-12 object-cover rounded-lg border-2 border-outline-variant shadow-sm transition-transform group-hover/img:scale-110" onerror="this.outerHTML=`<span class='text-xs text-on-surface-variant/70 italic border border-dashed border-outline-variant rounded p-1'>[Ảnh hỏng]</span>`;">
+                                    <div class="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                        <span class="material-symbols-outlined text-white text-[16px]">visibility</span>
+                                    </div>
+                                </a>
+                                {% else %}
+                                <span class="text-xs text-on-surface-variant/50 italic">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="text-xs text-on-surface-variant font-mono bg-surface-container p-2 rounded-lg border border-outline-variant/30 max-w-[200px] break-words">
+                                    {{ alert.chi_tiet }}
+                                </div>
+                            </td>
+                            <td class="px-4 py-3" id="status-{{ alert.id }}">
+                                {% if alert.da_xu_ly %}
+                                <span class="inline-flex items-center gap-1 text-primary text-xs font-bold">
+                                    <span class="material-symbols-outlined text-[16px]">check_circle</span> Đã xử lý
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1 text-error text-xs font-bold animate-pulse">
+                                    <span class="material-symbols-outlined text-[16px]">error</span> Chưa xử lý
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="flex justify-end gap-2 flex-wrap max-w-[120px] ml-auto">
+                                    {% if not alert.da_xu_ly %}
+                                    <button onclick="markResolved({{ alert.id }})" class="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white flex items-center justify-center transition-colors border border-primary/20" title="Đánh dấu đã xử lý">
+                                        <span class="material-symbols-outlined text-[18px]">done</span>
+                                    </button>
+                                    {% endif %}
+                                    {% if alert.ho_ten %}
+                                    <button onclick="cancelAttendance({{ alert.id }})" class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-600 hover:bg-orange-500 hover:text-white flex items-center justify-center transition-colors border border-orange-500/20" title="Hủy điểm danh ngày này">
+                                        <span class="material-symbols-outlined text-[18px]">calendar_add_on</span>
+                                    </button>
+                                    <button onclick="lockAccount({{ alert.id }}, '{{ alert.ho_ten }}')" class="w-8 h-8 rounded-lg bg-error/10 text-error hover:bg-error hover:text-white flex items-center justify-center transition-colors border border-error/20" title="Khóa tài khoản sinh viên">
+                                        <span class="material-symbols-outlined text-[18px]">person_off</span>
+                                    </button>
+                                    {% endif %}
+                                    <button onclick="deleteAlert({{ alert.id }})" class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error hover:text-white flex items-center justify-center transition-colors border border-outline-variant" title="Xóa log cảnh báo này">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="px-6 py-20 text-center">
+                                <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/10 mb-6">
+                                    <span class="material-symbols-outlined text-[48px] text-primary">verified_user</span>
+                                </div>
+                                <h5 class="text-xl font-bold text-on-surface mb-2">Hệ thống an toàn</h5>
+                                <p class="text-sm text-on-surface-variant max-w-md mx-auto">Chưa phát hiện hành vi gian lận điểm danh nào từ sinh viên. Lớp học đang được bảo vệ chặt chẽ bởi InsightFace Engine.</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
-
-
-{% endblock %}
-
-{% block scripts %}
-
 {% endblock %}
 
 {% block extra_js %}
+<!-- Giữ nguyên JS cũ để xử lý logic xóa/đánh dấu đã xử lý -->
 <script src="{{ url_for('static', filename='js/pages/fraud.js') }}"></script>
 {% endblock %}

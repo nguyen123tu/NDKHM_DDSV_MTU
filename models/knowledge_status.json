@@ -1,10 +1,10 @@
 {
-  "last_built": "2026-07-07 23:02:12",
-  "total_chunks": 1207,
+  "last_built": "2026-07-17 19:48:13",
+  "total_chunks": 1218,
   "sources": [
     {
       "file": "README.md",
-      "chunks": 17
+      "chunks": 20
     },
     {
       "file": "docs/bao_cao_do_an.md",
@@ -56,7 +56,7 @@
     },
     {
       "file": "routes\\api_mobile.py",
-      "chunks": 239
+      "chunks": 240
     },
     {
       "file": "routes\\attendance.py",
@@ -72,7 +72,7 @@
     },
     {
       "file": "routes\\chatbot.py",
-      "chunks": 27
+      "chunks": 31
     },
     {
       "file": "routes\\classes.py",
@@ -96,7 +96,7 @@
     },
     {
       "file": "routes\\students.py",
-      "chunks": 38
+      "chunks": 41
     },
     {
       "file": "routes\\support.py",
@@ -112,7 +112,11 @@
     },
     {
       "file": "services\\ai_chatbot.py",
-      "chunks": 65
+      "chunks": 43
+    },
+    {
+      "file": "services\\ai_tools.py",
+      "chunks": 14
     },
     {
       "file": "services\\attendance_service.py",
@@ -124,7 +128,7 @@
     },
     {
       "file": "services\\export_service.py",
-      "chunks": 54
+      "chunks": 63
     },
     {
       "file": "services\\fcm_service.py",
@@ -160,7 +164,7 @@
     },
     {
       "file": "core\\camera.py",
-      "chunks": 44
+      "chunks": 43
     },
     {
       "file": "core\\detector.py",

@@ -141,7 +141,7 @@ function showResult(data) {
         });
     }
 
-    p.style.display = 'block';
+    p.style.display = 'flex';
     addLog(s);
     setTimeout(() => { p.style.display = 'none' }, 5000);
 }
@@ -167,7 +167,7 @@ function showError(msg, isUnknown = false) {
         ttsAudio.play().catch(e => { });
     }
 
-    p.style.display = 'block';
+    p.style.display = 'flex';
     setTimeout(() => { p.style.display = 'none'; }, 4000);
 }
 

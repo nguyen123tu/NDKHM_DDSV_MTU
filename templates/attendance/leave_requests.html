@@ -1,71 +1,114 @@
 {% extends "base.html" %}
 
-{% block title %}Đơn Xin Phép — MTUFace{% endblock %}
+{% block title %}Đơn Xin Phép — MTU Face AI{% endblock %}
 {% block page_title %}Quản lý đơn xin phép{% endblock %}
 
 {% block content %}
-<div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-envelope-open-text me-2"></i>Danh sách đơn</h5>
-            <div>
-                <a href="{{ url_for('attendance.list_leave_requests') }}" class="btn btn-sm {% if current_status is none %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-3">Tất cả</a>
-                <a href="{{ url_for('attendance.list_leave_requests', status=0) }}" class="btn btn-sm {% if current_status == 0 %}btn-warning text-white{% else %}btn-outline-warning{% endif %} rounded-pill px-3 ms-2">Chờ duyệt</a>
-                <a href="{{ url_for('attendance.list_leave_requests', status=1) }}" class="btn btn-sm {% if current_status == 1 %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill px-3 ms-2">Đã duyệt</a>
-            </div>
-        </div>
+<div class="max-w-container-max mx-auto space-y-xl">
 
-        <div class="table-responsive">
-            <table class="table align-middle table-hover">
-                <thead class="table-light">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-xl">
+        <div>
+            <p class="text-sm text-on-surface-variant max-w-2xl">Duyệt hoặc từ chối đơn xin phép vắng mặt của sinh viên. Sinh viên có đơn được duyệt sẽ không bị trừ điểm chuyên cần.</p>
+        </div>
+        <div class="flex items-center gap-2 bg-surface-container-low p-1.5 rounded-xl border border-outline-variant shadow-sm">
+            <a href="{{ url_for('attendance.list_leave_requests') }}" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors {% if current_status is none %}bg-primary text-on-primary shadow-md{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}">
+                Tất cả
+            </a>
+            <a href="{{ url_for('attendance.list_leave_requests', status=0) }}" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors {% if current_status == 0 %}bg-warning-container text-on-warning-container border border-warning shadow-md{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}">
+                Chờ duyệt
+            </a>
+            <a href="{{ url_for('attendance.list_leave_requests', status=1) }}" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors {% if current_status == 1 %}bg-secondary-container text-on-secondary-container border border-secondary shadow-md{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}">
+                Đã duyệt
+            </a>
+        </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-surface-container-low">
                     <tr>
-                        <th>Thời gian gửi</th>
-                        <th>Sinh viên</th>
-                        <th>Lớp học</th>
-                        <th>Lý do</th>
-                        <th>Minh chứng</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Gửi lúc</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Sinh viên</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Lớp học</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider max-w-[250px]">Lý do</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">Minh chứng</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-outline-variant">
                     {% for req in requests %}
-                    <tr>
-                        <td class="text-muted small">{{ req.thoi_gian_tao.strftime('%d/%m/%Y %H:%M') if req.thoi_gian_tao else '' }}</td>
-                        <td>
-                            <div class="fw-bold">{{ req.ho_ten }}</div>
-                            <div class="text-muted small">{{ req.mssv }}</div>
+                    <tr class="hover:bg-surface-container-low/50 transition-colors group">
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-1 text-on-surface-variant text-xs font-mono font-medium">
+                                <span class="material-symbols-outlined text-[14px]">schedule</span>
+                                {{ req.thoi_gian_tao.strftime('%d/%m/%Y %H:%M') if req.thoi_gian_tao else '--/--' }}
+                            </span>
                         </td>
-                        <td><span class="badge bg-light text-dark border">{{ req.ten_lop }}</span></td>
-                        <td style="max-width: 250px;" class="text-wrap">{{ req.ly_do }}</td>
-                        <td>
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-on-surface">{{ req.ho_ten }}</div>
+                            <div class="text-[10px] text-on-surface-variant uppercase mt-0.5 font-semibold font-mono">{{ req.mssv }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-block px-2.5 py-1 bg-surface-container-high text-on-surface-variant font-bold text-xs rounded border border-outline-variant/50">
+                                {{ req.ten_lop }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-on-surface max-w-[250px] truncate" title="{{ req.ly_do }}">{{ req.ly_do }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
                             {% if req.minh_chung_url %}
-                            <button type="button" class="btn btn-sm btn-outline-info" onclick="viewEvidence('/{{ req.minh_chung_url|replace('\\\\', '/') }}')">
-                                <i class="fas fa-image"></i> Xem
+                            <button type="button" onclick="viewEvidence('/{{ req.minh_chung_url|replace('\\', '/') }}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-container/20 text-primary hover:bg-primary-container rounded-lg text-xs font-bold transition-colors border border-primary-container/50">
+                                <span class="material-symbols-outlined text-[16px]">image</span>
+                                Xem ảnh
                             </button>
                             {% else %}
-                            <span class="text-muted small">Không có</span>
+                            <span class="text-xs text-on-surface-variant/50 italic">—</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="px-6 py-4">
                             {% if req.trang_thai == 0 %}
-                            <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Chờ duyệt</span>
+                            <span class="inline-flex items-center gap-1 text-warning-container bg-warning/10 border border-warning/20 px-2.5 py-1 rounded-md text-xs font-bold shadow-sm">
+                                <span class="material-symbols-outlined text-[14px]">pending</span> Chờ duyệt
+                            </span>
                             {% elif req.trang_thai == 1 %}
-                            <span class="badge bg-success"><i class="fas fa-check"></i> Đã duyệt</span>
+                            <span class="inline-flex items-center gap-1 text-secondary bg-secondary/10 border border-secondary/20 px-2.5 py-1 rounded-md text-xs font-bold shadow-sm">
+                                <span class="material-symbols-outlined text-[14px]">check_circle</span> Đã duyệt
+                            </span>
                             {% else %}
-                            <span class="badge bg-danger"><i class="fas fa-times"></i> Từ chối</span>
+                            <span class="inline-flex items-center gap-1 text-error bg-error/10 border border-error/20 px-2.5 py-1 rounded-md text-xs font-bold shadow-sm">
+                                <span class="material-symbols-outlined text-[14px]">cancel</span> Từ chối
+                            </span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="px-6 py-4 text-right">
                             {% if req.trang_thai == 0 %}
-                            <button class="btn btn-sm btn-success shadow-sm btn-approve" data-id="{{ req.id }}" title="Duyệt"><i class="fas fa-check"></i></button>
-                            <button class="btn btn-sm btn-danger shadow-sm btn-reject ms-1" data-id="{{ req.id }}" title="Từ chối"><i class="fas fa-times"></i></button>
+                            <div class="flex justify-end gap-2">
+                                <button class="btn-approve p-1.5 bg-secondary/10 text-secondary hover:bg-secondary hover:text-white rounded-lg transition-colors border border-secondary/20 shadow-sm" data-id="{{ req.id }}" title="Duyệt đơn">
+                                    <span class="material-symbols-outlined text-[18px]">done</span>
+                                </button>
+                                <button class="btn-reject p-1.5 bg-error/10 text-error hover:bg-error hover:text-white rounded-lg transition-colors border border-error/20 shadow-sm" data-id="{{ req.id }}" title="Từ chối đơn">
+                                    <span class="material-symbols-outlined text-[18px]">close</span>
+                                </button>
+                            </div>
+                            {% else %}
+                            <span class="text-xs text-on-surface-variant/50 italic">Đã xử lý</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">Không có đơn xin phép nào.</td>
+                        <td colspan="7" class="px-6 py-16 text-center">
+                            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-surface-container-high mb-4">
+                                <span class="material-symbols-outlined text-[40px] text-on-surface-variant">drafts</span>
+                            </div>
+                            <h5 class="text-lg font-bold text-on-surface mb-2">Không có đơn xin phép nào</h5>
+                            <p class="text-sm text-on-surface-variant">Danh sách trống theo bộ lọc hiện tại.</p>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -74,39 +117,72 @@
     </div>
 </div>
 
-<!-- Modal Xem Ảnh -->
-<div class="modal fade" id="evidenceModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Minh chứng xin phép</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body text-center bg-light">
-        <img id="evidenceImage" src="" alt="Minh chứng" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
-      </div>
+<!-- Modal Xem Ảnh Custom Tailwind -->
+<div id="evidenceModal" class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-surface rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden transform scale-95 transition-transform duration-300" id="evidenceModalContent">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+            <h3 class="text-lg font-bold text-on-surface">Minh chứng xin phép</h3>
+            <button type="button" onclick="closeEvidenceModal()" class="w-8 h-8 rounded-full bg-surface-container-high hover:bg-surface-variant flex items-center justify-center text-on-surface-variant transition-colors">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <div class="p-6 bg-surface-container-lowest text-center flex justify-center items-center min-h-[300px]">
+            <img id="evidenceImage" src="" alt="Minh chứng" class="max-w-full max-h-[60vh] object-contain rounded-lg border border-outline-variant shadow-sm">
+        </div>
+        
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-outline-variant bg-surface-container-low flex justify-end">
+            <button type="button" onclick="closeEvidenceModal()" class="px-5 py-2 bg-surface-container-high text-on-surface rounded-lg text-sm font-bold hover:bg-surface-variant transition-colors shadow-sm">
+                Đóng
+            </button>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // Custom Modal logic
     function viewEvidence(url) {
         document.getElementById('evidenceImage').src = url;
-        new bootstrap.Modal(document.getElementById('evidenceModal')).show();
+        const modal = document.getElementById('evidenceModal');
+        const content = document.getElementById('evidenceModalContent');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        void modal.offsetWidth; // trigger reflow
+        
+        modal.classList.replace('opacity-0', 'opacity-100');
+        content.classList.replace('scale-95', 'scale-100');
     }
 
+    function closeEvidenceModal() {
+        const modal = document.getElementById('evidenceModal');
+        const content = document.getElementById('evidenceModalContent');
+        
+        modal.classList.replace('opacity-100', 'opacity-0');
+        content.classList.replace('scale-100', 'scale-95');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+
+    // Actions
     document.querySelectorAll('.btn-approve').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const id = e.currentTarget.getAttribute('data-id');
-            if (confirm('Duyệt đơn xin phép này? Sinh viên sẽ nhận được thông báo.')) {
+            if (confirm('Duyệt đơn xin phép này? Sinh viên sẽ nhận được thông báo qua hệ thống.')) {
                 try {
                     const res = await fetch(`/attendance/approve-leave/${id}`, { method: 'POST' });
                     const data = await res.json();
                     if (data.success) location.reload();
                     else alert(data.message);
-                } catch(e) { alert('Lỗi kết nối'); }
+                } catch(e) { alert('Lỗi kết nối Server'); }
             }
         });
     });
@@ -114,13 +190,13 @@
     document.querySelectorAll('.btn-reject').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const id = e.currentTarget.getAttribute('data-id');
-            if (confirm('Từ chối đơn xin phép này? Sinh viên sẽ nhận được thông báo.')) {
+            if (confirm('Từ chối đơn xin phép này? Sinh viên sẽ vẫn bị tính vắng mặt.')) {
                 try {
                     const res = await fetch(`/attendance/reject-leave/${id}`, { method: 'POST' });
                     const data = await res.json();
                     if (data.success) location.reload();
                     else alert(data.message);
-                } catch(e) { alert('Lỗi kết nối'); }
+                } catch(e) { alert('Lỗi kết nối Server'); }
             }
         });
     });

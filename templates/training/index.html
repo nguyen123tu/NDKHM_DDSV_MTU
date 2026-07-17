@@ -1,81 +1,253 @@
 {% extends "base.html" %}
-{% block title %}Training AI — MTUFace{% endblock %}
-{% block page_title %}Training AI{% endblock %}
+
+{% block title %}Training AI — MTU Face AI{% endblock %}
+{% block page_title %}Training Mô hình AI{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/training_index.css') }}?v=2">
-
+<style>
+    /* ProgressBar Animation for Training */
+    .progress-bar-animated {
+        background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+        background-size: 1rem 1rem;
+        animation: progress-bar-stripes 1s linear infinite;
+    }
+    @keyframes progress-bar-stripes {
+        0% { background-position: 1rem 0; }
+        100% { background-position: 0 0; }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<!-- Engine Switcher -->
-<div class="engine-grid">
-    <div class="engine-card {{ 'active' if current_engine == 'insightface' }}" onclick="switchEngine('insightface')" id="btnInsightFace">
-        <div class="ec-icon" style="background:var(--gradient-card-1)"><i class="fas fa-atom"></i></div>
-        <div><div class="ec-name">InsightFace</div><div class="ec-sub">ArcFace + SCRFD</div></div>
-        <span class="ec-badge {% if insightface_ready %}badge-ready{% else %}badge-notready{% endif %}">{% if insightface_ready %}PKL ✓{% else %}Chưa Train{% endif %}</span>
-        <div class="ec-check"><i class="fas fa-check"></i></div>
-    </div>
-    <div class="engine-card {{ 'active' if current_engine == 'yolo_resnet' }}" onclick="switchEngine('yolo_resnet')" id="btnYoloResnet">
-        <div class="ec-icon" style="background:var(--gradient-card-2)"><i class="fas fa-robot"></i></div>
-        <div><div class="ec-name">YOLO + ResNet50</div><div class="ec-sub">Ultralytics + PyTorch</div></div>
-        <span class="ec-badge {% if yolo_ready %}badge-ready{% else %}badge-notready{% endif %}">{% if yolo_ready %}PKL ✓{% else %}Chưa Train{% endif %}</span>
-        <div class="ec-check"><i class="fas fa-check"></i></div>
-    </div>
-</div>
-<!-- Train Section -->
-<div class="train-section">
-    <div class="train-action">
-        <h5><i class="fas fa-satellite-dish" style="color:var(--accent)"></i> Training toàn bộ</h5>
-        <p>Quét toàn bộ ảnh sinh viên trong <code>database/</code> để trích xuất Embedding Vector. Tốn vài phút tùy CPU.</p>
-        <button id="btnTrainAll" class="btn-train-all"><i class="fas fa-rocket"></i> BẮT ĐẦU TRAINING</button>
-    </div>
-    <div class="status-panel">
-        <div class="progress-panel" id="progressPanel">
-            <h5><i class="fas fa-cogs me-2"></i>Đang trích xuất Vector...</h5>
-            <div class="d-flex justify-content-between mb-2">
-                <span class="fw-bold fs-5" style="color:var(--primary)" id="progressText">0%</span>
-                <span class="small" style="color:var(--text-secondary)" id="statusText">Đang tải mô hình...</span>
-            </div>
-            <div class="progress" style="height:12px;border-radius:10px"><div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%;background:var(--gradient-primary) !important;border-radius:10px"></div></div>
-            <div class="progress-detail">
-                <div class="pd-row"><i class="fas fa-user-circle"></i><span class="fw-bold">Sinh viên:</span><span id="currentStudentLabel" style="color:var(--primary);font-weight:600">—</span></div>
-                <div class="pd-row"><i class="fas fa-image"></i><span class="fw-bold">Tiến trình:</span><span id="detailLabel" style="color:var(--text-secondary)">Đang khởi tạo...</span></div>
-                <div class="pd-row"><i class="fas fa-clock"></i><span class="fw-bold">Thời gian:</span><span id="elapsedTime" style="color:var(--text-secondary)">0s</span></div>
-            </div>
-            <p class="small mt-3 mb-0" style="color:var(--text-muted)"><i class="fas fa-exclamation-circle me-1" style="color:var(--warning)"></i>Không tải lại trang trong quá trình này.</p>
-        </div>
-        <div class="status-idle" id="idlePanel">
-            <div class="idle-icon"><i class="fas fa-check-double"></i></div>
-            <h6 class="fw-bold mb-1" style="color:var(--text-primary)">AI sẵn sàng</h6>
-            <p class="small mb-0" style="color:var(--text-muted)">Não bộ đang hoạt động bình thường</p>
-        </div>
-    </div>
-</div>
+<div class="max-w-container-max mx-auto space-y-xl">
 
-<!-- Student List -->
-<div class="section-title"><span class="st-dot"></span><h6>Trạng thái ảnh sinh viên</h6></div>
-<div class="sv-grid">
-    {% for sv in students %}
-    <div class="sv-row">
-        <span class="sv-mssv">{{ sv.mssv }}</span>
-        <span class="sv-name">{{ sv.ho_ten }}</span>
-        <span class="sv-count" style="background:{% if sv.image_count == 0 %}rgba(225,112,85,.1);color:var(--danger){% else %}rgba(0,184,148,.1);color:var(--success){% endif %}">{{ sv.image_count }} ảnh</span>
-        <span class="sv-status" style="color:{% if sv.da_train == 1 %}var(--success){% else %}var(--danger){% endif %}">
-            <i class="fas fa-{% if sv.da_train == 1 %}check{% else %}times{% endif %}-circle"></i>
-            {% if sv.da_train == 1 %}Đã có não bộ{% else %}Chưa train{% endif %}
-        </span>
-        {% if sv.image_count > 0 %}
-        <button class="btn-train-single" data-mssv="{{ sv.mssv }}"><i class="fas fa-brain me-1"></i>Train</button>
-        {% else %}
-        <button class="btn-train-single" disabled style="opacity:.4;cursor:not-allowed"><i class="fas fa-camera me-1"></i>Cần ảnh</button>
-        {% endif %}
+    <!-- Header & Action Section -->
+    <div class="flex flex-col md:flex-row gap-8">
+        
+        <!-- Left: Action Card & Agent Selection -->
+        <div class="md:w-1/2 flex flex-col gap-4">
+            
+            <!-- Agent Selection -->
+            <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant shadow-sm">
+                <h3 class="text-lg font-bold text-on-surface mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[24px]">smart_toy</span>
+                    Chọn Agent (AI Engine)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- YOLOv11 + ResNet50 -->
+                    <div id="btnYoloResnet" onclick="switchEngine('yolo_resnet')" class="cursor-pointer rounded-xl border-2 p-4 transition-all hover:bg-surface-container-low flex flex-col gap-2 {{ 'border-primary bg-primary/5 shadow-md' if current_engine == 'yolo_resnet' else 'border-outline-variant bg-transparent' }}">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-on-surface">YOLOv11 + ResNet50</span>
+                            {% if current_engine == 'yolo_resnet' %}
+                            <span class="material-symbols-outlined text-primary">check_circle</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-xs text-on-surface-variant flex items-center justify-between mt-auto pt-2">
+                            <span>Vector 2048 chiều</span>
+                            {% if yolo_ready %}
+                            <span class="text-secondary font-bold text-[10px] bg-secondary/10 px-2 py-1 rounded-md">PKL SẴN SÀNG</span>
+                            {% else %}
+                            <span class="text-error font-bold text-[10px] bg-error/10 px-2 py-1 rounded-md">CHƯA TRAIN</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- InsightFace -->
+                    <div id="btnInsightFace" onclick="switchEngine('insightface')" class="cursor-pointer rounded-xl border-2 p-4 transition-all hover:bg-surface-container-low flex flex-col gap-2 {{ 'border-primary bg-primary/5 shadow-md' if current_engine == 'insightface' else 'border-outline-variant bg-transparent' }}">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-on-surface">InsightFace</span>
+                            {% if current_engine == 'insightface' %}
+                            <span class="material-symbols-outlined text-primary">check_circle</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-xs text-on-surface-variant flex items-center justify-between mt-auto pt-2">
+                            <span>Vector 512 chiều</span>
+                            {% if insightface_ready %}
+                            <span class="text-secondary font-bold text-[10px] bg-secondary/10 px-2 py-1 rounded-md">PKL SẴN SÀNG</span>
+                            {% else %}
+                            <span class="text-error font-bold text-[10px] bg-error/10 px-2 py-1 rounded-md">CHƯA TRAIN</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant shadow-sm h-full flex flex-col justify-center">
+                <h3 class="text-xl font-bold text-on-surface flex items-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-primary text-[28px]">model_training</span>
+                    Training AI Hàng Loạt
+                </h3>
+                <p class="text-sm text-on-surface-variant mb-6">Hệ thống sẽ quét toàn bộ hình ảnh sinh viên đã đăng ký để trích xuất Embedding Vector, tạo "bộ não" cho AI. Quá trình này tiêu tốn tài nguyên và có thể mất vài phút.</p>
+                
+                <button id="btnTrainAll" class="w-full bg-primary text-on-primary py-4 rounded-xl font-bold text-lg shadow-md hover:bg-primary/90 transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[24px]">rocket_launch</span>
+                    BẮT ĐẦU TRAINING
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: Status / Progress Panel -->
+        <div class="md:w-1/2">
+            <div class="bg-surface-container-lowest rounded-2xl p-8 border border-outline-variant shadow-sm h-full relative overflow-hidden">
+                
+                <!-- Idle State -->
+                <div id="idlePanel" class="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-lowest z-10 transition-opacity duration-300">
+                    <div class="w-20 h-20 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mb-4">
+                        <span class="material-symbols-outlined text-[40px]">check_circle</span>
+                    </div>
+                    <h4 class="text-xl font-bold text-on-surface">AI Sẵn Sàng</h4>
+                    <p class="text-sm text-on-surface-variant">Bộ não AI đang trong trạng thái nghỉ và ổn định.</p>
+                </div>
+
+                <!-- Progress State -->
+                <div id="progressPanel" class="flex flex-col justify-center h-full opacity-0 pointer-events-none z-0 transition-opacity duration-300">
+                    <h4 class="text-lg font-bold text-on-surface flex items-center gap-2 mb-6">
+                        <span class="material-symbols-outlined text-primary animate-spin">settings</span>
+                        Đang trích xuất Vector...
+                    </h4>
+                    
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="text-3xl font-black text-primary" id="progressText">0%</span>
+                        <span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider" id="statusText">Đang khởi tạo...</span>
+                    </div>
+                    
+                    <div class="w-full bg-surface-container h-3 rounded-full overflow-hidden mb-6">
+                        <div id="progressBar" class="h-full bg-primary progress-bar-animated transition-all duration-300" style="width: 0%;"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 bg-surface-container-low p-4 rounded-xl text-sm mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Sinh viên</span>
+                            <span class="font-semibold text-on-surface truncate" id="currentStudentLabel">—</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Tiến trình chi tiết</span>
+                            <span class="font-semibold text-primary truncate" id="detailLabel">—</span>
+                        </div>
+                        <div class="flex flex-col col-span-2">
+                            <span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Thời gian trôi qua</span>
+                            <span class="font-mono font-semibold text-on-surface" id="elapsedTime">00:00</span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-xs font-bold text-warning flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">warning</span>
+                        Vui lòng KHÔNG đóng hoặc tải lại trang web trong quá trình này.
+                    </p>
+                </div>
+                
+            </div>
+        </div>
+
     </div>
-    {% endfor %}
+
+    <!-- Student List Section -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant overflow-hidden">
+        <div class="p-6 border-b border-outline-variant flex items-center gap-2 bg-surface-container-low/30">
+            <span class="material-symbols-outlined text-secondary text-[24px]">recent_patient</span>
+            <h3 class="text-lg font-bold text-on-surface">Trạng thái Dữ liệu Sinh viên</h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-surface-container-low">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Sinh viên</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Số lượng ảnh</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái Não bộ</th>
+                        <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant">
+                    {% for sv in students %}
+                    <tr class="hover:bg-surface-container-low/50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-on-surface">{{ sv.ho_ten }}</div>
+                            <div class="text-xs text-on-surface-variant font-mono mt-0.5">{{ sv.mssv }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if sv.image_count == 0 %}
+                            <span class="inline-flex items-center gap-1 bg-error/10 text-error px-2.5 py-1 rounded-md text-xs font-bold border border-error/20">
+                                {{ sv.image_count }} ảnh
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 bg-secondary/10 text-secondary px-2.5 py-1 rounded-md text-xs font-bold border border-secondary/20">
+                                {{ sv.image_count }} ảnh
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if sv.da_train == 1 %}
+                            <span class="inline-flex items-center gap-1 text-secondary text-sm font-bold">
+                                <span class="material-symbols-outlined text-[18px]">psychology</span> Đã có não bộ
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 text-error text-sm font-bold">
+                                <span class="material-symbols-outlined text-[18px]">no_encryption</span> Chưa train
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            {% if sv.image_count > 0 %}
+                            <button class="btn-train-single px-4 py-2 bg-primary-container/20 text-primary hover:bg-primary-container rounded-lg text-sm font-bold transition-colors border border-primary-container/50 flex items-center justify-end gap-2 ml-auto" data-mssv="{{ sv.mssv }}">
+                                <span class="material-symbols-outlined text-[18px]">model_training</span> Train
+                            </button>
+                            {% else %}
+                            <button disabled class="px-4 py-2 bg-surface-container text-on-surface-variant/50 rounded-lg text-sm font-bold cursor-not-allowed flex items-center justify-end gap-2 ml-auto">
+                                <span class="material-symbols-outlined text-[18px]">no_photography</span> Thiếu ảnh
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/pages/training_index.js') }}"></script>
+<script>
+    // CSS Toggle cho panel
+    const btnTrainAll = document.getElementById('btnTrainAll');
+    const idlePanel = document.getElementById('idlePanel');
+    const progressPanel = document.getElementById('progressPanel');
 
+    // Override hoặc móc vào logic cũ nếu cần thiết. Logic gửi ajax được nằm ở static/js/pages/training_index.js
+    // Ở file JS cũ, nó truy xuất #idlePanel và #progressPanel thông qua d-none, d-block (bootstrap). 
+    // Mình sẽ tạo MutationObserver hoặc patch lại JS một chút tại đây nếu cần thiết, 
+    // hoặc thêm helper toggle class cho Tailwind.
+    
+    function showProgress() {
+        idlePanel.classList.add('opacity-0');
+        setTimeout(() => {
+            idlePanel.classList.add('hidden');
+            idlePanel.classList.remove('flex');
+            
+            progressPanel.classList.remove('pointer-events-none', 'z-0');
+            progressPanel.classList.add('z-10');
+            progressPanel.classList.remove('opacity-0');
+        }, 300);
+    }
+
+    function hideProgress() {
+        progressPanel.classList.add('opacity-0');
+        setTimeout(() => {
+            progressPanel.classList.add('pointer-events-none', 'z-0');
+            progressPanel.classList.remove('z-10');
+            
+            idlePanel.classList.remove('hidden');
+            idlePanel.classList.add('flex');
+            // reflow
+            void idlePanel.offsetWidth;
+            idlePanel.classList.remove('opacity-0');
+        }, 300);
+    }
+    
+    // Ghi đè phương thức cũ trong trường hợp training_index.js dùng jQuery show/hide:
+    // Có thể tạm thời bỏ qua vì JS cũ sẽ thêm style="display: none" hoặc d-none, vẫn hoạt động với Tailwind nếu ta kiểm soát tốt.
+</script>
+<script src="{{ url_for('static', filename='js/pages/training_index.js') }}"></script>
 {% endblock %}

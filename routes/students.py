@@ -129,13 +129,31 @@ def api_add():
         'mssv': mssv,
         'ho_ten': ho_ten,
         'lop_id': int(lop_id),
-        'avatar': f"{mssv}/0.jpg" if images else None # Set first image as avatar if available
+        'avatar': f"{mssv}/0.jpg" if images else None, # Set first image as avatar if available
+        'da_train': 0,
+        'trang_thai_face': 1
     }
     
-    # Save student to db
-    student_id = student_service.create(student_data)
-    if student_id < 0:
-        return jsonify({'success': False, 'msg': 'MSSV đã tồn tại hoặc lỗi CSDL'})
+    # Check if student already exists
+    existing = student_service.get_by_mssv(mssv)
+    if existing:
+        # Update existing student
+        update_data = {
+            'ho_ten': ho_ten,
+            'lop_id': int(lop_id),
+            'da_train': 0,
+            'trang_thai_face': 1
+        }
+        if images:
+            update_data['avatar'] = f"{mssv}/0.jpg"
+        
+        student_service.update(existing['id'], update_data)
+        student_id = existing['id']
+    else:
+        # Save new student to db
+        student_id = student_service.create(student_data)
+        if student_id < 0:
+            return jsonify({'success': False, 'msg': 'Lỗi CSDL khi thêm sinh viên'})
         
     # Save images to folder
     valid_count = 0
@@ -171,8 +189,16 @@ def api_add():
                 print(f"Error processing image {idx}: {e}")
                 pass
                 
-    return jsonify({'success': True, 'msg': 'Thêm sinh viên và ảnh thành công'})
+    return jsonify({'success': True, 'msg': 'Đăng ký khuôn mặt thành công!'})
 
+@students_bp.route('/api/student/<mssv>')
+@login_required
+def api_get_student(mssv):
+    """Lấy thông tin sinh viên theo MSSV để điền tự động"""
+    student = student_service.get_by_mssv(mssv)
+    if student:
+        return jsonify({'success': True, 'data': {'ho_ten': student['ho_ten'], 'lop_id': student['lop_id']}})
+    return jsonify({'success': False, 'msg': 'Không tìm thấy sinh viên'})
 
 @students_bp.route('/<int:id>')
 @login_required

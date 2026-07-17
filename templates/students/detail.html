@@ -1,140 +1,248 @@
 {% extends "base.html" %}
 
-{% block title %}Chi Tiết Sinh Viên{% endblock %}
+{% block title %}Chi Tiết Sinh Viên — MTU Face AI{% endblock %}
+{% block page_title %}Chi Tiết Sinh Viên{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div class="d-flex align-items-center">
-        <a href="{{ url_for('students.list_students') }}" class="btn btn-outline-secondary border-0 p-2 me-3 text-muted hover-text-dark">
-            <i class="fas fa-arrow-left fs-5"></i>
-        </a>
-        <h3 class="fw-bold m-0"><i class="fas fa-user-circle text-secondary me-2"></i> Hồ Sơ: {{ student.ho_ten }}</h3>
-    </div>
-    <div>
-        <a href="{{ url_for('students.edit', id=student.id) }}" class="btn btn-outline-warning">
-            <i class="fas fa-edit me-1"></i> Chỉnh Sửa
-        </a>
-    </div>
-</div>
+<div class="max-w-container-max mx-auto space-y-xl">
 
-<div class="row g-4 mb-4">
-    <!-- Info Panel -->
-    <div class="col-lg-4">
-        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 text-center h-100">
-            <div class="mb-4">
-                {% if student.avatar %}
-                <img src="{{ url_for('serve_database_file', filename=student.avatar) }}" class="rounded-circle border border-4 border-secondary border-opacity-50" width="160" height="160" style="object-fit: cover; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-                {% else %}
-                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark mx-auto border border-4 border-dark" style="width: 160px; height: 160px; font-size: 4rem;">
-                    {{ student.ho_ten[0] }}
-                </div>
-                {% endif %}
-                
-                <h4 class="mt-3 fw-bold text-dark mb-1">{{ student.ho_ten }}</h4>
-                <div class="text-info fw-medium">{{ student.mssv }}</div>
-                <div class="badge bg-secondary mt-2 fs-6">{{ student.ma_lop or 'Không Thuộc Lớp Nào' }}</div>
-            </div>
-            
-            <div class="text-start mt-4 border-top border-light border-opacity-10 pt-4">
-                <p class="mb-2 text-muted small text-uppercase fw-bold">Thông tin Liên hệ</p>
-                <p class="mb-2"><i class="fas fa-envelope text-secondary me-2 w-15px"></i> {{ student.email or 'Chưa cập nhật' }}</p>
-                <p class="mb-2"><i class="fas fa-phone text-secondary me-2 w-15px"></i> {{ student.sdt or 'Chưa cập nhật' }}</p>
-                
-                <p class="mb-2 text-muted small text-uppercase fw-bold mt-4">Thông tin Cánh Nhân</p>
-                <p class="mb-2"><i class="fas fa-birthday-cake text-secondary me-2 w-15px"></i> {{ student.ngay_sinh or 'Chưa cập nhật' }}</p>
-                <p class="mb-2"><i class="fas fa-venus-mars text-secondary me-2 w-15px"></i> {% if student.gioi_tinh == 1 %}Nam{% elif student.gioi_tinh == 0 %}Nữ{% else %}Chưa cập nhật{% endif %}</p>
+    <!-- Header / Actions -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-lg">
+        <div class="flex items-center gap-4">
+            <a href="{{ url_for('students.list_students') }}" class="p-2 border border-outline-variant rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <div>
+                <h3 class="text-2xl font-bold text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[28px]">account_circle</span>
+                    Hồ Sơ: {{ student.ho_ten }}
+                </h3>
             </div>
         </div>
+        <div>
+            <a href="{{ url_for('students.edit', id=student.id) }}" class="bg-surface-container-lowest text-primary px-5 py-2.5 rounded-lg text-sm font-bold border border-primary hover:bg-primary hover:text-on-primary transition-colors flex items-center gap-2 shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">edit</span>
+                Chỉnh Sửa
+            </a>
+        </div>
     </div>
-    
-    <!-- AI & Stats Data -->
-    <div class="col-lg-8 d-flex flex-column gap-4">
-        <!-- Trạng thái Kho AI -->
-        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 d-flex align-items-center p-4">
-            <div class="me-4 text-center">
-                {% if student.da_train == 1 %}
-                <i class="fas fa-brain text-success" style="font-size: 3rem;"></i>
-                {% else %}
-                <i class="fas fa-brain text-danger opacity-50" style="font-size: 3rem;"></i>
-                {% endif %}
-            </div>
-            <div class="flex-grow-1">
-                <h5 class="fw-bold mb-1">Trạng thái Vector Khuôn Mặt</h5>
-                {% if student.da_train == 1 %}
-                <p class="text-success m-0 mb-2"><i class="fas fa-check-circle me-1"></i> AI có thể nhận diện sinh viên này</p>
-                {% else %}
-                <p class="text-danger m-0 mb-2"><i class="fas fa-times-circle me-1"></i> AI chưa thể nhận diện! Cần Train Data.</p>
-                {% endif %}
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+        
+        <!-- Left: Info Panel -->
+        <div class="lg:col-span-1 space-y-lg">
+            
+            <!-- Avatar & Primary Info -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-[24px] p-8 shadow-sm flex flex-col items-center text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"></div>
                 
-                <div class="d-flex align-items-center mt-3 pt-3 border-top border-secondary border-opacity-25">
-                    <div class="text-muted small me-4">
-                        <i class="fas fa-images me-1"></i> Hình ảnh để học: <span class="text-dark fw-bold">{{ image_count }}</span>
+                <div class="relative z-10 mb-6 group">
+                    {% if student.avatar %}
+                    <img src="{{ url_for('serve_database_file', filename=student.avatar) }}" class="w-40 h-40 rounded-full object-cover border-4 border-surface shadow-[0_0_20px_rgba(0,108,73,0.2)] group-hover:scale-105 transition-transform duration-300">
+                    {% else %}
+                    <div class="w-40 h-40 rounded-full border-4 border-surface shadow-[0_0_20px_rgba(0,108,73,0.2)] bg-surface-container-high text-on-surface flex items-center justify-center text-5xl font-bold group-hover:scale-105 transition-transform duration-300">
+                        {{ student.ho_ten[0] }}
                     </div>
+                    {% endif %}
+                </div>
+                
+                <div class="relative z-10">
+                    <h4 class="text-xl font-bold text-on-surface mb-1">{{ student.ho_ten }}</h4>
+                    <p class="text-sm font-mono text-secondary mb-3">{{ student.mssv }}</p>
+                    <span class="bg-surface-container-high text-on-surface px-4 py-1.5 rounded-full text-xs font-semibold border border-outline-variant/50">
+                        {{ student.ma_lop or 'Chưa phân lớp' }}
+                    </span>
                 </div>
             </div>
-            <div class="d-flex flex-column gap-2">
-                <a href="{{ url_for('training.capture', mssv=student.mssv) }}" class="btn btn-sm btn btn-primary shadow-sm">
-                    <i class="fas fa-camera-retro me-1"></i> Thu Thập Ảnh (Webcam)
-                </a>
-                <button class="btn btn-sm btn-outline-info" onclick="trainSingle('{{ student.mssv }}')">
-                    <i class="fas fa-sync-alt me-1"></i> Train AI Gọi Đơn
-                </button>
+
+            <!-- Contact & Personal Details -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-[24px] p-6 shadow-sm">
+                
+                <h5 class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-4 border-b border-outline-variant pb-2">Thông tin Liên hệ</h5>
+                <div class="space-y-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-secondary">
+                            <span class="material-symbols-outlined text-[18px]">mail</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant">Email</p>
+                            <p class="text-sm font-medium text-on-surface">{{ student.email or 'Chưa cập nhật' }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-secondary">
+                            <span class="material-symbols-outlined text-[18px]">call</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant">Số điện thoại</p>
+                            <p class="text-sm font-medium text-on-surface">{{ student.sdt or 'Chưa cập nhật' }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-4 border-b border-outline-variant pb-2">Thông tin Cá nhân</h5>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-[18px]">cake</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant">Ngày sinh</p>
+                            <p class="text-sm font-medium text-on-surface">{{ student.ngay_sinh or 'Chưa cập nhật' }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-[18px]">wc</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant">Giới tính</p>
+                            <p class="text-sm font-medium text-on-surface">{% if student.gioi_tinh == 1 %}Nam{% elif student.gioi_tinh == 0 %}Nữ{% else %}Chưa cập nhật{% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
         
-        <!-- Logs Điểm Danh 50 lần gần nhất -->
-        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 flex-grow-1 p-0 overflow-hidden d-flex flex-column">
-            <div class="p-3 border-bottom border-light border-opacity-10 bg-light bg-opacity-50">
-                <h6 class="fw-bold m-0"><i class="fas fa-history text-warning me-2"></i> Lịch Sử Quét Bằng Máy (50 lần gần nhất)</h6>
+        <!-- Right: AI & History -->
+        <div class="lg:col-span-2 space-y-lg flex flex-col">
+            
+            <!-- Trạng thái Kho AI -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-[24px] p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                <div class="w-24 h-24 rounded-2xl flex items-center justify-center shrink-0 {% if student.da_train == 1 %}bg-secondary/10 border border-secondary/30 text-secondary{% else %}bg-error/10 border border-error/30 text-error{% endif %}">
+                    <span class="material-symbols-outlined text-[56px]">psychology</span>
+                </div>
+                
+                <div class="flex-1 text-center sm:text-left">
+                    <h5 class="text-lg font-bold text-on-surface mb-2">Trạng thái Sinh trắc học</h5>
+                    
+                    {% if student.da_train == 1 %}
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary border border-secondary/20 mb-4">
+                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                        <span class="text-sm font-bold">AI đã có thể nhận diện sinh viên này</span>
+                    </div>
+                    {% else %}
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-error/10 text-error border border-error/20 mb-4">
+                        <span class="material-symbols-outlined text-[18px]">cancel</span>
+                        <span class="text-sm font-bold">AI chưa thể nhận diện! Cần Training.</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-4 text-sm">
+                        <div class="flex items-center gap-2 text-on-surface-variant bg-surface-container-high px-3 py-1.5 rounded-lg">
+                            <span class="material-symbols-outlined text-[18px]">imagesmode</span>
+                            <span>Số lượng ảnh mẫu: <strong class="text-on-surface">{{ image_count }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-row sm:flex-col gap-3 shrink-0">
+                    <button class="bg-primary text-on-primary px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors flex items-center gap-2 justify-center shadow-md whitespace-nowrap" onclick="trainSingle('{{ student.mssv }}')">
+                        <span class="material-symbols-outlined text-[18px]">model_training</span>
+                        Train AI Gọi Đơn
+                    </button>
+                    <!-- Tương lai có thể thêm button gọi tới Modal chụp -->
+                </div>
             </div>
             
-            <div class="table-responsive flex-grow-1" style="max-height: 350px;">
-                <table class="table table-light-flat mb-0 table-sm">
-                    <thead class="sticky-top bg-light">
-                        <tr>
-                            <th class="ps-3 border-0">Thời Gian Quét</th>
-                            <th class="border-0">Khoảng Accuracy</th>
-                            <th class="border-0">Trạng Thái</th>
-                            <th class="border-0">Thuộc Lớp Lúc Điểm Danh</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in history %}
-                        <tr>
-                            <td class="ps-3 text-dark">{{ log.thoi_gian.strftime('%H:%M %d/%m/%Y') }}</td>
-                            <td>
-                                {% if log.do_chinh_xac %}
-                                <div class="progress bg-light w-75" style="height: 5px;">
-                                    <div class="progress-bar bg-success" style="width: {{ (log.do_chinh_xac * 100)|int }}%"></div>
-                                </div>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if log.trang_thai == 'Co mat' %}
-                                <span class="text-success small fw-bold">Thành Công</span>
-                                {% else %}
-                                <span class="text-warning small fw-bold">{{ log.trang_thai }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-muted small">{{ log.ma_lop }}</td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-center py-5 text-muted">Chưa từng được AI quét thấy lần nào.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <!-- Logs Điểm Danh 50 lần gần nhất -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-[24px] shadow-sm flex-1 flex flex-col overflow-hidden">
+                <div class="p-5 border-b border-outline-variant bg-surface-container-low/50">
+                    <h6 class="font-bold text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary">history</span>
+                        Lịch Sử Quét Bằng Máy (50 lần gần nhất)
+                    </h6>
+                </div>
+                
+                <div class="overflow-x-auto flex-1 max-h-[400px] custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-surface-container-lowest sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th class="px-6 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Thời Gian Quét</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Khoảng Accuracy</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Trạng Thái</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Lớp Điểm Danh</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-outline-variant">
+                            {% for log in history %}
+                            <tr class="hover:bg-surface-container-low transition-colors">
+                                <td class="px-6 py-4 text-sm font-medium text-on-surface">{{ log.thoi_gian.strftime('%H:%M %d/%m/%Y') }}</td>
+                                <td class="px-6 py-4">
+                                    {% if log.do_chinh_xac %}
+                                    <div class="w-full max-w-[150px] bg-surface-container-high rounded-full h-2 overflow-hidden flex items-center">
+                                        <div class="bg-secondary h-2 rounded-full" style="width: {{ (log.do_chinh_xac * 100)|int }}%"></div>
+                                    </div>
+                                    <span class="text-xs text-on-surface-variant mt-1 block">{{ (log.do_chinh_xac * 100)|int }}%</span>
+                                    {% else %}
+                                    <span class="text-on-surface-variant">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if log.trang_thai == 'Co mat' %}
+                                    <span class="inline-flex items-center gap-1 text-secondary text-xs font-bold bg-secondary/10 px-2.5 py-1 rounded-md border border-secondary/20">
+                                        <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                        Thành Công
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center gap-1 text-error text-xs font-bold bg-error/10 px-2.5 py-1 rounded-md border border-error/20">
+                                        <span class="material-symbols-outlined text-[14px]">error</span>
+                                        {{ log.trang_thai }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-on-surface-variant">{{ log.ma_lop }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center text-on-surface-variant">
+                                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-container-high mb-3">
+                                        <span class="material-symbols-outlined text-[24px]">search_off</span>
+                                    </div>
+                                    <p class="text-sm font-medium">Chưa từng được AI quét thấy lần nào.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+            
         </div>
     </div>
 </div>
-
-
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/pages/students_detail.js') }}"></script>
+<!-- Add an empty script block so any JS function can go here, or external files -->
+<script>
+    async function trainSingle(mssv) {
+        if(!confirm('Bạn có muốn khởi chạy quy trình Train AI cho sinh viên này không?')) return;
+        
+        try {
+            // Hiển thị toast hoặc loading (tùy thuộc vào system toast đã có)
+            alert('Đang gửi yêu cầu Train... Vui lòng đợi trong giây lát.');
+            
+            const formData = new FormData();
+            formData.append('mssv', mssv);
+            
+            const res = await fetch('{{ url_for("training.start") }}', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                alert('Train thành công! AI đã học được khuôn mặt.');
+                location.reload();
+            } else {
+                alert('Lỗi: ' + data.msg);
+            }
+        } catch (e) {
+            alert('Lỗi kết nối máy chủ khi gọi API Train.');
+        }
+    }
+</script>
 {% endblock %}
