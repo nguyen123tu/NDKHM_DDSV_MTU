@@ -2,7 +2,7 @@
 Route Dashboard (Trang chủ Admin)
 """
 
-from flask import render_template, jsonify
+from flask import render_template, jsonify, session
 from . import dashboard_bp
 from utils.decorators import login_required
 from services.attendance_service import get_today_summary, get_weekly_chart_data, get_top_absent_students
@@ -37,7 +37,7 @@ def index():
     
     # Lấy số lượng sinh viên chờ duyệt khuôn mặt
     pending_row = db_execute_one("SELECT COUNT(*) as count FROM sinh_vien WHERE trang_thai_face = 1")
-    total_pending = pending_row['count'] if pending_row else 0
+    total_pending = int(pending_row['count'] or 0) if pending_row else 0
     
     return render_template('dashboard/index.html',
                           today_stats=today_stats,
@@ -73,5 +73,10 @@ def kiosk():
       200:
         description: Thành công
     """
-    classes = get_all_classes()
+    # Lọc lớp học nếu là giảng viên
+    giang_vien_id = None
+    if session.get('admin_role') == 'giang_vien':
+        giang_vien_id = session.get('admin_id')
+        
+    classes = get_all_classes(giang_vien_id=giang_vien_id)
     return render_template('dashboard/kiosk.html', classes=classes)

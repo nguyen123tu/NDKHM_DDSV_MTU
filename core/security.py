@@ -14,6 +14,26 @@ import threading
 # Cấu trúc: { "nonce_string": expire_timestamp_float }
 _used_nonces = {}
 _nonce_lock = threading.Lock()
+_table_checked = False
+
+def _ensure_nonce_table():
+    global _table_checked
+    if _table_checked:
+        return
+    try:
+        from db.connection import execute_update
+        query = """
+        IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='replay_nonces' and xtype='U')
+        CREATE TABLE replay_nonces (
+            nonce VARCHAR(128) PRIMARY KEY,
+            expires_at FLOAT NOT NULL
+        )
+        """
+        execute_update(query)
+        _table_checked = True
+    except Exception as e:
+        import logging
+        logging.warning("Could not ensure replay_nonces table: %s", e)
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Tính khoảng cách (mét) giữa 2 tọa độ GPS bằng công thức Haversine"""
@@ -78,7 +98,7 @@ def verify_nonce(nonce, timestamp_ms, max_age_seconds=10):
     if abs(now - ts_sec) > max_age_seconds:
         return False, f"Yêu cầu quá hạn (Vượt quá {max_age_seconds} giây). Có dấu hiệu Replay Attack!"
         
-    # 2. Kiểm tra Nonce đã dùng chưa
+    # 2. Kiểm tra Nonce đã dùng chưa (Thread-Safe & DB Persistence)
     with _nonce_lock:
         # Dọn dẹp các nonce đã cũ trong bộ nhớ
         expired_keys = [k for k, exp in _used_nonces.items() if now > exp]
@@ -87,6 +107,22 @@ def verify_nonce(nonce, timestamp_ms, max_age_seconds=10):
             
         if nonce in _used_nonces:
             return False, "Mã Nonce đã được sử dụng. Có dấu hiệu Replay Attack!"
+            
+        # Thử kiểm tra và lưu trong Database để bền vững giữa các worker/restart
+        try:
+            from db.connection import execute_query, execute_update
+            _ensure_nonce_table()
+            # Dọn dẹp nonce cũ trong DB
+            execute_update("DELETE FROM replay_nonces WHERE expires_at < %s", (now,))
+            
+            row = execute_query("SELECT nonce FROM replay_nonces WHERE nonce = %s", (nonce,))
+            if row:
+                return False, "Mã Nonce đã được sử dụng. Có dấu hiệu Replay Attack!"
+                
+            execute_update("INSERT INTO replay_nonces (nonce, expires_at) VALUES (%s, %s)", (nonce, now + max_age_seconds))
+        except Exception as e:
+            import logging
+            logging.warning("Replay nonce DB check/save failed, falling back to in-memory: %s", e)
             
         # Lưu nonce với thời gian hết hạn
         _used_nonces[nonce] = now + max_age_seconds

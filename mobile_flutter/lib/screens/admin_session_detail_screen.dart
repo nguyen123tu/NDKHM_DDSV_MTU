@@ -94,14 +94,6 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.download, color: AppTheme.primary),
-            onPressed: () {
-              if (_students.isNotEmpty) {
-                ExportService.exportSessionToExcel(_students, widget.tenLop);
-              }
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.refresh, color: AppTheme.secondary),
             onPressed: _loadDetails,
           ),

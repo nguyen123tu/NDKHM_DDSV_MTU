@@ -359,19 +359,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       NeuContainer(
                         padding: const EdgeInsets.all(4),
                         shape: BoxShape.circle,
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: AppTheme.surfaceLight,
-                          backgroundImage: (_profileData != null &&
-                                  _profileData!['avatar'] != null)
-                              ? NetworkImage(
-                                  _getAvatarUrl(_profileData!['avatar']))
-                              : null,
-                          child: (_profileData == null ||
-                                  _profileData!['avatar'] == null)
-                              ? const Icon(Icons.person,
-                                  size: 50, color: AppTheme.textSecondary)
-                              : null,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppTheme.surfaceLight,
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: (_profileData != null && _profileData!['avatar'] != null)
+                              ? ApiImage(
+                                  path: _getAvatarUrl(_profileData!['avatar']),
+                                  fit: BoxFit.cover,
+                                  errorWidget: const Icon(Icons.person, size: 50, color: AppTheme.textSecondary),
+                                )
+                              : const Icon(Icons.person, size: 50, color: AppTheme.textSecondary),
                         ),
                       ),
                       Positioned(
@@ -623,18 +625,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.1)),
-                              image: DecorationImage(
-                                image: NetworkImage(
-                                    "${ApiService.baseUrl}/database/${_faceImages[index]}"),
-                                fit: BoxFit.cover,
-                              ),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                               boxShadow: [
-                                BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    blurRadius: 10)
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 10)
                               ],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: ApiImage(
+                              path: "database/${_faceImages[index]}",
+                              fit: BoxFit.cover,
                             ),
                           ).animate().scale(
                               delay: Duration(milliseconds: 100 * index));

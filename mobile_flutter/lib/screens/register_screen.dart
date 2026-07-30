@@ -653,7 +653,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ? Stack(
                               children: [
                                 Positioned.fill(
-                                    child: CameraPreview(_controller!)),
+                                    child: FittedBox(
+                                      fit: BoxFit.cover,
+                                      child: SizedBox(
+                                        width: _controller!.value.previewSize?.height ?? 1,
+                                        height: _controller!.value.previewSize?.width ?? 1,
+                                        child: CameraPreview(_controller!),
+                                      ),
+                                    )),
                                 Positioned.fill(
                                     child: CustomPaint(
                                         painter: OvalOverlayPainter())),
@@ -697,71 +704,78 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
 
                 // Thumbnail list
-                if (_capturedImages.isNotEmpty) ...[
-                  const Text("Ảnh đã chụp",
-                      style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 72,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _capturedImages.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                margin: const EdgeInsets.only(top: 6, right: 6),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                      color: AppTheme.primary.withValues(alpha: 0.8),
-                                      width: 2),
-                                  image: DecorationImage(
-                                      image: MemoryImage(
-                                          base64Decode(_capturedImages[index])),
-                                      fit: BoxFit.cover),
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4))
-                                  ],
-                                ),
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: GestureDetector(
-                                  onTap: () => setState(
-                                      () => _capturedImages.removeAt(index)),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
+                // Thumbnail list (Dùng SizedBox cố định chiều cao để không đẩy nút chụp xuống)
+                SizedBox(
+                  height: 120,
+                  child: _capturedImages.isNotEmpty ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Ảnh đã chụp",
+                          style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 72,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _capturedImages.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    width: 64,
+                                    height: 64,
+                                    margin: const EdgeInsets.only(top: 6, right: 6),
                                     decoration: BoxDecoration(
-                                      color: Colors.redAccent,
-                                      shape: BoxShape.circle,
+                                      borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                          color: AppTheme.background, width: 2),
+                                          color: AppTheme.primary.withValues(alpha: 0.8),
+                                          width: 2),
+                                      image: DecorationImage(
+                                          image: MemoryImage(
+                                              base64Decode(_capturedImages[index])),
+                                          fit: BoxFit.cover),
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.3),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 4))
+                                      ],
                                     ),
-                                    child: const Icon(Icons.close,
-                                        color: Colors.white, size: 12),
                                   ),
-                                ),
-                              ),
-                            ],
-                          ).animate().scale(begin: const Offset(0.5, 0.5)),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                                  Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: GestureDetector(
+                                      onTap: () => setState(
+                                          () => _capturedImages.removeAt(index)),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.redAccent,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                              color: AppTheme.background, width: 2),
+                                        ),
+                                        child: const Icon(Icons.close,
+                                            color: Colors.white, size: 12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ).animate().scale(begin: const Offset(0.5, 0.5)),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ) : const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 16),
 
                 // Hướng dẫn
                 NeuContainer(

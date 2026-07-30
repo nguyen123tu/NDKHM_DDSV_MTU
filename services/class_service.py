@@ -6,32 +6,36 @@ Tất cả truy vấn DB liên quan tới bảng lop_hoc đều nằm ở đây.
 from db.connection import execute_query, execute_one, execute_update
 
 
-def get_all(active_only=True):
+def get_all(active_only=True, giang_vien_id=None):
     """
     Lấy danh sách tất cả lớp học.
     
     Args:
         active_only: True → chỉ lấy lớp đang hoạt động
+        giang_vien_id: Lọc lớp học theo giảng viên
         
     Returns:
         list[dict]: Danh sách lớp học
     """
+    params = []
+    
+    sql = """
+        SELECT lh.*, 
+               (SELECT COUNT(*) FROM sinh_vien sv WHERE sv.lop_id = lh.id AND sv.trang_thai = 1) as si_so
+        FROM lop_hoc lh 
+        WHERE 1=1
+    """
+    
     if active_only:
-        sql = """
-            SELECT lh.*, 
-                   (SELECT COUNT(*) FROM sinh_vien sv WHERE sv.lop_id = lh.id AND sv.trang_thai = 1) as si_so
-            FROM lop_hoc lh 
-            WHERE lh.trang_thai = 1 
-            ORDER BY lh.id DESC
-        """
-    else:
-        sql = """
-            SELECT lh.*, 
-                   (SELECT COUNT(*) FROM sinh_vien sv WHERE sv.lop_id = lh.id AND sv.trang_thai = 1) as si_so
-            FROM lop_hoc lh 
-            ORDER BY lh.id DESC
-        """
-    return execute_query(sql)
+        sql += " AND lh.trang_thai = 1"
+        
+    if giang_vien_id is not None:
+        sql += " AND lh.giang_vien_id = %s"
+        params.append(giang_vien_id)
+        
+    sql += " ORDER BY lh.id DESC"
+    
+    return execute_query(sql, tuple(params) if params else None)
 
 
 def get_by_id(class_id):
@@ -59,16 +63,10 @@ def get_by_ma_lop(ma_lop):
 def create(data):
     """
     Thêm lớp học mới.
-    
-    Args:
-        data: dict với keys: ma_lop, ten_lop, khoa, hoc_ky, nam_hoc, giao_vien, mo_ta
-        
-    Returns:
-        int: ID lớp mới, hoặc -1 nếu lỗi
     """
     sql = """
-        INSERT INTO lop_hoc (ma_lop, ten_lop, khoa, hoc_ky, nam_hoc, giao_vien, mo_ta)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO lop_hoc (ma_lop, ten_lop, khoa, hoc_ky, nam_hoc, giao_vien, giang_vien_id, mo_ta)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
         data.get("ma_lop"),
@@ -77,6 +75,7 @@ def create(data):
         data.get("hoc_ky"),
         data.get("nam_hoc"),
         data.get("giao_vien"),
+        data.get("giang_vien_id"),
         data.get("mo_ta")
     )
     return execute_update(sql, params)
@@ -85,11 +84,8 @@ def create(data):
 def update(class_id, data):
     """
     Cập nhật thông tin lớp học.
-    
-    Returns:
-        bool: True nếu thành công
     """
-    allowed_fields = ["ma_lop", "ten_lop", "khoa", "hoc_ky", "nam_hoc", "giao_vien", "mo_ta", "trang_thai"]
+    allowed_fields = ["ma_lop", "ten_lop", "khoa", "hoc_ky", "nam_hoc", "giao_vien", "giang_vien_id", "mo_ta", "trang_thai"]
     set_parts = []
     params = []
 
@@ -127,15 +123,17 @@ def get_students_in_class(lop_id):
 
 def get_attendance_summary(lop_id, date=None):
     """
-    Thống kê điểm danh của lớp trong 1 ngày.
+    Thống kê điểm danh của lớp trong 1 ngày (hoặc phiên theo ngày).
     
     Args:
         lop_id: ID lớp học
         date: Ngày cần thống kê (mặc định: hôm nay)
         
     Returns:
-        dict: {"co_mat": int, "vang": int, "si_so": int, "ty_le": float}
+        dict: {"co_mat": int, "tre": int, "phep": int, "vang": int, "si_so": int, "ty_le": float, "weighted_score_rate": float}
     """
+    from config import Config
+
     # Đếm sĩ số lớp
     si_so_result = execute_one(
         "SELECT COUNT(*) as total FROM sinh_vien WHERE lop_id = %s AND trang_thai = 1",
@@ -143,7 +141,7 @@ def get_attendance_summary(lop_id, date=None):
     )
     si_so = si_so_result["total"] if si_so_result else 0
 
-    # Đếm có mặt
+    # Đếm chi tiết theo trạng thái
     if date:
         date_filter = "CAST(dd.thoi_gian AS DATE) = %s"
         params = (lop_id, date)
@@ -151,22 +149,51 @@ def get_attendance_summary(lop_id, date=None):
         date_filter = "CAST(dd.thoi_gian AS DATE) = CAST(GETDATE() AS DATE)"
         params = (lop_id,)
 
-    co_mat_sql = f"""
-        SELECT COUNT(DISTINCT dd.sinh_vien_id) as co_mat
+    present_sql = f"""
+        SELECT COUNT(DISTINCT dd.sinh_vien_id) as cnt
         FROM diem_danh dd
-        WHERE dd.lop_id = %s AND {date_filter} AND dd.trang_thai = 'Co mat'
+        WHERE dd.lop_id = %s AND {date_filter} 
+          AND (dd.status IN ('PRESENT', 'LATE') OR dd.trang_thai = N'Co mat' OR dd.trang_thai = 'Co mat')
     """
-    co_mat_result = execute_one(co_mat_sql, params)
-    co_mat = co_mat_result["co_mat"] if co_mat_result else 0
+    p_res = execute_one(present_sql, params)
+    present = p_res["cnt"] if p_res else 0
 
-    vang = si_so - co_mat
-    ty_le = (co_mat / si_so * 100) if si_so > 0 else 0
+    late_sql = f"""
+        SELECT COUNT(DISTINCT dd.sinh_vien_id) as cnt
+        FROM diem_danh dd
+        WHERE dd.lop_id = %s AND {date_filter} 
+          AND (dd.status = 'LATE' OR dd.trang_thai = N'Tre' OR dd.trang_thai = 'Tre')
+    """
+    l_res = execute_one(late_sql, params)
+    late = l_res["cnt"] if l_res else 0
+
+    excused_sql = f"""
+        SELECT COUNT(DISTINCT dd.sinh_vien_id) as cnt
+        FROM diem_danh dd
+        WHERE dd.lop_id = %s AND {date_filter} 
+          AND (dd.status = 'EXCUSED_ABSENCE' OR dd.trang_thai = N'Vắng có phép' OR dd.trang_thai = 'Vang co phep')
+    """
+    e_res = execute_one(excused_sql, params)
+    excused = e_res["cnt"] if e_res else 0
+
+    co_mat = present + late
+    vang = max(0, si_so - (present + late + excused))
+
+    ty_le = (co_mat / si_so * 100) if si_so > 0 else 0.0
+
+    w_p = getattr(Config, 'WEIGHT_PRESENT', 1.0)
+    w_l = getattr(Config, 'WEIGHT_LATE', 0.75)
+    w_e = getattr(Config, 'WEIGHT_EXCUSED', 1.0)
+    weighted_score = ((present * w_p + late * w_l + excused * w_e) / si_so * 100) if si_so > 0 else 0.0
 
     return {
         "co_mat": co_mat,
+        "tre": late,
+        "phep": excused,
         "vang": vang,
         "si_so": si_so,
-        "ty_le": round(ty_le, 1)
+        "ty_le": round(ty_le, 1),
+        "weighted_score_rate": round(weighted_score, 1)
     }
 
 def get_schedule(lop_id):

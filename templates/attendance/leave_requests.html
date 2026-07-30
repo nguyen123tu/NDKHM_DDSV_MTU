@@ -12,7 +12,7 @@
             <p class="text-sm text-on-surface-variant max-w-2xl">Duyệt hoặc từ chối đơn xin phép vắng mặt của sinh viên. Sinh viên có đơn được duyệt sẽ không bị trừ điểm chuyên cần.</p>
         </div>
         <div class="flex items-center gap-2 bg-surface-container-low p-1.5 rounded-xl border border-outline-variant shadow-sm">
-            <a href="{{ url_for('attendance.list_leave_requests') }}" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors {% if current_status is none %}bg-primary text-on-primary shadow-md{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}">
+            <a href="{{ url_for('attendance.list_leave_requests') }}" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors {% if current_status is none %}btn-gradient shadow-md{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}">
                 Tất cả
             </a>
             <a href="{{ url_for('attendance.list_leave_requests', status=0) }}" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors {% if current_status == 0 %}bg-warning-container text-on-warning-container border border-warning shadow-md{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}">
@@ -25,7 +25,7 @@
     </div>
 
     <!-- Requests Table -->
-    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden hover-card">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead class="bg-surface-container-low">

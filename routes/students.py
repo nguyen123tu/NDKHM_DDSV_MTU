@@ -8,11 +8,12 @@ import numpy as np
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.utils import secure_filename
 from . import students_bp
-from utils.decorators import login_required
 from utils.helpers import allowed_image
 from services import student_service, class_service
 from db.connection import execute_query, execute_update
+from utils.decorators import login_required, admin_required
 from config import Config
+from core.image_validator import save_validated_image
 
 import base64
 
@@ -46,6 +47,7 @@ def list_students():
 
 @students_bp.route('/add', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def add():
     """
     /add
@@ -77,10 +79,14 @@ def add():
                 student_dir = os.path.join(Config.DATABASE_DIR, mssv)
                 os.makedirs(student_dir, exist_ok=True)
                 
-                # Lưu avatar vào trong luôn (Làm file số 0)
+                # Lưu avatar vào trong luôn (Làm file số 0), xác thực và xóa EXIF
                 file_path = os.path.join(student_dir, f"0.{ext}")
-                file.save(file_path)
-                avatar_filename = f"{mssv}/0.{ext}" # path tương đối
+                try:
+                    save_validated_image(file, file_path)
+                    avatar_filename = f"{mssv}/0.{ext}" # path tương đối
+                except Exception as e:
+                    flash(f"Lỗi ảnh tải lên: {str(e)}", "danger")
+                    return redirect(url_for('students.list_students'))
         
         data = {
             'mssv': mssv,
@@ -256,6 +262,7 @@ def api_images(mssv):
     return jsonify(images)
 @students_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def edit(id):
     """
     /<int:id>/edit
@@ -299,10 +306,14 @@ def edit(id):
                 student_dir = os.path.join(Config.DATABASE_DIR, mssv)
                 os.makedirs(student_dir, exist_ok=True)
                 
-                # Ghi đè file 0
+                # Ghi đè file 0, xác thực và xóa EXIF
                 file_path = os.path.join(student_dir, f"0.{ext}")
-                file.save(file_path)
-                data['avatar'] = f"{mssv}/0.{ext}"
+                try:
+                    save_validated_image(file, file_path)
+                    data['avatar'] = f"{mssv}/0.{ext}"
+                except Exception as e:
+                    flash(f"Lỗi ảnh tải lên: {str(e)}", "danger")
+                    return redirect(url_for('students.detail', id=id))
         
         if student_service.update(id, data):
             flash("Cập nhật thành công", "success")
@@ -314,6 +325,7 @@ def edit(id):
 
 @students_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
+@admin_required
 def delete(id):
     """
     /<int:id>/delete

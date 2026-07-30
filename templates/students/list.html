@@ -19,7 +19,7 @@
                 <span class="material-symbols-outlined text-[18px]">notifications_active</span>
                 Gửi thông báo
             </button>
-            <button type="button" class="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 shadow-md flex items-center gap-2 transition-transform active:scale-95" onclick="openRegistrationModal()">
+            <button type="button" class="btn-gradient px-5 py-2 rounded-lg text-sm font-semibold shadow-md flex items-center gap-2 transition-transform active:scale-95" onclick="openRegistrationModal()">
                 <span class="material-symbols-outlined text-[18px]">person_add</span>
                 Đăng ký mới
             </button>
@@ -28,27 +28,27 @@
 
     <!-- Dashboard Stats (Bento Style) -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-lg mb-xl">
-        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between">
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between hover-card">
             <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Tổng sinh viên hiển thị</span>
             <div class="flex items-baseline gap-2 mt-3">
                 <span class="text-3xl font-bold">{{ pagination.total if pagination else students|length }}</span>
             </div>
         </div>
-        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between">
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between hover-card">
             <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Đã đăng ký FaceID</span>
             <div class="flex items-baseline gap-2 mt-3">
                 <span class="text-3xl font-bold text-secondary">{{ students|selectattr('da_train', 'equalto', 1)|list|length }}</span>
                 <span class="text-xs text-on-surface-variant">trên trang này</span>
             </div>
         </div>
-        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between">
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between hover-card">
             <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Chưa đăng ký</span>
             <div class="flex items-baseline gap-2 mt-3">
                 <span class="text-3xl font-bold text-error">{{ students|selectattr('da_train', 'equalto', 0)|list|length }}</span>
                 <span class="text-xs text-on-surface-variant">Yêu cầu bổ sung</span>
             </div>
         </div>
-        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative">
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative hover-card">
             <div class="z-10 relative">
                 <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Độ chính xác AI</span>
                 <div class="flex items-baseline gap-2 mt-3">

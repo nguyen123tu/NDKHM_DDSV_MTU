@@ -1,65 +1,70 @@
-# Biến môi trường
-.env
+# ============================================================
+# .gitignore: MTUFace (Security & Hygiene)
+# ============================================================
 
-# Python
+# Environment Variables & Sensitive Secrets
+.env
+.env.*
+!.env.example
+serviceAccountKey*.json
+*.pem
+*.key
+
+# Python & Virtual Environments
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
 *.egg-info/
 dist/
 build/
 venv/
 .venv/
+env/
+.env_venv/
 
-# AI Models (file lớn, download riêng)
+# Large AI Model Binaries & Serialized Embeddings
+*.pkl
+*.npz
+*.onnx
+*.pt
+*.pth
+*.weights
+*.h5
 models/*.pkl
 models/*.onnx
-*.pt
-
-# Database ảnh khuôn mặt (dữ liệu riêng tư)
-database/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-Thumbs.db
-.DS_Store
-
-# Backup
-_backup/
-
-# InsightFace model cache
+models/*.npz
 insightface/
 
-# Personal and junk files
-SO TAY SV 2020v4.pdf
-_fix_db.py
-migrate_old_database.py
-
-# Runtime artifacts
+# Runtime Database, Media Uploads & Evidence
+database/
+dataset/
+evidence/
+exports/
+uploads/
+models/chroma_db/
+mssql_data/
 *.log
 tmp/
 temp/
 
-# Evidence/media exports
-exports/
-evidence/
+# Flutter Mobile App Build Artifacts & Large Binaries
+mobile_flutter/build/
+mobile_flutter/.dart_tool/
+mobile_flutter/.flutter-plugins
+mobile_flutter/.flutter-plugins-dependencies
+*.apk
+*.aab
 
-# Training dataset (YOLO format images/labels)
-dataset/
+# IDE & OS Files
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+_backup/
 
-# ChromaDB vector store
-models/chroma_db/
-
-# PyTorch model weights
-*.pth
-
-serviceAccountKey.json
-.env.production
-
-# Docker volumes data
-mssql_data/
+# Legacy scripts & temporary files
+SO TAY SV 2020v4.pdf
+_fix_db.py
+migrate_old_database.py

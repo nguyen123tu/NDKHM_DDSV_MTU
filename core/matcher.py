@@ -50,16 +50,31 @@ class FaceMatcher:
         self._lock = threading.Lock()  # Thread-safe
         self.load_brain()
 
+    def _get_active_model_path(self):
+        if os.path.exists(self._pkl_path):
+            return self._pkl_path
+        legacy_path = self._pkl_path.replace('.npz', '.pkl')
+        if os.path.exists(legacy_path):
+            return legacy_path
+        return self._pkl_path
+
     def load_brain(self):
-        """Đọc file embeddings.pkl vào RAM."""
-        if not os.path.exists(self._pkl_path):
-            print(f"[AI MATCHER] Chưa tìm thấy file não bộ: {self._pkl_path}")
+        """Đọc file embeddings.npz (hoặc pkl legacy) vào RAM."""
+        active_path = self._get_active_model_path()
+        if not os.path.exists(active_path):
+            print(f"[AI MATCHER] Chưa tìm thấy file não bộ: {active_path}")
             return False
 
         try:
             with self._lock:
-                with open(self._pkl_path, 'rb') as f:
-                    self._known_faces = pickle.load(f)
+                if active_path.endswith('.npz'):
+                    data = np.load(active_path, allow_pickle=False)
+                    keys = [str(k) for k in data["keys"]]
+                    values = data["values"]
+                    self._known_faces = {k: v for k, v in zip(keys, values)}
+                else:
+                    with open(active_path, 'rb') as f:
+                        self._known_faces = pickle.load(f)
                 
                 # Tối ưu hóa: Tạo Ma trận (N x 512) để so sánh song song hàng nghìn mặt
                 if len(self._known_faces) > 0:
@@ -74,23 +89,24 @@ class FaceMatcher:
                     self._mssv_list = []
                     self._emb_matrix = np.array([])
                 
-                self._last_mtime = os.path.getmtime(self._pkl_path)
+                self._last_mtime = os.path.getmtime(active_path)
             print(f"[AI MATCHER] Đã nạp {len(self._known_faces)} vector não bộ (Ma trận Tối ưu).")
             return True
         except Exception as e:
-            print(f"[AI MATCHER LỖI] Không đọc được pkl: {e}")
+            print(f"[AI MATCHER LỖI] Không đọc được file não bộ ({active_path}): {e}")
             return False
 
     def reload_if_updated(self):
         """
-        Kiểm tra file pkl có được cập nhật không.
+        Kiểm tra file model (.npz/.pkl) có được cập nhật không.
         Nếu có → tự động reload vào RAM (hot-reload).
         Nên gọi hàm này mỗi 10 giây trong vòng lặp chính.
         """
-        if not os.path.exists(self._pkl_path):
+        active_path = self._get_active_model_path()
+        if not os.path.exists(active_path):
             return False
 
-        current_mtime = os.path.getmtime(self._pkl_path)
+        current_mtime = os.path.getmtime(active_path)
         if current_mtime > self._last_mtime:
             print("[AI MATCHER] Phát hiện não bộ mới! Đang reload...")
             return self.load_brain()

@@ -140,14 +140,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         const Icon(Icons.access_time, size: 16, color: AppTheme.accent),
                         const SizedBox(width: 6),
                         Text(
-                          "Tiết ${item['tiet_bat_dau']} - ${item['tiet_bat_dau'] + item['so_tiet'] - 1}", 
+                          "${(item['gio_bat_dau']?.toString().length ?? 0) >= 5 ? item['gio_bat_dau'].toString().substring(0, 5) : (item['gio_bat_dau'] ?? '')} - ${(item['gio_ket_thuc']?.toString().length ?? 0) >= 5 ? item['gio_ket_thuc'].toString().substring(0, 5) : (item['gio_ket_thuc'] ?? '')}", 
                           style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
                         ),
                         const Spacer(),
                         const Icon(Icons.room, size: 16, color: AppTheme.primary),
                         const SizedBox(width: 6),
                         Text(
-                          "${item['phong_hoc']}", 
+                          "${item['phong_hoc'] ?? item['phong'] ?? ''}", 
                           style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
                         ),
                       ],
@@ -158,7 +158,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         const Icon(Icons.person, size: 16, color: AppTheme.textMuted),
                         const SizedBox(width: 6),
                         Text(
-                          "GV: ${item['giang_vien']}", 
+                          "GV: ${item['giang_vien'] ?? item['giao_vien'] ?? ''}", 
                           style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
                         ),
                       ],

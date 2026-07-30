@@ -68,7 +68,8 @@
                         <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider w-16">STT</th>
                         <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Sinh viên</th>
                         <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Giờ vào lớp</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Giờ điểm danh</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Giờ vào (Check-in)</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Giờ ra (Check-out)</th>
                         <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Đi trễ</th>
                         <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider text-right">Bằng chứng</th>
                     </tr>
@@ -96,7 +97,7 @@
                         <td class="px-6 py-4">
                             <div class="flex flex-col">
                                 <span class="text-sm font-bold text-primary flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                    <span class="material-symbols-outlined text-[16px]">login</span>
                                     {{ item.thoi_gian.strftime('%H:%M:%S') if item.thoi_gian else '--:--' }}
                                 </span>
                                 <span class="text-[10px] text-on-surface-variant mt-0.5">
@@ -105,7 +106,18 @@
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            {% if item.di_tre_phut > 0 %}
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-secondary flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[16px]">logout</span>
+                                    {{ item.gio_ra.strftime('%H:%M:%S') if item.gio_ra else '--:--' }}
+                                </span>
+                                <span class="text-[10px] text-on-surface-variant mt-0.5">
+                                    {{ item.gio_ra.strftime('%d/%m/%Y') if item.gio_ra else '' }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if item.di_tre_phut is not none and item.di_tre_phut > 0 %}
                             <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-500/10 text-orange-600 text-xs font-bold border border-orange-500/20">
                                 <span class="material-symbols-outlined text-[14px]">warning</span>
                                 {{ item.di_tre_phut }} phút
@@ -118,9 +130,15 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 text-right">
-                            {% set note = item.ghi_chu or "" %}
-                            {% if note.startswith("EVIDENCE:") %}
-                                <a href="/{{ note.replace('EVIDENCE:', '', 1) }}" target="_blank" class="inline-flex items-center gap-1 text-primary hover:text-secondary transition-colors text-sm font-semibold bg-primary-container/10 px-3 py-1.5 rounded-lg border border-primary-container/20 group-hover:bg-primary-container/20">
+                            {% if item.anh_checkin or item.anh_checkout %}
+                                <button type="button" 
+                                        onclick="showEvidenceModal('{{ item.anh_checkin or '' }}', '{{ item.anh_checkout or '' }}', '{{ item.ho_ten }}', '{{ item.mssv }}')"
+                                        class="inline-flex items-center gap-1 text-primary hover:text-secondary transition-colors text-sm font-semibold bg-primary-container/10 px-3 py-1.5 rounded-lg border border-primary-container/20 group-hover:bg-primary-container/20">
+                                    <span class="material-symbols-outlined text-[18px]">image</span>
+                                    Xem ảnh
+                                </button>
+                            {% elif item.ghi_chu and item.ghi_chu.startswith("EVIDENCE:") %}
+                                <a href="/{{ item.ghi_chu.replace('EVIDENCE:', '', 1) }}" target="_blank" class="inline-flex items-center gap-1 text-primary hover:text-secondary transition-colors text-sm font-semibold bg-primary-container/10 px-3 py-1.5 rounded-lg border border-primary-container/20 group-hover:bg-primary-container/20">
                                     <span class="material-symbols-outlined text-[18px]">image</span>
                                     Xem ảnh
                                 </a>
@@ -152,10 +170,101 @@
         {% endif %}
     </div>
 
+    <!-- Image Evidence Modal -->
+    <div id="evidenceModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div class="bg-surface rounded-xl shadow-2xl border border-outline-variant w-full max-w-2xl transform scale-95 transition-transform duration-300" id="evidenceModalContent">
+            <div class="p-4 border-b border-outline-variant flex justify-between items-center">
+                <h3 class="text-lg font-bold text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">image</span>
+                    Bằng chứng điểm danh
+                </h3>
+                <button onclick="closeEvidenceModal()" class="text-on-surface-variant hover:text-error transition-colors p-1 rounded-full hover:bg-surface-container-high">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4 text-center">
+                    <p class="font-bold text-lg text-on-surface" id="modalStudentName"></p>
+                    <p class="text-sm text-on-surface-variant font-mono" id="modalStudentMssv"></p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Check-in Image -->
+                    <div class="flex flex-col items-center">
+                        <h4 class="text-sm font-semibold text-primary mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">login</span> Ảnh Check-in</h4>
+                        <div class="w-full aspect-square bg-surface-container-low rounded-lg border border-outline-variant flex items-center justify-center overflow-hidden relative group">
+                            <img id="modalCheckinImg" src="" alt="Check-in" class="w-full h-full object-contain hidden" />
+                            <div id="modalCheckinEmpty" class="text-on-surface-variant/50 text-sm flex flex-col items-center gap-1">
+                                <span class="material-symbols-outlined text-3xl">no_photography</span>
+                                Không có ảnh
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Check-out Image -->
+                    <div class="flex flex-col items-center">
+                        <h4 class="text-sm font-semibold text-secondary mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">logout</span> Ảnh Check-out</h4>
+                        <div class="w-full aspect-square bg-surface-container-low rounded-lg border border-outline-variant flex items-center justify-center overflow-hidden relative group">
+                            <img id="modalCheckoutImg" src="" alt="Check-out" class="w-full h-full object-contain hidden" />
+                            <div id="modalCheckoutEmpty" class="text-on-surface-variant/50 text-sm flex flex-col items-center gap-1">
+                                <span class="material-symbols-outlined text-3xl">no_photography</span>
+                                Không có ảnh
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
-<!-- Keep existing JS logic if any -->
+<script>
+    function showEvidenceModal(checkin, checkout, name, mssv) {
+        document.getElementById('modalStudentName').innerText = name;
+        document.getElementById('modalStudentMssv').innerText = `MSSV: ${mssv}`;
+        
+        const checkinImg = document.getElementById('modalCheckinImg');
+        const checkinEmpty = document.getElementById('modalCheckinEmpty');
+        if (checkin) {
+            checkinImg.src = '/' + checkin;
+            checkinImg.classList.remove('hidden');
+            checkinEmpty.classList.add('hidden');
+        } else {
+            checkinImg.classList.add('hidden');
+            checkinEmpty.classList.remove('hidden');
+        }
+        
+        const checkoutImg = document.getElementById('modalCheckoutImg');
+        const checkoutEmpty = document.getElementById('modalCheckoutEmpty');
+        if (checkout) {
+            checkoutImg.src = '/' + checkout;
+            checkoutImg.classList.remove('hidden');
+            checkoutEmpty.classList.add('hidden');
+        } else {
+            checkoutImg.classList.add('hidden');
+            checkoutEmpty.classList.remove('hidden');
+        }
+
+        const modal = document.getElementById('evidenceModal');
+        const modalContent = document.getElementById('evidenceModalContent');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeEvidenceModal() {
+        const modal = document.getElementById('evidenceModal');
+        const modalContent = document.getElementById('evidenceModalContent');
+        modal.classList.add('opacity-0');
+        modalContent.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+</script>
 <script src="{{ url_for('static', filename='js/pages/attendance_history.js') }}"></script>
 {% endblock %}

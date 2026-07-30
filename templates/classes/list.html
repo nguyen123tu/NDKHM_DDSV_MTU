@@ -15,7 +15,7 @@
             <p class="text-sm text-on-surface-variant">Theo dõi và quản lý các lớp học có sử dụng hệ thống điểm danh AI.</p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="{{ url_for('classes.add') }}" class="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 shadow-md flex items-center gap-2 transition-transform active:scale-95">
+            <a href="{{ url_for('classes.add') }}" class="btn-gradient px-5 py-2 rounded-lg text-sm font-semibold shadow-md flex items-center gap-2 transition-transform active:scale-95">
                 <span class="material-symbols-outlined text-[18px]">add</span>
                 Thêm Lớp Mới
             </a>
@@ -24,7 +24,7 @@
 
     <!-- Stats Bento Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-xl">
-        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative group">
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative group hover-card">
             <div class="flex justify-between items-start relative z-10">
                 <div>
                     <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Tổng số lớp</span>
@@ -39,7 +39,7 @@
             </div>
         </div>
 
-        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative group">
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative group hover-card">
             <div class="flex justify-between items-start relative z-10">
                 <div>
                     <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Tổng Sinh Viên</span>
@@ -54,7 +54,7 @@
             </div>
         </div>
 
-        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative group">
+        <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant flex flex-col justify-between overflow-hidden relative group hover-card">
             <div class="flex justify-between items-start relative z-10">
                 <div>
                     <span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Đang Hoạt Động</span>
@@ -81,7 +81,7 @@
     <!-- Class Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg" id="classGrid">
         {% for cls in classes %}
-        <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden hover:shadow-md transition-shadow flex flex-col class-card" data-search="{{ cls.ma_lop|lower }} {{ cls.ten_lop|lower }} {{ (cls.giao_vien or '')|lower }}">
+        <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden flex flex-col class-card hover-card" data-search="{{ cls.ma_lop|lower }} {{ cls.ten_lop|lower }} {{ (cls.giao_vien or '')|lower }}">
             
             <div class="p-5 flex gap-4 border-b border-outline-variant bg-gradient-to-br from-surface-container-lowest to-surface-container-low/50">
                 <div class="w-12 h-12 rounded-xl bg-primary-container/10 text-primary flex items-center justify-center flex-shrink-0 shadow-sm border border-primary-container/10">

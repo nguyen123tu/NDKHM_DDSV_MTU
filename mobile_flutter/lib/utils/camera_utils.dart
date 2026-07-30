@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
 class CameraUtils {
   /// Chuyển đổi CameraImage (từ ImageStream) sang InputImage cho ML Kit
@@ -99,6 +101,43 @@ class CameraUtils {
       return avgLuminance < threshold;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Crop khuôn mặt từ ảnh Camera (File) dựa vào boundingBox của ML Kit
+  static Future<File?> cropFaceFromImage(File originalFile, Rect boundingBox) async {
+    try {
+      final bytes = await originalFile.readAsBytes();
+      final decodedImage = img.decodeImage(bytes);
+      if (decodedImage == null) return null;
+
+      // Tính toán vùng crop, thêm padding (mở rộng bounding box) để không bị mất góc mặt
+      final int padding = 30; 
+      
+      int x = (boundingBox.left - padding).toInt();
+      int y = (boundingBox.top - padding).toInt();
+      int w = (boundingBox.width + padding * 2).toInt();
+      int h = (boundingBox.height + padding * 2).toInt();
+
+      // Đảm bảo không vượt quá biên ảnh
+      x = x < 0 ? 0 : x;
+      y = y < 0 ? 0 : y;
+      if (x + w > decodedImage.width) w = decodedImage.width - x;
+      if (y + h > decodedImage.height) h = decodedImage.height - y;
+
+      final croppedImage = img.copyCrop(decodedImage, x: x, y: y, width: w, height: h);
+      
+      // Nén ảnh đã crop (giảm quality để tiết kiệm dung lượng)
+      final compressedBytes = img.encodeJpg(croppedImage, quality: 80);
+      
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/cropped_face_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await tempFile.writeAsBytes(compressedBytes);
+      
+      return tempFile;
+    } catch (e) {
+      debugPrint('Lỗi crop ảnh: $e');
+      return null;
     }
   }
 }

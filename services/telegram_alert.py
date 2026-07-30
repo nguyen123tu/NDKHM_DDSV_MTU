@@ -5,13 +5,22 @@ import io
 import os
 
 # THIẾT LẬP THÔNG SỐ TELEGRAM
-# Ưu tiên lấy từ biến môi trường
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8762386247:AAEBvm2-qGIXf2T8gsiK5n8hXxlqqwak39c")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "7724279500")
+# Chỉ lấy từ biến môi trường để đảm bảo an toàn bảo mật
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
+def _is_telegram_configured():
+    """Kiểm tra xem token và chat_id đã được cấu hình đúng trong .env chưa"""
+    invalid_tokens = ("", "YOUR_BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN_HERE")
+    invalid_chats = ("", "YOUR_CHAT_ID", "YOUR_TELEGRAM_CHAT_ID_HERE")
+    return (
+        TELEGRAM_BOT_TOKEN not in invalid_tokens
+        and TELEGRAM_CHAT_ID not in invalid_chats
+    )
 
 def send_telegram_message(message):
     """Gửi tin nhắn văn bản tới Telegram"""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID or TELEGRAM_BOT_TOKEN == "YOUR_BOT_TOKEN":
+    if not _is_telegram_configured():
         print(f"[CẢNH BÁO TELEGRAM MÔ PHỎNG] Tin nhắn: {message}")
         return False
         
@@ -29,9 +38,9 @@ def send_telegram_photo(frame, message="Phát hiện đối tượng!"):
     Gửi khung hình ảnh và thông báo tới Telegram qua HTTP API.
     Tuy nhiên, nếu chưa điền Token, hàm sẽ chỉ in ra màn hình.
     """
-    if TELEGRAM_BOT_TOKEN == "YOUR_BOT_TOKEN" or TELEGRAM_CHAT_ID == "YOUR_CHAT_ID" or not TELEGRAM_BOT_TOKEN:
+    if not _is_telegram_configured():
         print(f"[CẢNH BÁO TELEGRAM MÔ PHỎNG] Tin nhắn: {message}")
-        print("=> Bạn chưa cấu hình Token Telegram nên không thể gửi thật.")
+        print("=> Bạn chưa cấu hình Token Telegram hợp lệ trong .env nên không thể gửi thật.")
         return False
         
     try:

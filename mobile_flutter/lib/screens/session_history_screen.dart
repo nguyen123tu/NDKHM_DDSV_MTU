@@ -51,6 +51,8 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
     }
   }
 
+  // Hủy kích hoạt chức năng xóa phiên trên mobile theo yêu cầu
+  /*
   Future<void> _deleteSession(int sessionId, String tenLop) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -107,6 +109,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
       }
     }
   }
+  */
 
   @override
   Widget build(BuildContext context) {
@@ -212,18 +215,8 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
               const SizedBox(height: 2),
               Text(maLop, style: TextStyle(color: const Color(0xFF1E293B).withValues(alpha: 0.5), fontSize: 12)),
             ])),
-            // Nút xóa
-            GestureDetector(
-              onTap: () => _deleteSession(session['id'], tenLop),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
-              ),
-            ),
+            // Nút xóa đã bị ẩn
+            const SizedBox(),
           ]),
           const SizedBox(height: 12),
           // Thông tin chi tiết

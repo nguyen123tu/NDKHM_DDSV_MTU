@@ -1,0 +1,18 @@
+# ============================================================
+# MTUFace Base Requirements (Web Server, Database, Auth, Security)
+# ============================================================
+Flask==3.0.3
+flask-socketio==5.3.6
+flask-session==0.5.0
+python-dotenv==1.0.1
+pymssql==2.3.0
+mysql-connector-python==8.3.0
+dbutils==3.0.3
+werkzeug==3.0.3
+eventlet==0.35.2
+PyJWT==2.8.0
+flask-cors==4.0.0
+Flask-Limiter==3.8.0
+requests==2.31.0
+firebase-admin==6.5.0
+flasgger==0.9.71

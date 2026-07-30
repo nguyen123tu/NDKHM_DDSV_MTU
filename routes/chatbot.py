@@ -9,6 +9,8 @@ import io
 from flask import Blueprint, render_template, request, jsonify, session, Response
 import json
 import time
+from utils.decorators import login_required, admin_required
+from core.limiter import limiter
 
 chatbot_bp = Blueprint('chatbot', __name__, url_prefix='/chatbot')
 
@@ -41,6 +43,7 @@ def chat_page():
 
 
 @chatbot_bp.route('/ask', methods=['POST'])
+@limiter.limit("20 per minute")
 def ask():
     """
     API: Gửi câu hỏi cho AI
@@ -100,6 +103,7 @@ def ask():
 
 
 @chatbot_bp.route('/ask_stream', methods=['POST'])
+@limiter.limit("20 per minute")
 def ask_stream():
     """
     API: Gửi câu hỏi cho AI (Streaming SSE)
@@ -190,6 +194,8 @@ def clear_chat():
 
 
 @chatbot_bp.route('/build-knowledge', methods=['POST'])
+@login_required
+@admin_required
 def build_knowledge():
     """
     API: Xây dựng/rebuild kho tri thức
@@ -207,6 +213,8 @@ def build_knowledge():
 
 
 @chatbot_bp.route('/knowledge-progress')
+@login_required
+@admin_required
 def knowledge_progress():
     """
     SSE: Stream tiến độ xây dựng kho tri thức
@@ -240,6 +248,8 @@ def knowledge_progress():
 
 
 @chatbot_bp.route('/download-export/<path:filename>')
+@login_required
+@admin_required
 def download_export(filename):
     """
     Tải file báo cáo do AI sinh ra
@@ -251,6 +261,8 @@ def download_export(filename):
 
 
 @chatbot_bp.route('/knowledge-status')
+@login_required
+@admin_required
 def knowledge_status():
     """
     API: Trạng thái kho tri thức

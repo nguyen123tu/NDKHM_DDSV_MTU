@@ -226,17 +226,29 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
-                                      item['thoi_gian']
-                                          .toString()
-                                          .split(' ')[0],
-                                      style: const TextStyle(fontSize: 12)),
-                                  Text(
-                                      item['thoi_gian']
-                                          .toString()
-                                          .split(' ')[1],
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold)),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.login, size: 12, color: Colors.green),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                          item['thoi_gian'] != null ? item['thoi_gian'].toString().split(' ').last : '--:--',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold, color: Colors.green)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.logout, size: 12, color: Colors.orange),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                          item['gio_ra'] != null ? item['gio_ra'].toString().split(' ').last : '--:--',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold, color: Colors.orange)),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),

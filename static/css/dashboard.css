@@ -6,7 +6,18 @@ CSS riêng cho màn hình Dashboard
     display: flex;
     align-items: center;
     padding: 1.5rem;
+    background-color: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    transition: var(--transition-smooth);
+    border: 1px solid rgba(0, 0, 0, 0.02);
 }
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+}
+
 
 .stat-icon {
     width: 60px;
@@ -22,33 +33,33 @@ CSS riêng cho màn hình Dashboard
 
 /* Colors cho icon */
 .icon-purple {
-    background: rgba(126, 34, 206, 0.1);
+    background: linear-gradient(135deg, rgba(126, 34, 206, 0.15) 0%, rgba(126, 34, 206, 0.05) 100%);
     color: #7E22CE;
-    border: 1px solid rgba(126, 34, 206, 0.2);
+    border: 1px solid rgba(126, 34, 206, 0.1);
 }
 
 .icon-blue {
-    background: rgba(29, 78, 216, 0.1);
+    background: linear-gradient(135deg, rgba(29, 78, 216, 0.15) 0%, rgba(29, 78, 216, 0.05) 100%);
     color: #1D4ED8;
-    border: 1px solid rgba(29, 78, 216, 0.2);
+    border: 1px solid rgba(29, 78, 216, 0.1);
 }
 
 .icon-green {
-    background: rgba(4, 120, 87, 0.1);
-    color: #047857;
-    border: 1px solid rgba(4, 120, 87, 0.2);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.1);
 }
 
 .icon-red {
-    background: rgba(185, 28, 28, 0.1);
-    color: #B91C1C;
-    border: 1px solid rgba(185, 28, 28, 0.2);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.1);
 }
 
 .icon-orange {
-    background: rgba(194, 65, 12, 0.1);
-    color: #C2410C;
-    border: 1px solid rgba(194, 65, 12, 0.2);
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.05) 100%);
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.1);
 }
 
 .stat-details {

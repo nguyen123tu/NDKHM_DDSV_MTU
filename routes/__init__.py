@@ -15,10 +15,11 @@ training_bp = Blueprint('training', __name__, url_prefix='/training')
 camera_mgmt_bp = Blueprint('camera_mgmt', __name__, url_prefix='/cameras')
 export_bp = Blueprint('export', __name__, url_prefix='/export')
 public_bp = Blueprint('public', __name__, url_prefix='/public')
-from routes.api_mobile import api_mobile_bp
+from routes.mobile import api_mobile_bp
 from routes.chatbot import chatbot_bp
 from routes.fraud import fraud_bp
 from routes.support import support_bp
+users_bp = Blueprint('users', __name__, url_prefix='/users')
 
 # Import các file route để register chức năng
-from . import auth, dashboard, students, classes, attendance, training, camera_mgmt, export, public, api_mobile, chatbot, fraud, support
+from . import auth, dashboard, students, classes, attendance, training, camera_mgmt, export, public, mobile, chatbot, fraud, support, users

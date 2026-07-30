@@ -243,17 +243,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  // More Menu (Settings, About, Logout)
+                                  // More Menu (About, Logout)
                                   PopupMenuButton<String>(
                                     onSelected: (value) {
                                       switch (value) {
-                                        case 'settings':
-                                          Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      const DeviceSettingsScreen()));
-                                          break;
                                         case 'about':
                                           Navigator.push(
                                               context,
@@ -279,18 +272,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                           size: 20),
                                     ),
                                     itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                          value: 'settings',
-                                          child: Row(children: [
-                                            Icon(Icons.settings,
-                                                color: AppTheme.secondary,
-                                                size: 18),
-                                            SizedBox(width: 12),
-                                            Text('Cấu hình',
-                                                style: TextStyle(
-                                                    color:
-                                                        AppTheme.textPrimary))
-                                          ])),
                                       const PopupMenuItem(
                                           value: 'about',
                                           child: Row(children: [
@@ -344,13 +325,34 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Text(
-                                    userName,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .displayLarge
-                                        ?.copyWith(fontSize: 32),
-                                  ).animate().fadeIn(delay: 150.ms),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          userName,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displayLarge
+                                              ?.copyWith(fontSize: 28),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ).animate().fadeIn(delay: 150.ms),
+                                        if (!isAdmin)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Text(
+                                              "${auth.user?.mssv ?? ''} - ${auth.user?.lopName ?? 'Không có lớp'}",
+                                              style: TextStyle(
+                                                color: AppTheme.textMuted,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ).animate().fadeIn(delay: 200.ms),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
                                   if (auth.isOfflineMode)
                                     Padding(
                                       padding: const EdgeInsets.only(left: 12),
@@ -515,33 +517,63 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final stats = attendance.stats;
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _buildGlassStatCard(
-            title: isAdmin ? "Tổng SV" : "Số phiên",
-            value: "${stats?.total ?? 0}",
-            icon: isAdmin ? Icons.people_alt : Icons.class_,
-            color: AppTheme.primary,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildGlassStatCard(
+                title: isAdmin ? "Tổng SV" : "Tổng Số Phiên",
+                value: "${stats?.total ?? 0}",
+                icon: isAdmin ? Icons.people_alt : Icons.class_,
+                color: AppTheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildGlassStatCard(
+                title: "Có mặt",
+                value: "${stats?.present ?? 0}",
+                icon: Icons.how_to_reg,
+                color: AppTheme.success,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildGlassStatCard(
-            title: "Có mặt",
-            value: "${stats?.present ?? 0}",
-            icon: Icons.how_to_reg,
-            color: AppTheme.success,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildGlassStatCard(
-            title: "Vắng",
-            value: "${stats?.absent ?? 0}",
-            icon: Icons.person_off,
-            color: AppTheme.error,
-          ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            if (!isAdmin) ...[
+              Expanded(
+                child: _buildGlassStatCard(
+                  title: "Đi trễ",
+                  value: "${stats?.late ?? 0}",
+                  icon: Icons.watch_later_outlined,
+                  color: AppTheme.warning,
+                ),
+              ),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: _buildGlassStatCard(
+                title: "Vắng",
+                value: "${stats?.absent ?? 0}",
+                icon: Icons.person_off,
+                color: AppTheme.error,
+              ),
+            ),
+            if (!isAdmin) ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildGlassStatCard(
+                  title: "Tỷ lệ",
+                  value: "${stats?.rate ?? 0}%",
+                  icon: Icons.percent,
+                  color: AppTheme.secondary,
+                ),
+              ),
+            ],
+          ],
         ),
       ],
     );
@@ -617,36 +649,98 @@ class _HomeScreenState extends State<HomeScreen> {
             ] else ...[
               Expanded(
                 child: _buildActionCard(
-                  title: "Đăng Ký",
-                  subtitle: "Cập nhật Face ID",
-                  icon: Icons.face_retouching_natural,
-                  gradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-                  onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const reg_screen.RegisterScreen())),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildActionCard(
                   title: "Lịch Học",
                   subtitle: "Thời khóa biểu",
                   icon: Icons.calendar_today,
-                  gradient: const [AppTheme.secondary, AppTheme.primary],
+                  gradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
                   onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (_) => const ScheduleScreen())),
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildActionCard(
+                  title: "Lịch Sử",
+                  subtitle: "Lịch sử điểm danh",
+                  icon: Icons.history,
+                  gradient: const [AppTheme.secondary, AppTheme.primary],
+                  onTap: () {
+                    // Navigate to history if available, or just show a message for now
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Tính năng đang phát triển')),
+                    );
+                  },
+                ),
+              ),
             ]
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            if (isAdmin) ...[
+        if (!isAdmin) ...[
+          const SizedBox(height: 24),
+          Text(
+            "Kết quả điểm danh gần nhất",
+            style: TextStyle(
+                color: Theme.of(context).textTheme.displayLarge?.color,
+                fontSize: 18,
+                fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Consumer<AttendanceProvider>(
+            builder: (context, attendance, child) {
+              if (attendance.history.isEmpty) {
+                return const Text("Chưa có dữ liệu", style: TextStyle(color: AppTheme.textMuted));
+              }
+              final lastRecord = attendance.history.first;
+              return NeuContainer(
+                padding: const EdgeInsets.all(16),
+                borderRadius: 16,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: lastRecord.trangThai.toUpperCase() == 'PRESENT' ? AppTheme.success.withValues(alpha: 0.1) : 
+                               (lastRecord.trangThai.toUpperCase() == 'LATE' ? AppTheme.warning.withValues(alpha: 0.1) : AppTheme.error.withValues(alpha: 0.1)),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        lastRecord.trangThai.toUpperCase() == 'PRESENT' ? Icons.check_circle : 
+                        (lastRecord.trangThai.toUpperCase() == 'LATE' ? Icons.watch_later : Icons.cancel),
+                        color: lastRecord.trangThai.toUpperCase() == 'PRESENT' ? AppTheme.success : 
+                               (lastRecord.trangThai.toUpperCase() == 'LATE' ? AppTheme.warning : AppTheme.error),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(lastRecord.thoiGian, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text("Giờ ra: ${lastRecord.gioRa ?? '--:--'}", style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      lastRecord.trangThai.toUpperCase() == 'PRESENT' ? 'Có mặt' : 
+                      (lastRecord.trangThai.toUpperCase() == 'LATE' ? 'Đi trễ' : 'Vắng'),
+                      style: TextStyle(
+                        color: lastRecord.trangThai.toUpperCase() == 'PRESENT' ? AppTheme.success : 
+                               (lastRecord.trangThai.toUpperCase() == 'LATE' ? AppTheme.warning : AppTheme.error),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+        if (isAdmin) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
               Expanded(
                 child: _buildActionCard(
                   title: "Thống Kê",
@@ -670,51 +764,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (_) => const StudentQRScannerScreen())),
-                ),
-              ),
-            ] else ...[
-              Expanded(
-                child: _buildActionCard(
-                  title: "AI Chatbot",
-                  subtitle: "Trợ lý học vụ AI",
-                  icon: Icons.auto_awesome,
-                  gradient: const [Color(0xFF10B981), Color(0xFF059669)],
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const ChatbotScreen())),
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                  child: SizedBox()), // Empty slot for student balance
-            ],
-          ],
-        ),
-        if (isAdmin) ...[
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildActionCard(
-                  title: "AI Chatbot",
-                  subtitle: "Trợ lý học vụ AI",
-                  icon: Icons.auto_awesome,
-                  gradient: const [Color(0xFF10B981), Color(0xFF059669)],
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const ChatbotScreen())),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildActionCard(
-                  title: "Quản Lý SV",
-                  subtitle: "Sửa/Xóa dữ liệu",
-                  icon: Icons.manage_accounts,
-                  gradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-                  onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              const admin_student.AdminStudentListScreen())),
                 ),
               ),
             ],

@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/api_image.dart';
 
 class FaceApprovalScreen extends StatefulWidget {
   const FaceApprovalScreen({super.key});
@@ -73,12 +74,18 @@ class _FaceApprovalScreenState extends State<FaceApprovalScreen> {
                         child: Column(
                           children: [
                             ListTile(
-                              leading: CircleAvatar(
-                                radius: 30,
-                                backgroundImage: NetworkImage(
-                                  item['avatar'].contains('uploads/avatars')
-                                    ? "${ApiService.baseUrl}/static/${item['avatar']}"
-                                    : "${ApiService.baseUrl}/database/${item['avatar']}"
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(30),
+                                child: SizedBox(
+                                  width: 60,
+                                  height: 60,
+                                  child: ApiImage(
+                                    path: item['avatar'].contains('uploads/avatars')
+                                      ? "static/${item['avatar']}"
+                                      : "database/${item['avatar']}",
+                                    fit: BoxFit.cover,
+                                    errorWidget: const Icon(Icons.person, size: 30, color: Colors.grey),
+                                  ),
                                 ),
                               ),
                               title: Text(item['ho_ten'], style: const TextStyle(fontWeight: FontWeight.bold)),

@@ -14,7 +14,14 @@ class Config:
     """Cấu hình chung cho toàn bộ hệ thống"""
 
     # Flask
-    SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'mtu_super_secret_key_2026')
+    SECRET_KEY = os.getenv('FLASK_SECRET_KEY', '')
+
+    # CORS & WebSocket Allowed Origins
+    ALLOWED_ORIGINS = [
+        o.strip()
+        for o in os.getenv('ALLOWED_ORIGINS', 'http://localhost:5001,http://127.0.0.1:5001').split(',')
+        if o.strip()
+    ]
 
     # Database Microsoft SQL Server
     DB_HOST = os.getenv('DB_HOST', 'localhost')
@@ -22,6 +29,7 @@ class Config:
     DB_NAME = os.getenv('DB_NAME', 'face_attendance_db')
     DB_USER = os.getenv('DB_USER', 'sa')
     DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+    DB_MAX_CONNECTIONS = int(os.getenv('DB_MAX_CONNECTIONS', 20))
 
     # Đường dẫn thư mục
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -30,9 +38,9 @@ class Config:
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'database')
 
     # AI Model Paths
-    EMBEDDINGS_PATH = os.path.join(MODELS_DIR, 'embeddings.pkl')
-    EMBEDDINGS_YOLO_PATH = os.path.join(MODELS_DIR, 'embeddings_yolo_resnet.pkl')
-    EMBEDDINGS_DEEPFACE_PATH = os.path.join(MODELS_DIR, 'embeddings_deepface.pkl')
+    EMBEDDINGS_PATH = os.path.join(MODELS_DIR, 'embeddings.npz')
+    EMBEDDINGS_YOLO_PATH = os.path.join(MODELS_DIR, 'embeddings_yolo_resnet.npz')
+    EMBEDDINGS_DEEPFACE_PATH = os.path.join(MODELS_DIR, 'embeddings_deepface.npz')
     
     # AI Engine: 'insightface', 'yolo_resnet', hoặc 'deepface'
     AI_ENGINE = os.getenv('AI_ENGINE', 'insightface')
@@ -80,6 +88,9 @@ class Config:
 
     # Session
     SESSION_TYPE = 'filesystem'
+    SESSION_COOKIE_SECURE = os.getenv('FLASK_ENV', 'development') == 'production'
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
 
     # Mobile API auth (JWT)
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)
@@ -90,6 +101,13 @@ class Config:
     MOBILE_ALLOWED_CHECKIN_EARLY_MIN = int(os.getenv('MOBILE_ALLOWED_CHECKIN_EARLY_MIN', 15))
     MOBILE_ALLOWED_CHECKIN_LATE_MIN = int(os.getenv('MOBILE_ALLOWED_CHECKIN_LATE_MIN', 30))
     LATE_GRACE_PERIOD_MIN = int(os.getenv('LATE_GRACE_PERIOD_MIN', 15))
+
+    # Attendance score weights
+    WEIGHT_PRESENT = float(os.getenv('WEIGHT_PRESENT', 1.0))
+    WEIGHT_LATE = float(os.getenv('WEIGHT_LATE', 0.75))
+    WEIGHT_EXCUSED = float(os.getenv('WEIGHT_EXCUSED', 1.0))
+    WEIGHT_UNEXCUSED = float(os.getenv('WEIGHT_UNEXCUSED', 0.0))
+    WEIGHT_EARLY_LEAVE = float(os.getenv('WEIGHT_EARLY_LEAVE', 0.5))
 
     @classmethod
     def init_dirs(cls):
@@ -103,6 +121,9 @@ class DevelopmentConfig(Config):
     """Cấu hình dành cho môi trường phát triển"""
     DEBUG = True
     FLASK_ENV = 'development'
+    SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'mtu_dev_secret_key_only_for_development')
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)
+    ALLOWED_ORIGINS = ["*"]
 
 
 class ProductionConfig(Config):
@@ -110,10 +131,25 @@ class ProductionConfig(Config):
     DEBUG = False
     FLASK_ENV = 'production'
 
+    @classmethod
+    def validate_config(cls):
+        """Kiểm tra cấu hình bắt buộc khi chạy Production"""
+        missing_or_default = []
+        if not cls.SECRET_KEY or cls.SECRET_KEY in ('mtu_super_secret_key_2026', 'mtu_dev_secret_key_only_for_development'):
+            missing_or_default.append('FLASK_SECRET_KEY')
+        if not cls.JWT_SECRET_KEY or cls.JWT_SECRET_KEY in ('mtu_super_secret_key_2026', 'mtu_dev_secret_key_only_for_development'):
+            missing_or_default.append('JWT_SECRET_KEY')
+        if not cls.DB_PASSWORD:
+            missing_or_default.append('DB_PASSWORD')
+        if missing_or_default:
+            raise RuntimeError(
+                f"[SECURITY ERROR] Từ chối khởi động Production do thiếu hoặc dùng cấu hình mặc định cho: {', '.join(missing_or_default)}."
+            )
+
 
 # Mapping tên cấu hình
 config_map = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
-    'default': DevelopmentConfig
+    'default': ProductionConfig
 }

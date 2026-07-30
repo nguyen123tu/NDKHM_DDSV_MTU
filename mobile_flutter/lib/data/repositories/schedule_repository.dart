@@ -15,9 +15,8 @@ class ScheduleRepository {
     for (var s in schedules) {
       batch.insert('local_schedules', {
         'lop_id': s['lop_id'],
-        'thu': s['thu'],
-        'tiet_bat_dau': s['tiet_bat_dau'],
-        'tiet_ket_thuc': s['tiet_ket_thuc'],
+        'gio_bat_dau': s['gio_bat_dau'],
+        'gio_ket_thuc': s['gio_ket_thuc'],
         'phong': s['phong'],
         'mon_hoc': s['mon_hoc'],
         'giao_vien': s['giao_vien'],
@@ -33,7 +32,7 @@ class ScheduleRepository {
     final db = await _appDatabase.database;
     return await db.query(
       'local_schedules',
-      orderBy: 'thu ASC, tiet_bat_dau ASC',
+      orderBy: 'thu ASC, gio_bat_dau ASC',
     );
   }
 

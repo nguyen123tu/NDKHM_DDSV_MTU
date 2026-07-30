@@ -15,7 +15,7 @@
             <h2 class="text-2xl font-bold text-on-surface">Xin chào, Admin! 👋</h2>
             <p class="text-sm text-on-surface-variant mt-2">Chào mừng bạn quay lại hệ thống Điểm danh Thông minh. Hãy kiểm tra tình hình hôm nay.</p>
             <div class="mt-4 flex gap-3">
-                <a href="{{ url_for('attendance.live') }}" class="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 flex items-center gap-2 transition-colors">
+                <a href="{{ url_for('attendance.live') }}" class="text-white px-4 py-2 rounded-lg text-sm font-semibold hover:shadow-lg flex items-center gap-2 transition-all transform hover:-translate-y-0.5" style="background: var(--primary-gradient);">
                     <span class="material-symbols-outlined text-[18px]">play_arrow</span> Bắt đầu điểm danh
                 </a>
                 <a href="{{ url_for('chatbot.chat_page') }}" class="bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-variant flex items-center gap-2 transition-colors border border-outline-variant">
@@ -113,7 +113,7 @@
                 <div class="text-center py-8">
                     <span class="material-symbols-outlined text-[64px] text-outline-variant mb-4">bar_chart</span>
                     <p class="text-sm font-medium text-on-surface-variant mb-4">Chưa có dữ liệu điểm danh hôm nay</p>
-                    <a href="{{ url_for('attendance.live') }}" class="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
+                    <a href="{{ url_for('attendance.live') }}" class="btn-gradient px-4 py-2 rounded-lg text-sm font-semibold inline-flex items-center gap-2">
                         <span class="material-symbols-outlined text-[18px]">play_arrow</span> Bắt đầu ngay
                     </a>
                 </div>
@@ -129,10 +129,12 @@
                 <h3 class="text-lg font-bold mb-4">AI Scanner Engine</h3>
                 <div class="relative h-32 bg-black/30 rounded-lg overflow-hidden flex items-center justify-center border border-secondary-fixed/30 shadow-[0_0_15px_rgba(78,222,163,0.1)]">
                     <div class="relative z-10 text-center flex flex-col items-center">
-                        <div class="w-12 h-12 border-2 border-secondary-fixed rounded-xl flex items-center justify-center mb-2 animate-[pulse_2s_ease-in-out_infinite]">
+                        <div class="w-12 h-12 border-2 border-secondary-fixed rounded-xl flex items-center justify-center mb-2" style="animation: pulse-glow 2s infinite;">
                             <span class="material-symbols-outlined text-secondary-fixed text-[28px]">face</span>
                         </div>
-                        <p class="text-sm font-bold text-secondary-fixed tracking-wide">SYSTEM ONLINE</p>
+                        <p class="text-sm font-bold text-secondary-fixed tracking-wide flex items-center gap-2 justify-center">
+                            <span class="w-2 h-2 rounded-full bg-secondary-fixed" style="animation: pulse-glow 2s infinite;"></span> SYSTEM ONLINE
+                        </p>
                     </div>
                 </div>
             </div>

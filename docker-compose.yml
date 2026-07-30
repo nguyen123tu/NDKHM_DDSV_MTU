@@ -17,14 +17,14 @@ services:
     restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "${DB_PASSWORD:-MTUFace@2026}"
+      MSSQL_SA_PASSWORD: "${DB_PASSWORD}"
       MSSQL_PID: "Express"
     ports:
       - "1433:1433"
     volumes:
       - mssql_data:/var/opt/mssql
     healthcheck:
-      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${DB_PASSWORD:-MTUFace@2026}" -Q "SELECT 1" -C -b
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${DB_PASSWORD}" -Q "SELECT 1" -C -b
       interval: 15s
       timeout: 10s
       retries: 10
@@ -43,12 +43,12 @@ services:
       - "5001:5001"
     environment:
       - FLASK_ENV=production
-      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-mtu_docker_secret_2026}
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
       - DB_HOST=db
       - DB_PORT=1433
       - DB_NAME=${DB_NAME:-face_attendance_db}
       - DB_USER=sa
-      - DB_PASSWORD=${DB_PASSWORD:-MTUFace@2026}
+      - DB_PASSWORD=${DB_PASSWORD}
       - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.55}
       - MOTION_THRESHOLD=${MOTION_THRESHOLD:-3000}
       - ALERT_COOLDOWN=${ALERT_COOLDOWN:-20}

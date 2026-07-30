@@ -4,7 +4,7 @@ Route Quản lý Lớp Học (CRUD)
 
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from . import classes_bp
-from utils.decorators import login_required
+from utils.decorators import login_required, admin_required
 from services import class_service
 
 @classes_bp.route('/')
@@ -42,18 +42,11 @@ def schedule():
 
 @classes_bp.route('/add', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def add():
-    """
-    /add
-    ---
-    tags:
-      - Web API
-    responses:
-      200:
-        description: Thành công
-      500:
-        description: Lỗi máy chủ
-    """
+    from db.connection import execute_query
+    giang_viens = execute_query("SELECT id, ho_ten FROM admin WHERE role = 'giang_vien'")
+    
     if request.method == 'POST':
         data = {
             'ma_lop': request.form.get('ma_lop'),
@@ -61,7 +54,8 @@ def add():
             'khoa': request.form.get('khoa'),
             'hoc_ky': request.form.get('hoc_ky'),
             'nam_hoc': request.form.get('nam_hoc'),
-            'giao_vien': request.form.get('giao_vien'),
+            'giang_vien_id': request.form.get('giang_vien_id', type=int),
+            'giao_vien': request.form.get('giao_vien'), # Dùng làm ghi chú tên nếu cần
             'mo_ta': request.form.get('mo_ta')
         }
         
@@ -72,7 +66,7 @@ def add():
         else:
             flash("Lỗi! Mã lớp có thể đã tồn tại.", "danger")
             
-    return render_template('classes/add.html')
+    return render_template('classes/add.html', giang_viens=giang_viens)
 
 @classes_bp.route('/<int:id>')
 @login_required
@@ -103,22 +97,15 @@ def detail(id):
 
 @classes_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def edit(id):
-    """
-    /<int:id>/edit
-    ---
-    tags:
-      - Web API
-    responses:
-      200:
-        description: Thành công
-      500:
-        description: Lỗi máy chủ
-    """
     cls = class_service.get_by_id(id)
     if not cls:
         flash("Không tìm thấy lớp", "warning")
         return redirect(url_for('classes.list_classes'))
+        
+    from db.connection import execute_query
+    giang_viens = execute_query("SELECT id, ho_ten FROM admin WHERE role = 'giang_vien'")
         
     if request.method == 'POST':
         data = {
@@ -126,6 +113,7 @@ def edit(id):
             'khoa': request.form.get('khoa'),
             'hoc_ky': request.form.get('hoc_ky'),
             'nam_hoc': request.form.get('nam_hoc'),
+            'giang_vien_id': request.form.get('giang_vien_id', type=int),
             'giao_vien': request.form.get('giao_vien'),
             'mo_ta': request.form.get('mo_ta'),
             'trang_thai': request.form.get('trang_thai', type=int)
@@ -138,7 +126,7 @@ def edit(id):
             flash("Cập nhật thất bại", "danger")
             
     schedules = class_service.get_schedule(id)
-    return render_template('classes/edit.html', cls=cls, schedules=schedules)
+    return render_template('classes/edit.html', cls=cls, schedules=schedules, giang_viens=giang_viens)
 
 @classes_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required

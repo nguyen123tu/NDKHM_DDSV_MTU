@@ -46,3 +46,31 @@ setTimeout(() => {
         $('.animate-\\[slideInRight_0\\.4s_ease-out\\]').fadeOut('slow', function() { $(this).remove(); });
     }
 }, 5000);
+
+// Global Live Search Logic
+document.addEventListener('DOMContentLoaded', () => {
+    const globalSearchInput = document.getElementById('globalSearchInput');
+    if (globalSearchInput) {
+        globalSearchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            // Lọc tất cả các bảng trên trang hiện tại
+            const tables = document.querySelectorAll('table tbody');
+            
+            tables.forEach(tbody => {
+                const rows = tbody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const rowText = row.innerText.toLowerCase();
+                    // Normalize vietnamese characters to search without accents
+                    const normalizedText = rowText.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const normalizedQuery = query.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    
+                    if (rowText.includes(query) || normalizedText.includes(normalizedQuery)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+    }
+});

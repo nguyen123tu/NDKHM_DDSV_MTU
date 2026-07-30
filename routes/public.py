@@ -57,7 +57,7 @@ def api_lookup():
     # Lấy tổng số lần điểm danh
     stats_query = execute_one("""
         SELECT COUNT(*) as total_attendance,
-               SUM(CASE WHEN trang_thai = 'Co mat' THEN 1 ELSE 0 END) as total_present
+               SUM(CASE WHEN status IN ('PRESENT', 'LATE') THEN 1 ELSE 0 END) as total_present
         FROM diem_danh
         WHERE sinh_vien_id = %s
     """, (sv['id'],))

@@ -190,11 +190,12 @@ class FaceTrainer:
                 known_faces[ma_sv] = avg_emb
             print(f"  [TRAINER] {ma_sv}: Vector từ {len(emb_list)} góc độ")
 
-        # === PHẦN 4: Lưu file pkl ===
+        # === PHẦN 4: Lưu file npz ===
         if len(known_faces) > 0:
             os.makedirs(os.path.dirname(output_pkl), exist_ok=True)
-            with open(output_pkl, 'wb') as f:
-                pickle.dump(known_faces, f)
+            keys = np.array(list(known_faces.keys()))
+            values = np.array(list(known_faces.values()))
+            np.savez_compressed(output_pkl, keys=keys, values=values)
 
             # === OFFLINE-FIRST: Lưu Vector vào Database ===
             import json
@@ -280,17 +281,32 @@ class FaceTrainer:
             final_emb = np.mean(emb_list, axis=0)
             final_emb = final_emb / np.linalg.norm(final_emb)
 
-        # Load pkl hiện tại, cập nhật, rồi lưu lại
+        # Load npz hiện tại (hoặc legacy pkl), cập nhật, rồi lưu lại
         known_faces = {}
         if os.path.exists(output_pkl):
-            with open(output_pkl, 'rb') as f:
-                known_faces = pickle.load(f)
+            if output_pkl.endswith('.npz'):
+                try:
+                    data = np.load(output_pkl, allow_pickle=False)
+                    keys = [str(k) for k in data["keys"]]
+                    values = data["values"]
+                    known_faces = {k: v for k, v in zip(keys, values)}
+                except Exception as e:
+                    print(f"  [TRAINER] Lỗi load npz {output_pkl}: {e}")
+            else:
+                with open(output_pkl, 'rb') as f:
+                    known_faces = pickle.load(f)
+        else:
+            legacy_pkl = output_pkl.replace('.npz', '.pkl')
+            if os.path.exists(legacy_pkl):
+                with open(legacy_pkl, 'rb') as f:
+                    known_faces = pickle.load(f)
 
         known_faces[mssv] = final_emb
 
         os.makedirs(os.path.dirname(output_pkl), exist_ok=True)
-        with open(output_pkl, 'wb') as f:
-            pickle.dump(known_faces, f)
+        keys = np.array(list(known_faces.keys()))
+        values = np.array(list(known_faces.values()))
+        np.savez_compressed(output_pkl, keys=keys, values=values)
 
         # === OFFLINE-FIRST: Lưu Vector vào Database ===
         import json

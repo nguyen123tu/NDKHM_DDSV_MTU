@@ -40,14 +40,24 @@ class DashboardStats {
   final int total;
   final int present;
   final int absent;
+  final int late;
+  final double rate;
 
-  DashboardStats({required this.total, required this.present, required this.absent});
+  DashboardStats({
+    required this.total,
+    required this.present,
+    required this.absent,
+    this.late = 0,
+    this.rate = 0.0,
+  });
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
     return DashboardStats(
       total: json['total'] ?? 0,
       present: json['present'] ?? 0,
       absent: json['absent'] ?? 0,
+      late: json['late'] ?? 0,
+      rate: (json['rate'] ?? 0.0).toDouble(),
     );
   }
 }

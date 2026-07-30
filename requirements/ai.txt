@@ -1,0 +1,19 @@
+# ============================================================
+# MTUFace AI Requirements (Computer Vision, Face Recognition, Chatbot)
+# ============================================================
+numpy==1.26.4
+Pillow==10.3.0
+opencv-python-headless==4.9.0.80
+insightface==0.7.3
+onnxruntime==1.17.3
+ultralytics==8.3.0
+torchvision==0.17.2
+scikit-learn==1.4.2
+matplotlib==3.8.4
+seaborn==0.13.2
+pandas==2.2.2
+chromadb==0.4.24
+google-generativeai==0.5.2
+gTTS==2.5.1
+gdown==5.1.0
+fire==0.6.0

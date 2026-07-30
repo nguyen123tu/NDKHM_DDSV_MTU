@@ -1,147 +1,166 @@
 {% extends "base.html" %}
 
-{% block title %}Chi Tiết Lớp Học{% endblock %}
+{% block title %}Chi Tiết Lớp Học - {{ cls.ten_lop }}{% endblock %}
+
+{% block page_title %}Chi Tiết: {{ cls.ten_lop }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div class="d-flex align-items-center">
-        <a href="{{ url_for('classes.list_classes') }}" class="btn btn-outline-secondary border-0 p-2 me-3 text-muted hover-text-dark">
-            <i class="fas fa-arrow-left fs-5"></i>
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-md mb-lg">
+    <div class="flex items-center gap-md">
+        <a href="{{ url_for('classes.list_classes') }}" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors flex items-center justify-center">
+            <span class="material-symbols-outlined">arrow_back</span>
         </a>
-        <h3 class="fw-bold m-0"><i class="fas fa-layer-group text-secondary me-2"></i> Chi Tiết: {{ cls.ten_lop }}</h3>
+        <h3 class="text-2xl font-bold text-on-surface flex items-center gap-sm m-0">
+            <span class="material-symbols-outlined text-secondary text-3xl">class</span>
+            {{ cls.ten_lop }}
+        </h3>
     </div>
-    <div class="d-flex align-items-center">
-        <a href="{{ url_for('attendance.live') }}?lop_id={{ cls.id }}" class="btn btn btn-primary shadow-sm me-2">
-            <i class="fas fa-video me-1"></i> Điểm Danh Ngay
+    <div class="flex items-center gap-sm w-full sm:w-auto">
+        <a href="{{ url_for('attendance.live') }}?lop_id={{ cls.id }}" class="flex-1 sm:flex-none flex items-center justify-center gap-xs px-lg py-sm bg-secondary text-on-secondary font-semibold rounded-full hover:bg-secondary/90 transition-colors shadow-sm">
+            <span class="material-symbols-outlined text-[20px]">videocam</span>
+            Điểm Danh Ngay
         </a>
-        <a href="{{ url_for('classes.edit', id=cls.id) }}" class="btn btn-outline-warning">
-            <i class="fas fa-edit me-1"></i> Thiết Lập Lớp
+        <a href="{{ url_for('classes.edit', id=cls.id) }}" class="flex-1 sm:flex-none flex items-center justify-center gap-xs px-lg py-sm border border-outline-variant text-on-surface font-semibold rounded-full hover:bg-surface-container-high transition-colors">
+            <span class="material-symbols-outlined text-[20px]">edit</span>
+            Thiết Lập Lớp
         </a>
     </div>
 </div>
 
-<div class="row g-4 mb-4">
-    <div class="col-lg-4">
-        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 h-100">
-            <h5 class="fw-bold mb-4 text-info border-bottom border-secondary pb-2"><i class="fas fa-info-circle me-2"></i> Thông Tin Cơ Bản</h5>
+<div class="flex flex-col lg:flex-row gap-lg mb-lg">
+    <!-- Cột thông tin cơ bản -->
+    <div class="w-full lg:w-1/3">
+        <div class="bg-surface border border-outline-variant rounded-2xl p-lg h-full shadow-sm flex flex-col">
+            <h5 class="text-lg font-bold text-on-surface mb-md pb-sm border-b border-outline-variant flex items-center gap-sm">
+                <span class="material-symbols-outlined text-secondary">info</span>
+                Thông Tin Cơ Bản
+            </h5>
             
-            <ul class="list-unstyled mb-0">
-                <li class="mb-3 d-flex justify-content-between border-bottom border-light border-opacity-10 pb-2">
-                    <span class="text-muted"><i class="fas fa-hashtag me-2"></i>Mã Lớp</span>
-                    <span class="fw-bold text-dark">{{ cls.ma_lop }}</span>
+            <ul class="space-y-3 flex-1">
+                <li class="flex justify-between items-center py-2 border-b border-outline-variant/30">
+                    <span class="text-on-surface-variant flex items-center gap-xs text-sm"><span class="material-symbols-outlined text-[18px]">tag</span> Mã Lớp</span>
+                    <span class="font-bold text-on-surface">{{ cls.ma_lop }}</span>
                 </li>
-                <li class="mb-3 d-flex justify-content-between border-bottom border-light border-opacity-10 pb-2">
-                    <span class="text-muted"><i class="fas fa-calendar-alt me-2"></i>Học Kỳ</span>
-                    <span class="fw-bold text-dark">{{ cls.hoc_ky }} - {{ cls.nam_hoc }}</span>
+                <li class="flex justify-between items-center py-2 border-b border-outline-variant/30">
+                    <span class="text-on-surface-variant flex items-center gap-xs text-sm"><span class="material-symbols-outlined text-[18px]">calendar_today</span> Học Kỳ</span>
+                    <span class="font-bold text-on-surface">{{ cls.hoc_ky }} - {{ cls.nam_hoc }}</span>
                 </li>
-                <li class="mb-3 d-flex justify-content-between border-bottom border-light border-opacity-10 pb-2">
-                    <span class="text-muted"><i class="fas fa-building me-2"></i>Khoa/Viện</span>
-                    <span class="text-dark">{{ cls.khoa or 'Chưa xác định' }}</span>
+                <li class="flex justify-between items-center py-2 border-b border-outline-variant/30">
+                    <span class="text-on-surface-variant flex items-center gap-xs text-sm"><span class="material-symbols-outlined text-[18px]">domain</span> Khoa/Viện</span>
+                    <span class="font-medium text-on-surface">{{ cls.khoa or 'Chưa xác định' }}</span>
                 </li>
-                <li class="mb-3 d-flex justify-content-between border-bottom border-light border-opacity-10 pb-2">
-                    <span class="text-muted"><i class="fas fa-chalkboard-teacher me-2"></i>Giảng Viên</span>
-                    <span class="text-dark ms-4 text-end">{{ cls.giao_vien or 'Chưa phân công' }}</span>
+                <li class="flex justify-between items-center py-2 border-b border-outline-variant/30">
+                    <span class="text-on-surface-variant flex items-center gap-xs text-sm"><span class="material-symbols-outlined text-[18px]">school</span> Giảng Viên</span>
+                    <span class="font-medium text-on-surface text-right">{{ cls.giao_vien or 'Chưa phân công' }}</span>
                 </li>
-                <li class="mb-0 d-flex justify-content-between">
-                    <span class="text-muted"><i class="fas fa-power-off me-2"></i>Trạng Thái</span>
+                <li class="flex justify-between items-center py-2">
+                    <span class="text-on-surface-variant flex items-center gap-xs text-sm"><span class="material-symbols-outlined text-[18px]">power_settings_new</span> Trạng Thái</span>
                     {% if cls.trang_thai == 1 %}
-                    <span class="badge badge-comat">Đang Mở</span>
+                    <span class="inline-flex items-center px-2 py-1 rounded-md bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-wider">Đang Mở</span>
                     {% else %}
-                    <span class="badge badge-canhbao">Đã Đóng</span>
+                    <span class="inline-flex items-center px-2 py-1 rounded-md bg-error/10 text-error text-xs font-bold uppercase tracking-wider">Đã Đóng</span>
                     {% endif %}
                 </li>
             </ul>
         </div>
     </div>
     
-    <div class="col-lg-8">
-        <div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 h-100">
-            <h5 class="fw-bold mb-4 text-warning border-bottom border-secondary pb-2"><i class="fas fa-chart-pie me-2"></i> Báo Cáo Điểm Danh Hôm Nay</h5>
+    <!-- Cột báo cáo -->
+    <div class="w-full lg:w-2/3">
+        <div class="bg-surface border border-outline-variant rounded-2xl p-lg h-full shadow-sm flex flex-col">
+            <h5 class="text-lg font-bold text-on-surface mb-md pb-sm border-b border-outline-variant flex items-center gap-sm">
+                <span class="material-symbols-outlined text-primary">pie_chart</span>
+                Báo Cáo Điểm Danh Hôm Nay
+            </h5>
             
-            <div class="row text-center mt-4">
-                <div class="col-4">
-                    <div class="p-3 bg-light bg-opacity-50 rounded border border-info border-opacity-25 h-100 d-flex justify-content-center align-items-center flex-column">
-                        <h2 class="fw-bold text-info m-0">{{ summary.si_so }}</h2>
-                        <div class="text-muted small mt-2 text-uppercase">TỔNG SĨ SỐ</div>
-                    </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-md flex-1 mt-2">
+                <div class="p-md bg-surface-container-low rounded-xl border border-outline-variant/50 flex flex-col items-center justify-center">
+                    <h2 class="text-4xl font-bold text-primary m-0">{{ summary.si_so }}</h2>
+                    <div class="text-on-surface-variant text-xs mt-2 font-bold tracking-wider uppercase text-center">Tổng Sĩ Số</div>
                 </div>
-                <div class="col-4">
-                    <div class="p-3 bg-light bg-opacity-50 rounded border border-success border-opacity-25 h-100 d-flex justify-content-center align-items-center flex-column">
-                        <h2 class="fw-bold text-success m-0">{{ summary.co_mat }}</h2>
-                        <div class="text-muted small mt-2 text-uppercase">SV CÓ MẶT</div>
-                    </div>
+                <div class="p-md bg-secondary/10 rounded-xl border border-secondary/20 flex flex-col items-center justify-center">
+                    <h2 class="text-4xl font-bold text-secondary m-0">{{ summary.co_mat }}</h2>
+                    <div class="text-secondary/80 text-xs mt-2 font-bold tracking-wider uppercase text-center">SV Có Mặt</div>
                 </div>
-                <div class="col-4">
-                    <div class="p-3 bg-light bg-opacity-50 rounded border border-warning border-opacity-50 h-100 d-flex justify-content-center align-items-center flex-column">
-                        <h2 class="fw-bold text-warning m-0">{{ summary.ty_le }}%</h2>
-                        <div class="text-muted small mt-2 text-uppercase">CHUYÊN CẦN</div>
-                    </div>
+                <div class="p-md bg-primary-container/20 rounded-xl border border-primary-container/30 flex flex-col items-center justify-center">
+                    <h2 class="text-4xl font-bold text-primary-container m-0">{{ summary.ty_le }}%</h2>
+                    <div class="text-primary-container/80 text-xs mt-2 font-bold tracking-wider uppercase text-center">Chuyên Cần</div>
                 </div>
             </div>
             
-            <div class="mt-4 text-end">
-                <a href="{{ url_for('attendance.history') }}?lop_id={{ cls.id }}" class="text-decoration-none small">
-                    Xem chi tiết lịch sử điểm danh <i class="fas fa-arrow-right ms-1"></i>
+            <div class="mt-md pt-sm text-right border-t border-outline-variant/20">
+                <a href="{{ url_for('attendance.history') }}?lop_id={{ cls.id }}" class="text-sm font-medium text-secondary hover:text-secondary/80 inline-flex items-center justify-end gap-xs transition-colors">
+                    Xem chi tiết lịch sử điểm danh <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                 </a>
             </div>
         </div>
     </div>
 </div>
 
-<div class="flat-card border-0 shadow-sm bg-white rounded-3 p-4 mb-4 p-0 overflow-hidden">
-    <div class="p-4 border-bottom border-secondary border-opacity-25 bg-light bg-opacity-25 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold m-0"><i class="fas fa-users text-secondary me-2"></i> Danh Sách Sinh Viên Thuộc Lớp ({{ summary.si_so }})</h5>
-        <a href="{{ url_for('students.add') }}?lop_id={{ cls.id }}" class="btn btn-sm btn-outline-light">
-            <i class="fas fa-plus me-1"></i> Sinh Viên Mới
+<div class="bg-surface border border-outline-variant rounded-2xl overflow-hidden mb-lg shadow-sm">
+    <div class="p-lg border-b border-outline-variant bg-surface-container-lowest flex flex-col sm:flex-row justify-between items-start sm:items-center gap-md">
+        <h5 class="text-lg font-bold text-on-surface m-0 flex items-center gap-sm">
+            <span class="material-symbols-outlined text-secondary">group</span> 
+            Danh Sách Sinh Viên Thuộc Lớp ({{ summary.si_so }})
+        </h5>
+        <a href="{{ url_for('students.add') }}?lop_id={{ cls.id }}" class="flex items-center gap-xs px-md py-sm bg-primary text-on-primary font-semibold rounded-full hover:bg-primary/90 transition-colors shadow-sm text-sm">
+            <span class="material-symbols-outlined text-[18px]">person_add</span> Sinh Viên Mới
         </a>
     </div>
     
-    <div class="table-responsive">
-        <table class="table table-light-flat mb-0">
-            <thead class="bg-light border-bottom border-light border-opacity-10">
-                <tr>
-                    <th>STT</th>
-                    <th>MSSV</th>
-                    <th>Họ và Tên</th>
-                    <th>Liên Hệ</th>
-                    <th>Tình Trạng Training AI</th>
-                    <th class="text-end">Hành động</th>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-surface-container-low text-on-surface-variant text-sm border-b border-outline-variant">
+                    <th class="py-md px-lg font-semibold w-16">STT</th>
+                    <th class="py-md px-lg font-semibold">MSSV</th>
+                    <th class="py-md px-lg font-semibold">Họ và Tên</th>
+                    <th class="py-md px-lg font-semibold">Liên Hệ</th>
+                    <th class="py-md px-lg font-semibold text-center">Tình Trạng Training AI</th>
+                    <th class="py-md px-lg font-semibold text-center w-32">Hành động</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="text-on-surface">
                 {% for sv in students %}
-                <tr>
-                    <td class="text-muted">{{ loop.index }}</td>
-                    <td class="fw-bold">{{ sv.mssv }}</td>
-                    <td>
-                        <div class="d-flex align-items-center">
+                <tr class="border-b border-outline-variant/50 hover:bg-surface-container-lowest transition-colors group">
+                    <td class="py-md px-lg text-on-surface-variant text-sm">{{ loop.index }}</td>
+                    <td class="py-md px-lg font-bold">{{ sv.mssv }}</td>
+                    <td class="py-md px-lg">
+                        <div class="flex items-center gap-sm">
                             {% if sv.avatar %}
-                            <img src="{{ url_for('serve_database_file', filename=sv.avatar) }}" class="rounded-circle me-2" width="30" height="30" style="object-fit:cover;">
+                            <img src="{{ url_for('serve_database_file', filename=sv.avatar) }}" class="rounded-full w-8 h-8 object-cover border border-outline-variant">
                             {% else %}
-                            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-dark me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">{{ sv.ho_ten[0] }}</div>
+                            <div class="rounded-full bg-surface-container-high w-8 h-8 flex items-center justify-center text-on-surface-variant font-bold text-sm border border-outline-variant">{{ sv.ho_ten[0] }}</div>
                             {% endif %}
-                            {{ sv.ho_ten }}
+                            <span class="font-medium">{{ sv.ho_ten }}</span>
                         </div>
                     </td>
-                    <td>
-                        <div class="small">
-                            <div><i class="fas fa-envelope text-muted me-1"></i> {{ sv.email or 'N/A' }}</div>
+                    <td class="py-md px-lg">
+                        <div class="text-sm flex items-center gap-xs text-on-surface-variant">
+                            <span class="material-symbols-outlined text-[16px]">mail</span> {{ sv.email or 'N/A' }}
                         </div>
                     </td>
-                    <td>
+                    <td class="py-md px-lg text-center">
                         {% if sv.da_train == 1 %}
-                        <span class="badge badge-comat">Đã Training</span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-wider">Đã Training</span>
                         {% else %}
-                        <span class="badge badge-canhbao">Chưa Có Dữ Liệu</span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-error/10 text-error text-xs font-bold uppercase tracking-wider">Chưa Có Dữ Liệu</span>
                         {% endif %}
                     </td>
-                    <td class="text-end">
-                        <a href="{{ url_for('students.detail', id=sv.id) }}" class="btn btn-sm btn-outline-info" title="Chi tiết"><i class="fas fa-eye"></i></a>
+                    <td class="py-md px-lg text-center">
+                        <a href="{{ url_for('students.detail', id=sv.id) }}" class="p-xs text-primary/70 hover:text-primary hover:bg-primary/10 rounded-full transition-colors inline-flex tooltip" title="Chi tiết">
+                            <span class="material-symbols-outlined text-[20px]">visibility</span>
+                        </a>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">Lớp học này chưa có sinh viên nào.</td>
+                    <td colspan="6" class="py-xl text-center text-on-surface-variant">
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="material-symbols-outlined text-4xl mb-sm opacity-50">group_off</span>
+                            <p>Lớp học này chưa có sinh viên nào.</p>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

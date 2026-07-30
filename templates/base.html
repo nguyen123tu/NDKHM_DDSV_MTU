@@ -16,30 +16,30 @@
             theme: {
                 extend: {
                     colors: {
-                        "on-background": "#0b1c30",
-                        "primary-container": "#131b2e",
-                        "surface-tint": "#565e74",
-                        "surface-variant": "#d3e4fe",
-                        "on-primary": "#ffffff",
-                        "surface-container-high": "#dce9ff",
-                        "primary": "#000000",
-                        "on-primary-container": "#7c839b",
-                        "secondary-fixed-dim": "#4edea3",
-                        "outline": "#76777d",
-                        "on-surface": "#0b1c30",
+                        "on-background": "#0f172a",
+                        "primary-container": "rgba(255, 255, 255, 0.8)",
+                        "surface-tint": "#3b82f6",
+                        "surface-variant": "#f1f5f9",
+                        "on-primary": "#0f172a",
+                        "surface-container-high": "#e2e8f0",
+                        "primary": "#2563eb",
+                        "on-primary-container": "#64748b",
+                        "secondary-fixed-dim": "#10b981",
+                        "outline": "#cbd5e1",
+                        "on-surface": "#0f172a",
                         "on-secondary": "#ffffff",
-                        "surface": "#f8f9ff",
-                        "surface-container": "#e5eeff",
+                        "surface": "rgba(255, 255, 255, 0.9)",
+                        "surface-container": "#f8fafc",
                         "surface-container-lowest": "#ffffff",
-                        "on-surface-variant": "#45464d",
-                        "error": "#ba1a1a",
-                        "secondary-fixed": "#6ffbbe",
-                        "secondary": "#006c49",
+                        "on-surface-variant": "#64748b",
+                        "error": "#ef4444",
+                        "secondary-fixed": "#3b82f6",
+                        "secondary": "#10b981",
                         "on-error": "#ffffff",
-                        "on-primary-fixed-variant": "#3f465c",
-                        "background": "#f8f9ff",
-                        "outline-variant": "#c6c6cd",
-                        "surface-container-low": "#eff4ff"
+                        "on-primary-fixed-variant": "#3b82f6",
+                        "background": "#f8fafc",
+                        "outline-variant": "#e2e8f0",
+                        "surface-container-low": "#f1f5f9"
                     },
                     spacing: {
                         "sm": "12px",
@@ -77,7 +77,7 @@
     {% if session.get('admin_id') %}
     <!-- Sidebar -->
     <aside id="app-sidebar"
-        class="fixed left-0 top-0 bottom-0 w-sidebar-width flex flex-col bg-primary-container border-r border-outline-variant z-50 overflow-x-hidden">
+        class="fixed left-0 top-0 bottom-0 w-sidebar-width flex flex-col bg-primary-container backdrop-blur-xl border-r border-outline-variant z-50 overflow-x-hidden shadow-sm">
         <div class="px-lg py-xl">
             <a href="{{ url_for('dashboard.index') }}">
                 <h1 class="text-2xl font-bold text-on-primary">MTU Face AI</h1>
@@ -87,54 +87,65 @@
 
         <nav class="flex-1 px-md space-y-2 overflow-y-auto custom-scrollbar">
             <a href="{{ url_for('dashboard.index') }}"
-                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint == 'dashboard.index' %} border-l-4 border-secondary-fixed bg-on-primary-fixed-variant/10 text-on-primary {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint == 'dashboard.index' %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
                 <span class="material-symbols-outlined text-[20px]">dashboard</span>
                 <span>Dashboard</span>
             </a>
 
+            {% if session.get('admin_role') == 'admin' %}
             <a href="{{ url_for('students.list_students') }}"
-                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('students') and request.endpoint != 'students.pending_faces' %} border-l-4 border-secondary-fixed bg-on-primary-fixed-variant/10 text-on-primary {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('students') and request.endpoint != 'students.pending_faces' %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
                 <span class="material-symbols-outlined text-[20px]">group</span>
                 <span>Sinh viên</span>
             </a>
 
             <a href="{{ url_for('classes.list_classes') }}"
-                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('classes') %} border-l-4 border-secondary-fixed bg-on-primary-fixed-variant/10 text-on-primary {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('classes') %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
                 <span class="material-symbols-outlined text-[20px]">class</span>
                 <span>Lớp học</span>
             </a>
+            {% endif %}
 
             <a href="{{ url_for('attendance.history') }}"
-                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint == 'attendance.history' %} border-l-4 border-secondary-fixed bg-on-primary-fixed-variant/10 text-on-primary {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint == 'attendance.history' %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
                 <span class="material-symbols-outlined text-[20px]">history</span>
                 <span>Lịch sử điểm danh</span>
             </a>
 
+            {% if session.get('admin_role') == 'admin' %}
             <a href="{{ url_for('fraud.index') }}"
-                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('fraud') %} border-l-4 border-secondary-fixed bg-on-primary-fixed-variant/10 text-on-primary {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('fraud') %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
                 <span class="material-symbols-outlined text-[20px]">security</span>
                 <span>Gian lận</span>
             </a>
             <a href="{{ url_for('students.pending_faces') }}"
-                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint == 'students.pending_faces' %} border-l-4 border-secondary-fixed bg-on-primary-fixed-variant/10 text-on-primary {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint == 'students.pending_faces' %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
                 <span class="material-symbols-outlined text-[20px]">how_to_reg</span>
                 <span>Duyệt FaceID</span>
             </a>
+            {% endif %}
 
             <a href="{{ url_for('attendance.list_leave_requests') }}"
-                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint == 'attendance.list_leave_requests' %} border-l-4 border-secondary-fixed bg-on-primary-fixed-variant/10 text-on-primary {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint == 'attendance.list_leave_requests' %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
                 <span class="material-symbols-outlined text-[20px]">assignment_add</span>
                 <span>Đơn xin phép</span>
             </a>
 
+            {% if session.get('admin_role') == 'admin' %}
             <a href="{{ url_for('training.index') }}"
-                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('training') %} border-l-4 border-secondary-fixed bg-on-primary-fixed-variant/10 text-on-primary {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('training') %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
                 <span class="material-symbols-outlined text-[20px]">model_training</span>
                 <span>Training AI</span>
             </a>
+            <a href="{{ url_for('users.list_users') }}"
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('users') %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                <span class="material-symbols-outlined text-[20px]">manage_accounts</span>
+                <span>Quản lý Tài khoản</span>
+            </a>
+            {% endif %}
 
             <a href="{{ url_for('export.index') }}"
-                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('export') %} border-l-4 border-secondary-fixed bg-on-primary-fixed-variant/10 text-on-primary {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
+                class="flex items-center gap-md px-lg py-sm font-semibold rounded-lg transition-colors {% if request.endpoint and request.endpoint.startswith('export') %} sidebar-active {% else %} text-on-primary-container/70 hover:text-on-primary hover:bg-on-primary-fixed-variant/20 {% endif %}">
                 <span class="material-symbols-outlined text-[20px]">file_export</span>
                 <span>Xuất báo cáo</span>
             </a>
@@ -166,7 +177,7 @@
     <div id="main-content" class="flex-1 flex flex-col min-w-0 {% if session.get('admin_id') %}ml-[260px]{% endif %}">
         {% if session.get('admin_id') %}
         <header
-            class="flex justify-between items-center w-full px-xl h-16 sticky top-0 bg-surface/80 backdrop-blur-md border-b border-outline-variant z-40 shadow-sm">
+            class="flex justify-between items-center w-full px-xl h-16 sticky top-0 bg-surface backdrop-blur-xl border-b border-outline-variant z-40 shadow-sm">
             <div class="flex items-center gap-md flex-1">
                 <button id="sidebarToggle"
                     class="p-2 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-colors flex items-center justify-center">
@@ -175,7 +186,7 @@
                 <div class="relative w-full max-w-md hidden sm:block">
                     <span
                         class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
-                    <input type="text" placeholder="Tìm kiếm nhanh..."
+                    <input type="text" id="globalSearchInput" placeholder="Tìm kiếm theo MSSV, Họ tên, Lớp..."
                         class="w-full pl-xl pr-md py-xs bg-surface-container-low border border-outline-variant rounded-full text-sm focus:ring-2 focus:ring-secondary focus:outline-none transition-shadow">
                 </div>
             </div>
@@ -190,12 +201,12 @@
                 <div class="h-8 w-px bg-outline-variant"></div>
                 <div class="flex items-center gap-sm">
                     <div class="text-right hidden sm:block">
-                        <p class="text-sm font-bold text-on-surface">Administrator</p>
+                        <p class="text-sm font-bold text-on-surface">{{ session.get('admin_name', 'Người dùng') }}</p>
                         <p class="text-xs text-on-surface-variant font-mono" id="timeDisplay">--:--:--</p>
                     </div>
                     <div
                         class="w-10 h-10 rounded-full border-2 border-secondary-fixed bg-surface-container-high flex items-center justify-center">
-                        <span class="material-symbols-outlined text-on-surface-variant">shield_person</span>
+                        <span class="material-symbols-outlined text-on-surface-variant">{% if session.get('admin_role') == 'giang_vien' %}person{% else %}shield_person{% endif %}</span>
                     </div>
                 </div>
             </div>

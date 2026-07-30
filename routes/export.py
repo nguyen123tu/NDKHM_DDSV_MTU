@@ -156,3 +156,56 @@ def monthly():
         print(f"[MONTHLY EXPORT ERROR] {e}")
         flash("Lỗi xuất báo cáo tháng", "danger")
         return redirect(url_for('export.index'))
+
+
+@export_bp.route('/session/<int:phien_id>', methods=['GET'])
+@login_required
+def export_session(phien_id):
+    """Xuất file Excel báo cáo chi tiết theo phiên điểm danh."""
+    try:
+        file_bytes = export_service.export_session_report(phien_id)
+        if not file_bytes:
+            flash("Không tìm thấy phiên hoặc phiên không có dữ liệu", "warning")
+            return redirect(url_for('export.index'))
+
+        filename = f"BaoCao_Phien_{phien_id}.xlsx"
+        return send_file(
+            io.BytesIO(file_bytes),
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        print(f"[SESSION EXPORT ERROR] {e}")
+        flash("Lỗi xuất báo cáo phiên", "danger")
+        return redirect(url_for('export.index'))
+
+
+@export_bp.route('/semester', methods=['POST'])
+@login_required
+def export_semester():
+    """Xuất ma trận chuyên cần cả học kỳ (tất cả các phiên đã chốt) của lớp."""
+    lop_id = request.form.get('lop_id', type=int)
+    if not lop_id:
+        flash("Vui lòng chọn lớp học", "danger")
+        return redirect(url_for('export.index'))
+
+    try:
+        file_bytes = export_service.export_semester_report(lop_id)
+        if not file_bytes:
+            flash("Lớp chưa có phiên điểm danh nào đã chốt hoặc không có sinh viên", "warning")
+            return redirect(url_for('export.index'))
+
+        lop = class_service.get_by_id(lop_id)
+        ma_lop = lop.get("ma_lop", "UNKNOWN") if lop else "UNKNOWN"
+        filename = f"ChuyenCan_HocKy_{ma_lop}.xlsx"
+        return send_file(
+            io.BytesIO(file_bytes),
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        print(f"[SEMESTER EXPORT ERROR] {e}")
+        flash("Lỗi xuất báo cáo học kỳ", "danger")
+        return redirect(url_for('export.index'))

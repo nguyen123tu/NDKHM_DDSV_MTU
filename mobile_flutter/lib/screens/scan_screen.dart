@@ -14,6 +14,10 @@ import 'package:geolocator/geolocator.dart';
 import '../theme/app_theme.dart';
 import '../utils/camera_utils.dart';
 
+// Liveness Detection State
+enum LivenessState { findFace, challenge, returnFrontal, passed }
+enum LivenessChallenge { turnLeft, turnRight, smile, blink }
+
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
 
@@ -30,13 +34,15 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   DateTime _lastFrameProcessed = DateTime.now();
   final ApiService _apiService = ApiService();
   bool _isOffline = false;
+  bool _isProcessingFrame = false;
+  double _uploadProgress = 0.0;
+  String _realtimeWarning = "";
   
-  // Google ML Kit Face Detector
   final FaceDetector _faceDetector = FaceDetector(
     options: FaceDetectorOptions(
       enableContours: false,
       enableLandmarks: false,
-      enableClassification: false,
+      enableClassification: true, // Bật để nhận diện chớp mắt và nụ cười
       performanceMode: FaceDetectorMode.fast, // Tối ưu tốc độ
     ),
   );
@@ -53,17 +59,19 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   String? _resultMessage;
   bool? _resultSuccess;
 
-  // Real-time Validation
-  bool _isProcessingFrame = false;
-  String _realtimeWarning = "Đang khởi tạo...";
-  bool _hasBlinked = false;
-  double _uploadProgress = 0.0;
+  LivenessState _livenessState = LivenessState.findFace;
+  LivenessChallenge _currentChallenge = LivenessChallenge.blink;
 
-  // Auto scan timer (removed timer, using ImageStream)
+  void _resetLiveness() {
+    _livenessState = LivenessState.findFace;
+    final challenges = [LivenessChallenge.turnLeft, LivenessChallenge.turnRight, LivenessChallenge.smile, LivenessChallenge.blink];
+    _currentChallenge = challenges[Random().nextInt(challenges.length)];
+  }
 
   @override
   void initState() {
     super.initState();
+    _resetLiveness();
     _initCamera();
     _checkConnectivity();
 
@@ -155,14 +163,11 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
 
       final face = faces.first; // Lấy khuôn mặt to nhất (gần nhất)
       
-      // Kiểm tra góc mặt
       final rotY = face.headEulerAngleY ?? 0;
       final rotZ = face.headEulerAngleZ ?? 0;
-      if (rotY.abs() > 15 || rotZ.abs() > 15) {
-        if (mounted) setState(() => _realtimeWarning = "Vui lòng nhìn thẳng camera");
-        _isProcessingFrame = false;
-        return;
-      }
+      final leftEyeOpen = face.leftEyeOpenProbability ?? 1.0;
+      final rightEyeOpen = face.rightEyeOpenProbability ?? 1.0;
+      final smiling = face.smilingProbability ?? 0.0;
 
       // Kiểm tra khoảng cách
       final screenWidth = MediaQuery.of(context).size.width;
@@ -172,28 +177,61 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
         return;
       }
 
-      // Liveness Detection: Yêu cầu chớp mắt
-      final leftEyeOpen = face.leftEyeOpenProbability ?? 1.0;
-      final rightEyeOpen = face.rightEyeOpenProbability ?? 1.0;
-      if (leftEyeOpen < 0.2 && rightEyeOpen < 0.2) {
-        _hasBlinked = true; // Đã chớp mắt
+      // STATE MACHINE: Liveness Detection
+      if (_livenessState == LivenessState.findFace) {
+         if (rotY.abs() <= 10 && rotZ.abs() <= 10) {
+            _livenessState = LivenessState.challenge;
+         } else {
+            if (mounted) setState(() => _realtimeWarning = "Vui lòng nhìn thẳng camera");
+            _isProcessingFrame = false;
+            return;
+         }
       }
 
-      if (!_hasBlinked) {
-        if (mounted) setState(() => _realtimeWarning = "Vui lòng chớp mắt để xác thực");
-        _isProcessingFrame = false;
-        return;
+      if (_livenessState == LivenessState.challenge) {
+         switch (_currentChallenge) {
+           case LivenessChallenge.turnLeft:
+             if (mounted) setState(() => _realtimeWarning = "Quay nhẹ đầu sang TRÁI");
+             if (rotY < -15) _livenessState = LivenessState.returnFrontal;
+             break;
+           case LivenessChallenge.turnRight:
+             if (mounted) setState(() => _realtimeWarning = "Quay nhẹ đầu sang PHẢI");
+             if (rotY > 15) _livenessState = LivenessState.returnFrontal;
+             break;
+           case LivenessChallenge.smile:
+             if (mounted) setState(() => _realtimeWarning = "Hãy MỈM CƯỜI");
+             if (smiling > 0.7) _livenessState = LivenessState.returnFrontal;
+             break;
+           case LivenessChallenge.blink:
+             if (mounted) setState(() => _realtimeWarning = "Hãy CHỚP MẮT");
+             if (leftEyeOpen < 0.2 && rightEyeOpen < 0.2) _livenessState = LivenessState.returnFrontal;
+             break;
+         }
+         _isProcessingFrame = false;
+         return;
       }
 
-      // Mọi thứ hoàn hảo -> Kích hoạt chụp
-      if (mounted) setState(() {
-        _realtimeWarning = "Đang xử lý...";
-        _uploadProgress = 0.2;
-      });
-      
-      // Stop stream, take high quality picture, then restart stream
-      await _controller!.stopImageStream();
-      _captureAndDetectFace();
+      if (_livenessState == LivenessState.returnFrontal) {
+         if (mounted) setState(() => _realtimeWarning = "Tuyệt vời! Hãy nhìn thẳng");
+         if (rotY.abs() <= 10 && rotZ.abs() <= 10) {
+            _livenessState = LivenessState.passed;
+         } else {
+            _isProcessingFrame = false;
+            return;
+         }
+      }
+
+      // Vượt qua Liveness -> Kích hoạt chụp
+      if (_livenessState == LivenessState.passed) {
+        if (mounted) setState(() {
+          _realtimeWarning = "Đang xử lý...";
+          _uploadProgress = 0.2;
+        });
+        
+        await _controller!.stopImageStream();
+        _captureAndDetectFace();
+      }
+
 
     } catch (e) {
       // Ignored
@@ -222,12 +260,26 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
       });
 
       final imageFile = await _controller!.takePicture();
+      setState(() => _uploadProgress = 0.5);
+
+      // Chạy ML Kit 1 lần nữa trên ảnh đã chụp để lấy boundingBox chuẩn (do độ phân giải ảnh chụp có thể khác luồng preview)
+      Rect? finalBoundingBox;
+      try {
+        final inputImage = InputImage.fromFilePath(imageFile.path);
+        final faces = await _faceDetector.processImage(inputImage);
+        if (faces.isNotEmpty) {
+           finalBoundingBox = faces.first.boundingBox;
+        }
+      } catch(e) {
+        debugPrint('Không thể detect face trên ảnh chụp: $e');
+      }
+
       setState(() => _uploadProgress = 0.6);
 
       if (_isOffline) {
         await _handleOfflineScan(imageFile);
       } else {
-        await _recognizeViaApi(imageFile);
+        await _recognizeViaApi(imageFile, finalBoundingBox);
       }
     } catch (e) {
       debugPrint('Lỗi camera/ML: $e');
@@ -235,7 +287,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
       if (mounted) {
         setState(() {
           _isScanning = false;
-          _hasBlinked = false; // Reset trạng thái chớp mắt cho lần quét sau
+          _resetLiveness(); // Reset trạng thái liveness cho lần quét sau
           _uploadProgress = 0.0;
         });
         
@@ -320,12 +372,23 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _recognizeViaApi(XFile image) async {
+  Future<void> _recognizeViaApi(XFile image, Rect? boundingBox) async {
     try {
       double? lat;
       double? lng;
 
-      final bytes = await image.readAsBytes();
+      File fileToUpload = File(image.path);
+      
+      // Giai đoạn 1: Crop khuôn mặt nếu có bounding box để giảm tải dung lượng API
+      if (boundingBox != null) {
+         final croppedFile = await CameraUtils.cropFaceFromImage(fileToUpload, boundingBox);
+         if (croppedFile != null) {
+           fileToUpload = croppedFile;
+           debugPrint('Đã crop ảnh khuôn mặt thành công');
+         }
+      }
+
+      final bytes = await fileToUpload.readAsBytes();
       final base64Image = base64Encode(bytes);
       final dataUrl = "data:image/jpeg;base64,$base64Image";
 

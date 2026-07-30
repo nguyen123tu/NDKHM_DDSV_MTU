@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/neu_container.dart';
 import '../widgets/neu_button.dart';
+import '../widgets/api_image.dart';
 
 class AdminLeaveScreen extends StatefulWidget {
   const AdminLeaveScreen({super.key});
@@ -74,14 +75,9 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
         backgroundColor: Colors.transparent,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Image.network(
-            '${ApiService.baseUrl}$imageUrl',
+          child: ApiImage(
+            imageUrl: imageUrl,
             fit: BoxFit.contain,
-            errorBuilder: (c, e, s) => Container(
-              color: AppTheme.surface,
-              padding: const EdgeInsets.all(40),
-              child: const Icon(Icons.broken_image, size: 60, color: AppTheme.textMuted),
-            ),
           ),
         ),
       ),
@@ -138,7 +134,6 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
                 _buildFilterChip('Tất cả', -1),
                 _buildFilterChip('Đang chờ', 0),
                 _buildFilterChip('Đã duyệt', 1),
-                _buildFilterChip('Từ chối', 2),
               ],
             ),
           ),
@@ -182,9 +177,6 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
     if (req.trangThai == 1) {
       statusColor = AppTheme.success;
       statusText = 'Đã duyệt';
-    } else if (req.trangThai == 2) {
-      statusColor = AppTheme.error;
-      statusText = 'Từ chối';
     } else {
       statusColor = AppTheme.warning;
       statusText = 'Đang chờ';
@@ -272,13 +264,6 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(
-                  child: NeuButton(
-                    onPressed: () => _updateStatus(req.id, 2),
-                    child: const Text('TỪ CHỐI', style: TextStyle(color: AppTheme.error, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: NeuButton(
                     isPrimary: true,

@@ -8,19 +8,35 @@ import eventlet
 # Sử dụng eventlet cho WebSocket hiệu năng cao, nhưng KHÔNG patch thread để tránh deadlock với ChromaDB (native threads)
 eventlet.monkey_patch(thread=False)
 
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, request, session, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from flasgger import Swagger
+import jwt
 from config import config_map, Config
+from core.csrf import init_csrf
+from core.limiter import init_limiter
 
-# Global SocketIO object
-socketio = SocketIO(cors_allowed_origins="*")
+# Global SocketIO object (origins configured per-app in create_app)
+socketio = SocketIO()
 
 def create_app(config_name='default'):
     """Tạo instance Flask ứng với config pattern"""
+    config_class = config_map.get(config_name, config_map['default'])
+    if hasattr(config_class, 'validate_config'):
+        config_class.validate_config()
+
     app = Flask(__name__)
-    CORS(app) # Enable CORS for all routes
+    app.config.from_object(config_class)
+
+    # Restrict CORS to ALLOWED_ORIGINS
+    CORS(app, origins=app.config.get("ALLOWED_ORIGINS", ["*"]))
+
+    # Kích hoạt bảo vệ CSRF
+    init_csrf(app)
+
+    # Kích hoạt Rate Limiter
+    init_limiter(app)
     
     # Cấu hình Swagger UI (Flasgger)
     swagger_template = {
@@ -33,15 +49,13 @@ def create_app(config_name='default'):
     }
     Swagger(app, template=swagger_template)
     
-    # Nạp config
-    app.config.from_object(config_map[config_name])
-    
+    # Nạp config đã được gọi ở trên
     # Register blueprints
     from routes import (
         auth_bp, dashboard_bp, students_bp, classes_bp,
         attendance_bp, training_bp, camera_mgmt_bp, 
         export_bp, public_bp, api_mobile_bp,
-        chatbot_bp, fraud_bp
+        chatbot_bp, fraud_bp, users_bp
     )
     
     app.register_blueprint(auth_bp)
@@ -56,75 +70,112 @@ def create_app(config_name='default'):
     app.register_blueprint(api_mobile_bp)
     app.register_blueprint(chatbot_bp)
     app.register_blueprint(fraud_bp)
+    app.register_blueprint(users_bp)
     from routes.support import support_bp
     app.register_blueprint(support_bp, url_prefix='/support')
     
-    # Init SocketIO
-    socketio.init_app(app, async_mode='eventlet')
+    # Init SocketIO with allowed origins
+    socketio.init_app(
+        app,
+        async_mode='eventlet',
+        cors_allowed_origins=app.config.get("ALLOWED_ORIGINS", ["*"])
+    )
     
     # Khởi tạo Firebase Admin
     from services.fcm_service import init_firebase
     init_firebase()
     
-    # Error handlers — Trang lỗi đẹp mắt
-    from datetime import datetime
-    
-    @app.errorhandler(404)
-    def page_not_found(e):
-        return render_template('errors/error.html',
-            error_code=404,
-            error_title="Trang Không Tồn Tại",
-            error_message="Trang bạn tìm kiếm không tồn tại hoặc đã bị di chuyển. Kiểm tra lại đường dẫn URL.",
-            now=datetime.now().strftime("%H:%M:%S %d/%m/%Y")
-        ), 404
-    
-    @app.errorhandler(500)
-    def internal_error(e):
-        return render_template('errors/error.html',
-            error_code=500,
-            error_title="Lỗi Máy Chủ",
-            error_message="Hệ thống gặp lỗi không mong muốn. Vui lòng thử lại sau hoặc liên hệ quản trị viên.",
-            now=datetime.now().strftime("%H:%M:%S %d/%m/%Y")
-        ), 500
-    
-    @app.errorhandler(403)
-    def forbidden(e):
-        return render_template('errors/error.html',
-            error_code=403,
-            error_title="Truy Cập Bị Từ Chối",
-            error_message="Bạn không có quyền truy cập vào tài nguyên này. Vui lòng đăng nhập với tài khoản phù hợp.",
-            now=datetime.now().strftime("%H:%M:%S %d/%m/%Y")
-        ), 403
-    
-    @app.errorhandler(405)
-    def method_not_allowed(e):
-        return render_template('errors/error.html',
-            error_code=405,
-            error_title="Phương Thức Không Hỗ Trợ",
-            error_message="Phương thức HTTP bạn sử dụng không được hỗ trợ cho trang này.",
-            now=datetime.now().strftime("%H:%M:%S %d/%m/%Y")
-        ), 405
+    # Đăng ký centralized error handler & structured logging
+    from core.error_handler import register_error_handlers
+    register_error_handlers(app)
         
     # Khởi tạo các thư mục rỗng
     Config.init_dirs()
 
+    def _is_authorized_file_access(filename, file_type):
+        """Kiểm tra quyền truy cập file sinh trắc học và ảnh bằng chứng"""
+        if session.get('admin_id') or session.get('giang_vien_id'):
+            return True
+        
+        auth_header = request.headers.get("Authorization", "")
+        token = None
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1].strip()
+        if not token:
+            token = request.args.get("token")
+            
+        if token:
+            try:
+                payload = jwt.decode(token, app.config.get("JWT_SECRET_KEY", Config.SECRET_KEY), algorithms=["HS256"])
+                role = payload.get('role')
+                if role in ('admin', 'teacher'):
+                    return True
+                
+                # Student can only access their own files
+                if role == 'student':
+                    user_id = payload.get('sub')
+                    if not user_id:
+                        return False
+                    
+                    from db.connection import execute_one
+                    if file_type == 'database':
+                        # Check if filename starts with student's mssv
+                        sv = execute_one("SELECT mssv FROM sinh_vien WHERE id = %s", (user_id,))
+                        if sv and filename.startswith(f"{sv['mssv']}"):
+                            return True
+                    elif file_type == 'evidence':
+                        # Check if evidence belongs to this student's leave request
+                        # filename might be stored in minh_chung_url as '/evidence/filename'
+                        check = execute_one("SELECT 1 FROM don_xin_phep WHERE sinh_vien_id = %s AND minh_chung_url LIKE %s", (user_id, f"%{filename}%"))
+                        if check:
+                            return True
+                    elif file_type == 'uploads':
+                        return True # uploads might be public or less sensitive
+                
+                return False
+            except Exception:
+                return False
+                
+        # Fallback for web session
+        if session.get('user_id'):
+            user_id = session.get('user_id')
+            from db.connection import execute_one
+            if file_type == 'database':
+                sv = execute_one("SELECT mssv FROM sinh_vien WHERE id = %s", (user_id,))
+                if sv and filename.startswith(f"{sv['mssv']}"):
+                    return True
+            elif file_type == 'evidence':
+                check = execute_one("SELECT 1 FROM don_xin_phep WHERE sinh_vien_id = %s AND minh_chung_url LIKE %s", (user_id, f"%{filename}%"))
+                if check:
+                    return True
+            elif file_type == 'uploads':
+                return True
+                
+        return False
+
     @app.route('/uploads/<path:filename>')
     def serve_uploaded_file(filename):
-        """Expose uploaded image files."""
+        """Expose uploaded image files securely."""
+        if not _is_authorized_file_access(filename, 'uploads'):
+            return jsonify({"success": False, "message": "Unauthorized access to file"}), 401
         return send_from_directory(Config.UPLOAD_FOLDER, filename)
+
+    @app.route('/database/<path:filename>')
+    def serve_database_file(filename):
+        if not _is_authorized_file_access(filename, 'database'):
+            return jsonify({"success": False, "message": "Unauthorized access to biometric file"}), 401
+        return send_from_directory(Config.DATABASE_DIR, filename)
+
+    @app.route('/evidence/<path:filename>')
+    def serve_evidence_file(filename):
+        if not _is_authorized_file_access(filename, 'evidence'):
+            return jsonify({"success": False, "message": "Unauthorized access to evidence file"}), 401
+        return send_from_directory(Config.EVIDENCE_DIR, filename)
     
     return app
 
 # Khởi tạo the app
 app = create_app(os.getenv('FLASK_ENV', 'development'))
-
-@app.route('/database/<path:filename>')
-def serve_database_file(filename):
-    return send_from_directory(Config.DATABASE_DIR, filename)
-
-@app.route('/evidence/<path:filename>')
-def serve_evidence_file(filename):
-    return send_from_directory(Config.EVIDENCE_DIR, filename)
 
 if __name__ == '__main__':
     print("\n" + "="*50)

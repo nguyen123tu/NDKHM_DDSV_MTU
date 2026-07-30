@@ -1,12 +1,12 @@
 from db.connection import execute_query, execute_update, execute_one
 from services.fcm_service import send_custom_notification
 
-def create_leave_request(sinh_vien_id, lop_id, ly_do, minh_chung_url=None):
+def create_leave_request(sinh_vien_id, lop_id, phien_id, ly_do, minh_chung_url=None):
     sql = """
-        INSERT INTO don_xin_phep (sinh_vien_id, lop_id, ly_do, minh_chung_url, trang_thai)
-        VALUES (%s, %s, %s, %s, 0)
+        INSERT INTO don_xin_phep (sinh_vien_id, lop_id, phien_id, ly_do, minh_chung_url, trang_thai)
+        VALUES (%s, %s, %s, %s, %s, 0)
     """
-    return execute_update(sql, (sinh_vien_id, lop_id, ly_do, minh_chung_url))
+    return execute_update(sql, (sinh_vien_id, lop_id, phien_id, ly_do, minh_chung_url))
 
 def get_student_leave_requests(sinh_vien_id):
     sql = """

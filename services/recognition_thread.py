@@ -36,20 +36,28 @@ class RecognitionSession:
     4. FPS giới hạn 15fps
     """
 
-    def __init__(self, lop_id, camera_id, socketio, start_time="07:00"):
+    def __init__(self, lop_id, camera_id, socketio, start_time="07:00", phien_id=None,
+                 scheduled_start=None, checkin_close_at=None):
         """
         Args:
             lop_id: ID lớp đang điểm danh
             camera_id: ID camera sử dụng
             socketio: Flask-SocketIO instance để emit events
             start_time: Giờ quy định bắt đầu tiết học (VD: "07:00")
+            phien_id: ID phiên điểm danh trong CSDL
+            scheduled_start: datetime giờ học dự kiến
+            checkin_close_at: datetime giờ đóng check-in
         """
         self.lop_id = lop_id
         self.camera_id = camera_id
         self.socketio = socketio
         self.start_time = start_time
+        self.phien_id = phien_id
+        self.scheduled_start = scheduled_start
+        self.checkin_close_at = checkin_close_at
         self._thread = None
         self._running = False
+        self._camera_connected = True
         self._lock = threading.Lock()
 
         # Background subtractor cho motion detection
@@ -163,11 +171,33 @@ class RecognitionSession:
                 matcher.reload_if_updated()
                 last_brain_check = time.time()
 
-            # Đọc frame
+            # Đọc frame — Camera lỗi không làm mất phiên
             frame = cam_manager.get_frame(self.camera_id)
             if frame is None:
-                time.sleep(0.1)
+                if self._camera_connected:
+                    self._camera_connected = False
+                    self.socketio.emit('camera_status', {
+                        'status': 'CAMERA_DISCONNECTED',
+                        'message': 'Camera mất kết nối. Phiên vẫn tiếp tục trong DB. App vẫn có thể điểm danh.',
+                        'camera_id': self.camera_id,
+                    })
+                    print(f"[SESSION] ⚠️ Camera {self.camera_id} mất kết nối. Phiên {self.phien_id} vẫn mở.")
+                time.sleep(1)  # Thử lại sau 1 giây
+                # Thử kết nối lại camera
+                try:
+                    cam_manager.connect(self.camera_id, self.camera_id)
+                except Exception:
+                    pass
                 continue
+            else:
+                if not self._camera_connected:
+                    self._camera_connected = True
+                    self.socketio.emit('camera_status', {
+                        'status': 'CAMERA_CONNECTED',
+                        'message': 'Camera đã kết nối lại.',
+                        'camera_id': self.camera_id,
+                    })
+                    print(f"[SESSION] ✅ Camera {self.camera_id} đã kết nối lại.")
 
             # TỐI ƯU HIỆU NĂNG: Resize frame ngay từ đầu để giảm độ trễ của AI
             # Giảm kích thước ảnh xuống max width 640px trước khi đưa vào YOLO/InsightFace
@@ -305,54 +335,50 @@ class RecognitionSession:
 
                         self._last_ai_results.append(result_item)
 
-                        # Xử lý kết quả & Điểm danh
+                        # Xử lý kết quả & Điểm danh — dùng record_attendance()
                         if mssv != "UNKNOWN":
-                            # ĐÃ ĐIỂM DANH TRONG PHIÊN NÀY → bỏ qua, không ghi DB lại
-                            if mssv in self._attended_students:
-                                pass  # Chỉ hiển thị bbox, không ghi attendance
+                            from db.connection import execute_one
+                            sv_db = execute_one("SELECT id, lop_id FROM sinh_vien WHERE mssv = %s", (mssv,))
+                            if sv_db and str(sv_db.get('lop_id')) == str(self.lop_id):
+                                face_crop = frame[max(0, int(y1)):int(y2), max(0, int(x1)):int(x2)]
+                                log_result = attendance_service.record_attendance(
+                                    session_id=self.phien_id,
+                                    student_id=sv_db['id'],
+                                    method="FACE_CAMERA",
+                                    confidence=sim,
+                                    camera_id=self.camera_id,
+                                    face_image=face_crop if face_crop.size > 0 else None,
+                                )
                             else:
-                                from db.connection import execute_one
-                                sv_db = execute_one("SELECT lop_id FROM sinh_vien WHERE mssv = %s", (mssv,))
-                                if sv_db and str(sv_db.get('lop_id')) == str(self.lop_id):
-                                    log_result = attendance_service.log(
-                                        mssv=mssv,
-                                        lop_id=self.lop_id,
-                                        do_chinh_xac=sim,
-                                        camera_id=self.camera_id,
-                                        session_start_time=self.start_time
-                                    )
-                                    
-                                    # Nếu ghi thành công → đánh dấu đã điểm danh
-                                    if isinstance(log_result, dict) and log_result.get('success'):
-                                        self._attended_students.add(mssv)
-                                else:
-                                    # Cảnh báo sinh viên khác lớp
-                                    log_result = {"success": False, "msg": "Khác lớp", "action": "wrong_class"}
-                                    self._attended_students.add(mssv) # Đánh dấu đã nhận diện để khỏi spam log liên tục
+                                # Cảnh báo sinh viên khác lớp
+                                log_result = {"success": False, "action": "wrong_class", "error_code": "WRONG_CLASS"}
                             
                             # Emit thông tin lên frontend (cooldown 60s tránh spam)
                             emit_key = mssv
                             now = time.time()
                             last_emit = self._emit_cooldowns.get(emit_key, 0)
                             
-                            if now - last_emit > 60:
-                                self._emit_cooldowns[emit_key] = now
-                                
-                                action = log_result.get('action', 'checkin') if isinstance(log_result, dict) else 'checkin'
-                                if isinstance(log_result, dict) and log_result.get('trang_thai') == 'Tre':
-                                    action = 'late'
-                                
-                                avatar_path = student_service.get_avatar_path(mssv)
-                                
-                                self.socketio.emit('attendance_log', {
-                                    'mssv': mssv,
-                                    'ho_ten': ho_ten,
-                                    'similarity': round(sim, 2),
-                                    'thoi_gian': time.strftime("%H:%M:%S"),
-                                    'trang_thai': log_result.get('trang_thai', 'Co mat') if isinstance(log_result, dict) else 'Co mat',
-                                    'action': action,
-                                    'avatar': avatar_path
-                                })
+                            if now - last_emit > 10:
+                                if isinstance(log_result, dict) and log_result.get('success') or (isinstance(log_result, dict) and log_result.get('action') == 'wrong_class' and now - last_emit > 60):
+                                    self._emit_cooldowns[emit_key] = now
+                                    
+                                    action = log_result.get('action', 'checkin')
+                                    status = log_result.get('status', 'PRESENT')
+                                    if status == 'LATE':
+                                        action = 'late'
+                                    
+                                    avatar_path = student_service.get_avatar_path(mssv)
+                                    
+                                    self.socketio.emit('attendance_log', {
+                                        'mssv': mssv,
+                                        'ho_ten': ho_ten,
+                                        'similarity': round(sim, 2),
+                                        'thoi_gian': time.strftime("%H:%M:%S"),
+                                        'trang_thai': log_result.get('display_status', 'Có mặt'),
+                                        'status': status,
+                                        'action': action,
+                                        'avatar': avatar_path
+                                    })
                         else:
                             # Cảnh báo người lạ (người chưa đăng ký) trên Dashboard
                             now = time.time()
@@ -382,11 +408,11 @@ class RecognitionSession:
                     similarities.append(res['sim'])
                     
                     if res.get('is_spoofed'):
-                        # Khuôn mặt giả mạo — Vàng cảnh báo
-                        color = (0, 165, 255)  # Cam
+                        # Khuôn mặt giả mạo — Đỏ cảnh báo
+                        color = (0, 0, 255)  # BGR for Red
                         label = "⚠ GIẢ MẠO"
                     elif mssv != "UNKNOWN":
-                        color = (0, 255, 0)
+                        color = (0, 255, 0) # Lục
                         label = f"{res['ho_ten']} ({res['sim']:.0%})"
                         # Thêm thông tin phân tích nếu có
                         extra_info = []
@@ -399,10 +425,25 @@ class RecognitionSession:
                         if extra_info:
                             label += f" [{', '.join(extra_info)}]"
                     else:
-                        color = (128, 128, 128)
-                        label = "Chưa nhận diện"
+                        color = (0, 165, 255) # Cam cho lúc đang chờ/chưa rõ
+                        label = "Đang phân tích..."
                         
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                    # Vẽ khung dạng góc (Bracket corners) thay vì hình chữ nhật kín
+                    length = 30
+                    thickness = 3
+                    # Top-left
+                    cv2.line(frame, (x1, y1), (x1 + length, y1), color, thickness)
+                    cv2.line(frame, (x1, y1), (x1, y1 + length), color, thickness)
+                    # Top-right
+                    cv2.line(frame, (x2, y1), (x2 - length, y1), color, thickness)
+                    cv2.line(frame, (x2, y1), (x2, y1 + length), color, thickness)
+                    # Bottom-left
+                    cv2.line(frame, (x1, y2), (x1 + length, y2), color, thickness)
+                    cv2.line(frame, (x1, y2), (x1, y2 - length), color, thickness)
+                    # Bottom-right
+                    cv2.line(frame, (x2, y2), (x2 - length, y2), color, thickness)
+                    cv2.line(frame, (x2, y2), (x2, y2 - length), color, thickness)
+
                     frame = self._draw_vn_text(frame, label, (x1, y1 - 28), color)
             else:
                 self._last_ai_results = [] # Xóa box nếu không còn chuyển động
@@ -439,25 +480,55 @@ def get_active_session():
     return _active_session
 
 
-def start_session(lop_id, camera_id, socketio, start_time="07:00"):
+def start_session(lop_id, camera_id, socketio, start_time="07:00", admin_id=None):
     """
     Bắt đầu phiên điểm danh mới.
+    Tạo phiên trong DB → Web và App đều nhìn thấy cùng phiên.
     Nếu đang có phiên cũ → dừng trước.
     """
     global _active_session
     if _active_session and _active_session.is_running:
-        _active_session.stop()
+        stop_session(admin_id=admin_id)
 
-    _active_session = RecognitionSession(lop_id, camera_id, socketio, start_time)
+    from services.attendance_session_service import AttendanceSessionService
+    from datetime import datetime, date
+    try:
+        st_obj = datetime.strptime(start_time, "%H:%M").time()
+        gio_du_kien = datetime.combine(date.today(), st_obj)
+    except Exception:
+        gio_du_kien = datetime.now()
+
+    sess_row, err = AttendanceSessionService.create_session(
+        lop_id=lop_id,
+        admin_id=admin_id,
+        loai_phien="WEB_CAMERA",
+        gio_hoc_du_kien=gio_du_kien
+    )
+    phien_id = sess_row['id'] if sess_row else None
+
+    # Lấy metadata phiên để truyền cho recognition thread
+    scheduled_start = gio_du_kien
+    checkin_close_at = sess_row.get('dong_checkin') or sess_row.get('het_han') if sess_row else None
+
+    _active_session = RecognitionSession(
+        lop_id, camera_id, socketio, start_time,
+        phien_id=phien_id,
+        scheduled_start=scheduled_start,
+        checkin_close_at=checkin_close_at,
+    )
     _active_session.start()
-    return True
+    return phien_id  # Trả session_id để frontend có thể dùng
 
 
-def stop_session():
-    """Dừng phiên điểm danh hiện tại."""
+def stop_session(admin_id=None):
+    """Dừng phiên điểm danh hiện tại và chốt kết quả."""
     global _active_session
     if _active_session:
+        from services.attendance_session_service import AttendanceSessionService
+        close_result = None
+        if _active_session.phien_id:
+            close_result = AttendanceSessionService.close_session(_active_session.phien_id, admin_id=admin_id)
         _active_session.stop()
         _active_session = None
-        return True
+        return close_result or True
     return False

@@ -2,7 +2,7 @@
 Route Điểm Danh Realtime
 """
 
-from flask import render_template, jsonify, request, current_app
+from flask import render_template, jsonify, request, current_app, session
 from . import attendance_bp
 from utils.decorators import login_required
 from services import class_service, attendance_service
@@ -64,8 +64,10 @@ def start():
         return jsonify({"success": False, "msg": "Thiếu thông tin lớp"}), 400
         
     socketio = current_app.extensions['socketio']
-    if start_session(lop_id, camera_id, socketio, start_time):
-        return jsonify({"success": True})
+    admin_id = session.get('admin_id')
+    phien_id = start_session(lop_id, camera_id, socketio, start_time, admin_id=admin_id)
+    if phien_id:
+        return jsonify({"success": True, "session_id": phien_id})
     return jsonify({"success": False, "msg": "Không thể khởi động camera"}), 500
 
 @attendance_bp.route('/stop', methods=['POST'])
@@ -82,7 +84,10 @@ def stop():
       500:
         description: Lỗi máy chủ
     """
-    stop_session()
+    admin_id = session.get('admin_id')
+    result = stop_session(admin_id=admin_id)
+    if isinstance(result, dict):
+        return jsonify({"success": True, "data": result})
     return jsonify({"success": True})
 
 @attendance_bp.route('/history')

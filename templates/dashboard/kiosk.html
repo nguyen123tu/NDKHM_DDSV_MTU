@@ -11,121 +11,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "on-background": "#0b1c30",
-                        "primary-container": "#131b2e",
-                        "surface-tint": "#565e74",
-                        "surface-variant": "#d3e4fe",
-                        "on-tertiary-fixed-variant": "#783200",
-                        "tertiary-fixed": "#ffdbca",
-                        "on-primary-fixed": "#131b2e",
-                        "on-primary": "#ffffff",
-                        "surface-container-high": "#dce9ff",
-                        "primary": "#000000",
-                        "on-secondary-fixed-variant": "#005236",
-                        "on-primary-container": "#7c839b",
-                        "inverse-primary": "#bec6e0",
-                        "secondary-fixed-dim": "#4edea3",
-                        "tertiary": "#000000",
-                        "secondary-container": "#6cf8bb",
-                        "outline": "#76777d",
-                        "on-surface": "#0b1c30",
-                        "on-tertiary-fixed": "#341100",
-                        "on-secondary": "#ffffff",
-                        "on-secondary-container": "#00714d",
-                        "surface": "#f8f9ff",
-                        "surface-dim": "#cbdbf5",
-                        "surface-container-highest": "#d3e4fe",
-                        "tertiary-container": "#341100",
-                        "primary-fixed-dim": "#bec6e0",
-                        "surface-container": "#e5eeff",
-                        "surface-container-lowest": "#ffffff",
-                        "on-surface-variant": "#45464d",
-                        "error": "#ba1a1a",
-                        "secondary-fixed": "#6ffbbe",
-                        "secondary": "#006c49",
-                        "on-tertiary": "#ffffff",
-                        "on-secondary-fixed": "#002113",
-                        "inverse-on-surface": "#eaf1ff",
-                        "surface-bright": "#f8f9ff",
-                        "surface-container-low": "#eff4ff",
-                        "on-error": "#ffffff",
-                        "on-primary-fixed-variant": "#3f465c",
-                        "background": "#f8f9ff",
-                        "outline-variant": "#c6c6cd",
-                        "on-tertiary-container": "#d95f00",
-                        "on-error-container": "#93000a",
-                        "error-container": "#ffdad6",
-                        "inverse-surface": "#213145",
-                        "primary-fixed": "#dae2fd",
-                        "tertiary-fixed-dim": "#ffb690"
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: theme('colors.background'); }
-        /* Scanning Frame Animation */
-        .scan-bracket {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            border: 4px solid theme('colors.secondary-fixed-dim');
-            filter: drop-shadow(0 0 10px theme('colors.secondary-fixed-dim'));
-            transition: all 0.3s ease;
-        }
-        .bracket-tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
-        .bracket-tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
-        .bracket-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
-        .bracket-br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
-
-        .scanning-line {
-            height: 2px;
-            width: 100%;
-            background: linear-gradient(90deg, transparent, theme('colors.secondary-fixed-dim'), transparent);
-            position: absolute;
-            top: 0;
-            animation: scan 2.5s linear infinite;
-            opacity: 0;
-        }
-
-        @keyframes scan {
-            0% { top: 0; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-        }
-        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px 2px rgba(78, 222, 163, 0.1); }
-            50% { box-shadow: 0 0 40px 8px rgba(78, 222, 163, 0.3); }
-        }
-        
-        /* Custom scrollbar for logs */
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: theme('colors.outline-variant'); border-radius: 10px; }
-        
-        /* Animation cho badge */
-        .res-badge-ok { color: theme('colors.secondary'); }
-        .res-badge-err { color: theme('colors.error'); }
-        
-        /* Cần ghi đè các class bootstrap d-none, badge từ logic kiosk.js */
-        .d-none { display: none !important; }
-        .d-flex { display: flex !important; }
-        .bg-success { background-color: theme('colors.secondary') !important; color: white !important; }
-        .bg-danger { background-color: theme('colors.error') !important; color: white !important; }
-        .bg-warning { background-color: #f59e0b !important; color: black !important; }
-        .badge { padding: 4px 8px; border-radius: 9999px; font-size: 12px; font-weight: bold; }
-        .text-danger { color: theme('colors.error') !important; }
-        .text-warning { color: #f59e0b !important; }
-    </style>
+    <script src="{{ url_for('static', filename='js/pages/kiosk_tailwind.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/kiosk.css') }}">
 </head>
 <body class="h-screen w-screen overflow-hidden text-on-surface">
 
@@ -246,152 +133,113 @@
         </div>
     </div>
 
-    <!-- PRE-LIVESTREAM SETUP SCREEN -->
-    <div id="setupScreen" class="absolute inset-0 z-50 bg-background/95 backdrop-blur-xl flex items-center justify-center">
-        <div class="max-w-4xl w-full bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl p-8 mx-4">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-black text-on-surface mb-2 flex justify-center items-center gap-3">
-                    <span class="material-symbols-outlined text-[36px] text-primary">satellite_alt</span>
-                    Dashboard Kiosk Setup
-                </h1>
-                <p class="text-on-surface-variant">Cấu hình phiên điểm danh Kiosk trước khi bắt đầu</p>
-            </div>
+        <!-- PRE-LIVESTREAM SETUP SCREEN -->
+    <div id="setupScreen" class="absolute inset-0 z-50 bg-background/80 backdrop-blur-2xl flex items-center justify-center transition-all duration-500">
+        <!-- Premium Glassmorphism Modal -->
+        <div class="max-w-4xl w-full bg-white/60 dark:bg-[#0b1c30]/80 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] p-10 mx-4 relative overflow-hidden group">
+            
+            <!-- Ambient Glow Effects -->
+            <div class="absolute -top-40 -right-40 w-96 h-96 bg-secondary/20 rounded-full blur-3xl pointer-events-none opacity-50 group-hover:opacity-70 transition-opacity duration-700"></div>
+            <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none opacity-50 group-hover:opacity-70 transition-opacity duration-700"></div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Left: Preview -->
-                <div class="bg-surface-container border border-outline-variant rounded-xl overflow-hidden relative" style="aspect-ratio: 16/9;">
-                    <div class="absolute top-2 right-2 z-10">
-                        <span id="previewStatus" class="badge bg-warning">Chưa kết nối</span>
+            <div class="relative z-10">
+                <div class="text-center mb-10">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-secondary to-blue-500 text-white shadow-lg shadow-secondary/30 mb-5 animate-bounce">
+                        <span class="material-symbols-outlined text-[32px]">satellite_alt</span>
                     </div>
-                    
-                    <video id="previewWebcam" autoplay playsinline muted class="w-full h-full object-cover scale-x-[-1]" style="display:none;"></video>
-                    <img id="previewRtsp" crossorigin="anonymous" class="w-full h-full object-cover" style="display:none;">
-                    
-                    <div id="previewPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-black/5 text-on-surface-variant">
-                        <div id="previewLoading" class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3 d-none"></div>
-                        <span id="previewIcon" class="material-symbols-outlined text-[48px] opacity-50 mb-2">videocam_off</span>
-                        <p id="previewText" class="text-sm font-semibold">Chờ tín hiệu Camera...</p>
-                    </div>
+                    <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight mb-2">
+                        Dashboard Kiosk Setup
+                    </h1>
+                    <p class="text-on-surface-variant/80 font-medium text-lg">Cấu hình phiên điểm danh Kiosk trước khi bắt đầu</p>
                 </div>
 
-                <!-- Right: Config Form -->
-                <div class="flex flex-col gap-5 justify-center">
-                    <div>
-                        <label class="block text-sm font-bold text-on-surface uppercase tracking-wider mb-2">
-                            Nguồn Camera
-                        </label>
-                        <select id="setupCamSource" class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-4 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
-                            <option value="webcam">📸 Webcam Trình Duyệt</option>
-                            <option value="rtsp_lan">🌐 Camera IMOU (LAN - 1.108)</option>
-                            <option value="rtsp_wan">🌐 Camera IMOU (WAN - 1.80)</option>
-                            <option value="rtsp_custom">⚙️ RTSP Tùy Chỉnh Khác</option>
-                        </select>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <!-- Left: Camera Preview (High-Tech Style) -->
+                    <div class="relative rounded-2xl overflow-hidden bg-black/5 dark:bg-black/40 border border-white/20 dark:border-white/10 shadow-inner group/preview" style="aspect-ratio: 16/9;">
+                        <!-- Viewfinder corners -->
+                        <div class="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-secondary/70 rounded-tl-lg z-20 pointer-events-none"></div>
+                        <div class="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-secondary/70 rounded-tr-lg z-20 pointer-events-none"></div>
+                        <div class="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-secondary/70 rounded-bl-lg z-20 pointer-events-none"></div>
+                        <div class="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-secondary/70 rounded-br-lg z-20 pointer-events-none"></div>
+
+                        <div class="absolute top-4 right-4 z-30">
+                            <span id="previewStatus" class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30 backdrop-blur-md shadow-sm transition-all duration-300">Chưa kết nối</span>
+                        </div>
+                        
+                        <video id="previewWebcam" autoplay playsinline muted class="w-full h-full object-cover scale-x-[-1] absolute inset-0" style="display:none;"></video>
+                        <img id="previewRtsp" crossorigin="anonymous" class="w-full h-full object-cover absolute inset-0" style="display:none;">
+                        
+                        <div id="previewPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-transparent text-on-surface-variant/60 backdrop-blur-[2px]">
+                            <div id="previewLoading" class="animate-spin rounded-full h-10 w-10 border-4 border-secondary/20 border-t-secondary mb-4 d-none shadow-[0_0_15px_rgba(0,108,73,0.3)]"></div>
+                            <div id="previewIconWrapper" class="w-16 h-16 rounded-full bg-white/50 dark:bg-black/50 backdrop-blur-md flex items-center justify-center mb-3 border border-white/20 shadow-sm transition-all duration-300 group-hover/preview:scale-110">
+                                <span id="previewIcon" class="material-symbols-outlined text-[32px] text-gray-600 dark:text-gray-300">videocam_off</span>
+                            </div>
+                            <p id="previewText" class="text-sm font-semibold tracking-wide">Chờ tín hiệu Camera...</p>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-bold text-on-surface uppercase tracking-wider mb-2">
-                            Lớp Điểm Danh
-                        </label>
-                        <select id="setupLopId" class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-4 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
-                            <option value="">-- Chọn lớp học --</option>
-                            {% for c in classes %}
-                            <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    <!-- Right: Config Form (Modern Inputs) -->
+                    <div class="flex flex-col gap-6 justify-center">
+                        <div class="group/input">
+                            <label class="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
+                                <span class="material-symbols-outlined text-[18px] text-secondary">videocam</span> Nguồn Camera
+                            </label>
+                            <div class="relative">
+                                <select id="setupCamSource" class="w-full bg-white/50 dark:bg-[#131b2e]/50 border border-white/40 dark:border-white/10 rounded-xl text-sm font-semibold px-4 py-3.5 outline-none focus:border-secondary focus:ring-4 focus:ring-secondary/20 transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_15px_rgba(0,0,0,0.08)] appearance-none !bg-none text-on-surface cursor-pointer">
+                                    <option value="webcam">📸 Webcam Trình Duyệt</option>
+                                    <option value="rtsp_lan">🌐 Camera IMOU (LAN - 1.108)</option>
+                                    <option value="rtsp_wan">🌐 Camera IMOU (WAN - 1.80)</option>
+                                    <option value="rtsp_custom">⚙️ RTSP Tùy Chỉnh Khác</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover/input:text-secondary transition-colors">expand_more</span>
+                            </div>
+                        </div>
 
-                    <div>
-                        <label class="block text-sm font-bold text-on-surface uppercase tracking-wider mb-2">
-                            Ca Học
-                        </label>
-                        <select id="setupStartTime" class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-4 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
-                            <option value="auto">Tự động (Theo lịch học)</option>
-                            <option value="07:00">Ca Sáng (07:00 - 11:30)</option>
-                            <option value="13:00">Ca Chiều (13:00 - 17:30)</option>
-                            <option value="18:00">Ca Tối (18:00 - 21:00)</option>
-                        </select>
-                    </div>
+                        <div class="group/input">
+                            <label class="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
+                                <span class="material-symbols-outlined text-[18px] text-secondary">school</span> Lớp Điểm Danh
+                            </label>
+                            <div class="relative">
+                                <select id="setupLopId" class="w-full bg-white/50 dark:bg-[#131b2e]/50 border border-white/40 dark:border-white/10 rounded-xl text-sm font-semibold px-4 py-3.5 outline-none focus:border-secondary focus:ring-4 focus:ring-secondary/20 transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_15px_rgba(0,0,0,0.08)] appearance-none !bg-none text-on-surface cursor-pointer">
+                                    <option value="">-- Chọn lớp học --</option>
+                                    {% for c in classes %}
+                                    <option value="{{ c.id }}">{{ c.ma_lop }} - {{ c.ten_lop }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover/input:text-secondary transition-colors">expand_more</span>
+                            </div>
+                        </div>
 
-                    <button id="btnGoLive" class="mt-2 w-full bg-primary text-on-primary font-bold py-4 rounded-xl shadow-lg hover:bg-primary/90 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined">power_settings_new</span> KHỞI ĐỘNG HỆ THỐNG
-                    </button>
+                        <div class="group/input">
+                            <label class="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 ml-1">
+                                <span class="material-symbols-outlined text-[18px] text-secondary">schedule</span> Ca Học
+                            </label>
+                            <div class="relative">
+                                <select id="setupStartTime" class="w-full bg-white/50 dark:bg-[#131b2e]/50 border border-white/40 dark:border-white/10 rounded-xl text-sm font-semibold px-4 py-3.5 outline-none focus:border-secondary focus:ring-4 focus:ring-secondary/20 transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_15px_rgba(0,0,0,0.08)] appearance-none !bg-none text-on-surface cursor-pointer">
+                                    <option value="auto">Tự động (Theo lịch học)</option>
+                                    <option value="07:00">Ca Sáng (07:00 - 11:30)</option>
+                                    <option value="13:00">Ca Chiều (13:00 - 17:30)</option>
+                                    <option value="18:00">Ca Tối (18:00 - 21:00)</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover/input:text-secondary transition-colors">expand_more</span>
+                            </div>
+                        </div>
+
+                        <button id="btnGoLive" class="mt-4 w-full relative overflow-hidden group/btn bg-gradient-to-r from-secondary to-[#00b07a] text-white font-bold py-4 rounded-xl shadow-[0_8px_20px_rgba(0,108,73,0.3)] hover:shadow-[0_12px_25px_rgba(0,108,73,0.5)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2">
+                            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-out"></div>
+                            <span class="material-symbols-outlined relative z-10 transition-transform duration-500 group-hover/btn:rotate-[360deg]">power_settings_new</span>
+                            <span class="relative z-10 tracking-wider">KHỞI ĐỘNG HỆ THỐNG</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- UI Bridge Script -->
-    <script>
-        // Bridge between kiosk.js logic and Tailwind UI
-        const resultPanel = document.getElementById('result-panel');
-        const waitState = document.getElementById('waitState');
-        
-        // Use MutationObserver to toggle waitState based on resultPanel visibility
-        const resObserver = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.attributeName === 'style') {
-                    if (resultPanel.style.display === 'none') {
-                        waitState.style.display = 'block';
-                    } else {
-                        waitState.style.display = 'none';
-                    }
-                }
-            });
-        });
-        resObserver.observe(resultPanel, { attributes: true });
+    
+    
 
-        // Overwrite addLog CSS slightly to match Tailwind via JS hook
-        const originalAddLog = window.addLog;
-        // We will define this after kiosk.js loads, or just style `.log-item` in css.
-    </script>
-    <style>
-        /* Styles for dynamic log items created by kiosk.js */
-        .log-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid theme('colors.outline-variant');
-            gap: 12px;
-        }
-        .log-item:last-child { border-bottom: none; }
-        .log-time { font-family: monospace; font-size: 12px; color: theme('colors.on-surface-variant'); font-weight: 600; width: 45px; }
-        .log-name { font-weight: 700; font-size: 14px; color: theme('colors.on-surface'); }
-        .log-mssv { font-family: monospace; font-size: 12px; color: theme('colors.on-surface-variant'); }
-        .flex-grow-1 { flex-grow: 1; }
-        .log-check { color: theme('colors.secondary'); display: flex; align-items: center; }
-    </style>
-
-    <!-- Global: Bypass ngrok warning -->
-    <script>
-    (function() {
-        const _f = window.fetch;
-        window.fetch = function(u, o) {
-            let isLocal = true;
-            try {
-                const urlStr = (typeof u === 'string') ? u : (u && u.url ? u.url : String(u));
-                if (urlStr.startsWith('http://') || urlStr.startsWith('https://')) {
-                    if (new URL(urlStr).origin !== window.location.origin) isLocal = false;
-                }
-            } catch(e) {}
-            
-            if (isLocal) {
-                let newO = o ? { ...o } : {};
-                let newH = newO.headers ? newO.headers : {};
-                if (newH instanceof Headers) {
-                    const h = new Headers(newH);
-                    h.set('ngrok-skip-browser-warning', '1');
-                    newO.headers = h;
-                } else {
-                    newO.headers = { ...newH, 'ngrok-skip-browser-warning': '1' };
-                }
-                return _f.call(this, u, newO);
-            }
-            
-            if (o === undefined) return _f.call(this, u);
-            return _f.call(this, u, o);
-        };
-    })();
-    </script>
+    
     
     <script src="{{ url_for('static', filename='js/pages/kiosk.js') }}?v=4"></script>
 </body>

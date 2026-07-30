@@ -75,7 +75,7 @@ class AIChatbot:
                         ten_lop = lop['ten_lop'] if lop else "Không rõ"
                         
                         total_sessions = execute_one("SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s", (sv['lop_id'],))
-                        present = execute_one("SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND trang_thai = 'Co mat'", (sv['id'],))
+                        present = execute_one("SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND status IN ('PRESENT', 'LATE')", (sv['id'],))
                         vang = (total_sessions['count'] if total_sessions else 0) - (present['count'] if present else 0)
                         if vang < 0: vang = 0
                         
@@ -146,7 +146,7 @@ class AIChatbot:
                         ten_lop = lop['ten_lop'] if lop else "Không rõ"
                         
                         total_sessions = execute_one("SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s", (sv['lop_id'],))
-                        present = execute_one("SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND trang_thai = 'Co mat'", (sv['id'],))
+                        present = execute_one("SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND status IN ('PRESENT', 'LATE')", (sv['id'],))
                         vang = (total_sessions['count'] if total_sessions else 0) - (present['count'] if present else 0)
                         if vang < 0: vang = 0
                         

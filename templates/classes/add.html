@@ -62,9 +62,20 @@
                 </div>
                 
                 <!-- Row 3: Teacher -->
-                <div>
-                    <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Giảng Viên Quản Lý</label>
-                    <input type="text" name="giao_vien" placeholder="ThS. Nguyễn Văn A" class="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Chọn Giảng Viên <span class="text-error">*</span></label>
+                        <select name="giang_vien_id" class="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm cursor-pointer" required>
+                            <option value="">-- Chọn Giảng viên --</option>
+                            {% for gv in giang_viens %}
+                            <option value="{{ gv.id }}">{{ gv.ho_ten }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5 block">Ghi chú chức danh (Tùy chọn)</label>
+                        <input type="text" name="giao_vien" placeholder="VD: ThS. Nguyễn Văn A" class="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all shadow-sm">
+                    </div>
                 </div>
                 
                 <!-- Row 4: Note -->

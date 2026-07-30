@@ -148,7 +148,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         startBrowserDetectionLoop();
 
                     } catch (err) {
-                        alert("Lỗi mở Webcam: " + err);
+                        console.error("Lỗi mở Webcam:", err);
+                        let msg = "Không thể mở Webcam trên máy tính của bạn.\n\n";
+                        if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                            msg += "🔴 Nguyên nhân (NotFoundError):\n• Máy tính/Laptop của bạn hiện KHÔNG CÓ thiết bị Camera/Webcam nào được cắm vào.\n• Hoặc công tắc vật lý (phím chức năng tắt Camera trên Laptop) đang bị tắt.\n• Hoặc camera bị vô hiệu hóa trong Windows Device Manager.\n\n💡 Cách khắc phục: Hãy cắm Webcam USB, bật phím camera trên máy, hoặc chuyển sang chế độ IP Camera / test trên máy có Webcam.";
+                        } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                            msg += "🔴 Nguyên nhân (NotAllowedError):\n• Bạn đã từ chối cấp quyền sử dụng Camera trên trình duyệt.\n• Hoặc cài đặt Quyền riêng tư của Windows (Settings > Privacy & security > Camera) đang tắt quyền cho trình duyệt.\n\n💡 Cách khắc phục: Cho phép quyền truy cập Camera trên thanh URL và trong cài đặt Windows.";
+                        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                            msg += "🔴 Nguyên nhân (NotReadableError):\n• Camera đang bị chiếm dụng bởi một ứng dụng khác (Zoom, MS Teams, OBS, Skype...) hoặc một tab trình duyệt khác.\n\n💡 Cách khắc phục: Hãy tắt các phần mềm đang dùng Camera và thử lại.";
+                        } else {
+                            msg += "🔴 Chi tiết lỗi: " + (err.message || err);
+                        }
+                        alert("⚠️ LỖI THIẾT BỊ CAMERA\n\n" + msg);
+                        statusText.innerText = "Lỗi thiết bị Camera (" + err.name + ")";
                         startBtn.disabled = false;
                     }
 
@@ -304,48 +316,72 @@ document.addEventListener('DOMContentLoaded', () => {
                     const earR = getEAR(rightEye);
                     const ear = (earL + earR) / 2.0;
 
-                    // Vẽ box
-                    ctx.strokeStyle = '#00FF00';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-                    // Liveness check (chớp mắt)
-                    // Nếu EAR < 0.25 => đang nhắm mắt (blinked)
                     const isBlinking = ear < 0.25;
                     
-                    let displayText = "Nhìn thẳng & chớp mắt";
-                    let displayColor = '#00FF00';
+                    let displayText = "Đang quét...";
+                    let displayColor = '#FBBF24'; // Màu vàng chờ
+                    let boxColor = '#FBBF24';
                     
                     if (isBlinking) {
-                        displayText = "Đã chớp mắt!";
-                        displayColor = '#FF0000';
+                        displayText = "Đang phân tích...";
+                        displayColor = '#3B82F6'; // Màu xanh dương
+                        boxColor = '#3B82F6';
                         validFaceDetected = true;
                     } else {
                         validFaceDetected = true; 
                     }
                     
-                    // Show similarity if we have a recent match
-                    if (lastMatchInfo && (Date.now() - lastMatchInfo.time < 4000)) {
-                        const simPercent = (lastMatchInfo.similarity * 100).toFixed(1);
-                        displayText = `${lastMatchInfo.name} (${simPercent}%)`;
-                        displayColor = '#00FFFF'; // Cyan for successful match
-                        ctx.strokeStyle = '#00FFFF';
-                        ctx.strokeRect(box.x, box.y, box.width, box.height);
+                    // Hiển thị trạng thái sau khi check backend
+                    if (window.lastValidation && (Date.now() - window.lastValidation.time < 4000)) {
+                        displayText = window.lastValidation.text;
+                        if (window.lastValidation.status === 'success') {
+                            displayColor = '#10B981'; // Xanh lá mượt
+                            boxColor = '#10B981';
+                        } else if (window.lastValidation.status === 'spoofing') {
+                            displayColor = '#EF4444'; // Đỏ cảnh báo
+                            boxColor = '#EF4444';
+                        } else {
+                            displayColor = '#F97316'; // Cam cảnh báo
+                            boxColor = '#F97316';
+                        }
                     }
 
-                    ctx.fillStyle = displayColor;
-                    ctx.font = "bold 16px Arial";
+                    // Vẽ khung dạng góc (Bracket corners) giống máy quét
+                    const {x, y, width, height} = box;
+                    const len = 30; // độ dài góc
+                    ctx.strokeStyle = boxColor;
+                    ctx.lineWidth = 4;
+                    ctx.lineJoin = 'round';
+                    ctx.beginPath();
+                    // Top-Left
+                    ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y);
+                    // Top-Right
+                    ctx.moveTo(x + width - len, y); ctx.lineTo(x + width, y); ctx.lineTo(x + width, y + len);
+                    // Bottom-Left
+                    ctx.moveTo(x, y + height - len); ctx.lineTo(x, y + height); ctx.lineTo(x + len, y + height);
+                    // Bottom-Right
+                    ctx.moveTo(x + width - len, y + height); ctx.lineTo(x + width, y + height); ctx.lineTo(x + width, y + height - len);
+                    ctx.stroke();
+
+                    // Vẽ text nền đen mờ
                     ctx.save();
-                    ctx.translate(box.x + box.width / 2, box.y - 10);
-                    ctx.scale(-1, 1);
+                    ctx.translate(box.x + box.width / 2, box.y - 15);
+                    ctx.scale(-1, 1); // Đảo ngược do camera bị lật
+                    
+                    ctx.font = "bold 16px 'Inter', sans-serif";
                     ctx.textAlign = "center";
-                    ctx.fillText(displayText, 0, 0);
+                    const textWidth = ctx.measureText(displayText).width;
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+                    ctx.fillRect(-textWidth/2 - 8, -16, textWidth + 16, 24);
+                    
+                    ctx.fillStyle = displayColor;
+                    ctx.fillText(displayText, 0, 2);
                     ctx.restore();
                 }
 
                 // Gửi ảnh lên server nếu phát hiện khuôn mặt hợp lệ
                 const now = Date.now();
-                if (validFaceDetected && (now - lastRecognizeTime > 2000)) {
+                if (validFaceDetected && (now - lastRecognizeTime > 2500)) {
                     lastRecognizeTime = now;
                     sendFrameToBackend(localVideo);
                 }
@@ -545,15 +581,32 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const toast = document.createElement('div');
-        toast.className = `attendance-toast ${type === 'warning' ? 'toast-checkout' : ''} ${type === 'danger' ? 'toast-alert' : ''}`;
+        let borderClass = 'border-l-4 border-green-500';
+        let iconBg = 'bg-green-100 text-green-600';
+        
+        if (type === 'warning') {
+            borderClass = 'border-l-4 border-yellow-500';
+            iconBg = 'bg-yellow-100 text-yellow-600';
+        } else if (type === 'danger') {
+            borderClass = 'border-l-4 border-red-500';
+            iconBg = 'bg-red-100 text-red-600';
+        }
+
+        toast.className = `flex items-center gap-3 bg-surface border border-outline-variant rounded-xl shadow-lg p-4 min-w-[320px] transition-all duration-300 transform translate-x-full ${borderClass}`;
+        // Delay to slide in
+        setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+
         toast.innerHTML = `
-            <div class="toast-icon ${type}">${iconMap[type] || iconMap.success}</div>
-            <div class="toast-body">
-                <h6>${title}</h6>
-                <p>${message}</p>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 ${iconBg}">
+                ${iconMap[type] || iconMap.success}
             </div>
-            <button class="toast-close" onclick="this.parentElement.classList.add('toast-out'); setTimeout(() => this.parentElement.remove(), 300);">
-                <i class="fas fa-times"></i>
+            <div class="flex-1">
+                <h6 class="text-sm font-bold text-on-surface m-0">${title}</h6>
+                <p class="text-xs text-on-surface-variant m-0 mt-0.5">${message}</p>
+            </div>
+            <button class="text-on-surface-variant hover:text-error transition-colors p-1" 
+                    onclick="this.parentElement.classList.add('translate-x-full', 'opacity-0'); setTimeout(() => this.parentElement.remove(), 300);">
+                <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
         `;
 
@@ -574,8 +627,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Auto remove after 4s
         setTimeout(() => {
-            toast.classList.add('toast-out');
-            setTimeout(() => toast.remove(), 300);
+            if (toast.parentElement) {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }
         }, 4000);
 
         // Keep max 5 toasts
