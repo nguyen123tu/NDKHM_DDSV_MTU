@@ -16,6 +16,7 @@ import '../utils/camera_utils.dart';
 
 // Liveness Detection State
 enum LivenessState { findFace, challenge, returnFrontal, passed }
+
 enum LivenessChallenge { turnLeft, turnRight, smile, blink }
 
 class ScanScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   bool _isProcessingFrame = false;
   double _uploadProgress = 0.0;
   String _realtimeWarning = "";
-  
+
   final FaceDetector _faceDetector = FaceDetector(
     options: FaceDetectorOptions(
       enableContours: false,
@@ -64,7 +65,12 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
 
   void _resetLiveness() {
     _livenessState = LivenessState.findFace;
-    final challenges = [LivenessChallenge.turnLeft, LivenessChallenge.turnRight, LivenessChallenge.smile, LivenessChallenge.blink];
+    final challenges = [
+      LivenessChallenge.turnLeft,
+      LivenessChallenge.turnRight,
+      LivenessChallenge.smile,
+      LivenessChallenge.blink
+    ];
     _currentChallenge = challenges[Random().nextInt(challenges.length)];
   }
 
@@ -75,12 +81,16 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
     _initCamera();
     _checkConnectivity();
 
-    _scanLineController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2500))..repeat();
+    _scanLineController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 2500))
+      ..repeat();
     _scanLineAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _scanLineController, curve: Curves.easeInOut),
     );
 
-    _cornerPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
+    _cornerPulseController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1500))
+      ..repeat(reverse: true);
     _cornerPulseAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
       CurvedAnimation(parent: _cornerPulseController, curve: Curves.easeInOut),
     );
@@ -95,14 +105,17 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           orElse: () => _cameras![0],
         );
         _controller = CameraController(
-          frontCamera, 
-          ResolutionPreset.medium, // Giảm xuống medium (480p) để tăng FPS và giảm giật lag UI
+          frontCamera,
+          ResolutionPreset
+              .medium, // Giảm xuống medium (480p) để tăng FPS và giảm giật lag UI
           enableAudio: false,
-          imageFormatGroup: Platform.isAndroid ? ImageFormatGroup.yuv420 : ImageFormatGroup.bgra8888,
+          imageFormatGroup: Platform.isAndroid
+              ? ImageFormatGroup.yuv420
+              : ImageFormatGroup.bgra8888,
         );
         await _controller!.initialize();
         if (!mounted) return;
-        
+
         // Bật tự động lấy nét và tự động phơi sáng
         await _controller!.setFocusMode(FocusMode.auto);
         await _controller!.setExposureMode(ExposureMode.auto);
@@ -126,29 +139,36 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
         builder: (c) => AlertDialog(
           title: const Text("Lỗi Khởi Tạo"),
           content: Text("Không thể truy cập camera: $e"),
-          actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text("Đóng"))],
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(c), child: const Text("Đóng"))
+          ],
         ),
       );
     }
   }
 
-  Future<void> _processCameraImage(CameraImage image, CameraDescription camera) async {
+  Future<void> _processCameraImage(
+      CameraImage image, CameraDescription camera) async {
     if (_isProcessingFrame || _isScanning) return;
-    
+
     // Throttle để chỉ xử lý 5-7 khung hình / giây, nhường CPU cho UI render mượt hơn
-    if (DateTime.now().difference(_lastFrameProcessed).inMilliseconds < 150) return;
-    
+    if (DateTime.now().difference(_lastFrameProcessed).inMilliseconds < 150)
+      return;
+
     _isProcessingFrame = true;
     _lastFrameProcessed = DateTime.now();
 
     try {
       if (CameraUtils.isImageTooDark(image)) {
-        if (mounted) setState(() => _realtimeWarning = "Thiếu sáng! Hãy tìm nơi sáng hơn");
+        if (mounted)
+          setState(() => _realtimeWarning = "Thiếu sáng! Hãy tìm nơi sáng hơn");
         _isProcessingFrame = false;
         return;
       }
 
-      final inputImage = CameraUtils.convertCameraImageToInputImage(image, camera);
+      final inputImage =
+          CameraUtils.convertCameraImageToInputImage(image, camera);
       if (inputImage == null) {
         _isProcessingFrame = false;
         return;
@@ -156,13 +176,14 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
 
       final faces = await _faceDetector.processImage(inputImage);
       if (faces.isEmpty) {
-        if (mounted) setState(() => _realtimeWarning = "Không tìm thấy khuôn mặt");
+        if (mounted)
+          setState(() => _realtimeWarning = "Không tìm thấy khuôn mặt");
         _isProcessingFrame = false;
         return;
       }
 
       final face = faces.first; // Lấy khuôn mặt to nhất (gần nhất)
-      
+
       final rotY = face.headEulerAngleY ?? 0;
       final rotZ = face.headEulerAngleZ ?? 0;
       final leftEyeOpen = face.leftEyeOpenProbability ?? 1.0;
@@ -172,67 +193,72 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
       // Kiểm tra khoảng cách
       final screenWidth = MediaQuery.of(context).size.width;
       if (face.boundingBox.width < screenWidth * 0.3) {
-        if (mounted) setState(() => _realtimeWarning = "Hãy di chuyển lại gần hơn");
+        if (mounted)
+          setState(() => _realtimeWarning = "Hãy di chuyển lại gần hơn");
         _isProcessingFrame = false;
         return;
       }
 
       // STATE MACHINE: Liveness Detection
       if (_livenessState == LivenessState.findFace) {
-         if (rotY.abs() <= 10 && rotZ.abs() <= 10) {
-            _livenessState = LivenessState.challenge;
-         } else {
-            if (mounted) setState(() => _realtimeWarning = "Vui lòng nhìn thẳng camera");
-            _isProcessingFrame = false;
-            return;
-         }
+        if (rotY.abs() <= 10 && rotZ.abs() <= 10) {
+          _livenessState = LivenessState.challenge;
+        } else {
+          if (mounted)
+            setState(() => _realtimeWarning = "Vui lòng nhìn thẳng camera");
+          _isProcessingFrame = false;
+          return;
+        }
       }
 
       if (_livenessState == LivenessState.challenge) {
-         switch (_currentChallenge) {
-           case LivenessChallenge.turnLeft:
-             if (mounted) setState(() => _realtimeWarning = "Quay nhẹ đầu sang TRÁI");
-             if (rotY < -15) _livenessState = LivenessState.returnFrontal;
-             break;
-           case LivenessChallenge.turnRight:
-             if (mounted) setState(() => _realtimeWarning = "Quay nhẹ đầu sang PHẢI");
-             if (rotY > 15) _livenessState = LivenessState.returnFrontal;
-             break;
-           case LivenessChallenge.smile:
-             if (mounted) setState(() => _realtimeWarning = "Hãy MỈM CƯỜI");
-             if (smiling > 0.7) _livenessState = LivenessState.returnFrontal;
-             break;
-           case LivenessChallenge.blink:
-             if (mounted) setState(() => _realtimeWarning = "Hãy CHỚP MẮT");
-             if (leftEyeOpen < 0.2 && rightEyeOpen < 0.2) _livenessState = LivenessState.returnFrontal;
-             break;
-         }
-         _isProcessingFrame = false;
-         return;
+        switch (_currentChallenge) {
+          case LivenessChallenge.turnLeft:
+            if (mounted)
+              setState(() => _realtimeWarning = "Quay nhẹ đầu sang TRÁI");
+            if (rotY < -15) _livenessState = LivenessState.returnFrontal;
+            break;
+          case LivenessChallenge.turnRight:
+            if (mounted)
+              setState(() => _realtimeWarning = "Quay nhẹ đầu sang PHẢI");
+            if (rotY > 15) _livenessState = LivenessState.returnFrontal;
+            break;
+          case LivenessChallenge.smile:
+            if (mounted) setState(() => _realtimeWarning = "Hãy MỈM CƯỜI");
+            if (smiling > 0.7) _livenessState = LivenessState.returnFrontal;
+            break;
+          case LivenessChallenge.blink:
+            if (mounted) setState(() => _realtimeWarning = "Hãy CHỚP MẮT");
+            if (leftEyeOpen < 0.2 && rightEyeOpen < 0.2)
+              _livenessState = LivenessState.returnFrontal;
+            break;
+        }
+        _isProcessingFrame = false;
+        return;
       }
 
       if (_livenessState == LivenessState.returnFrontal) {
-         if (mounted) setState(() => _realtimeWarning = "Tuyệt vời! Hãy nhìn thẳng");
-         if (rotY.abs() <= 10 && rotZ.abs() <= 10) {
-            _livenessState = LivenessState.passed;
-         } else {
-            _isProcessingFrame = false;
-            return;
-         }
+        if (mounted)
+          setState(() => _realtimeWarning = "Tuyệt vời! Hãy nhìn thẳng");
+        if (rotY.abs() <= 10 && rotZ.abs() <= 10) {
+          _livenessState = LivenessState.passed;
+        } else {
+          _isProcessingFrame = false;
+          return;
+        }
       }
 
       // Vượt qua Liveness -> Kích hoạt chụp
       if (_livenessState == LivenessState.passed) {
-        if (mounted) setState(() {
-          _realtimeWarning = "Đang xử lý...";
-          _uploadProgress = 0.2;
-        });
-        
+        if (mounted)
+          setState(() {
+            _realtimeWarning = "Đang xử lý...";
+            _uploadProgress = 0.2;
+          });
+
         await _controller!.stopImageStream();
         _captureAndDetectFace();
       }
-
-
     } catch (e) {
       // Ignored
     } finally {
@@ -250,7 +276,8 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _captureAndDetectFace() async {
-    if (_isScanning || _controller == null || !_controller!.value.isInitialized) return;
+    if (_isScanning || _controller == null || !_controller!.value.isInitialized)
+      return;
 
     try {
       setState(() {
@@ -268,9 +295,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
         final inputImage = InputImage.fromFilePath(imageFile.path);
         final faces = await _faceDetector.processImage(inputImage);
         if (faces.isNotEmpty) {
-           finalBoundingBox = faces.first.boundingBox;
+          finalBoundingBox = faces.first.boundingBox;
         }
-      } catch(e) {
+      } catch (e) {
         debugPrint('Không thể detect face trên ảnh chụp: $e');
       }
 
@@ -290,7 +317,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           _resetLiveness(); // Reset trạng thái liveness cho lần quét sau
           _uploadProgress = 0.0;
         });
-        
+
         // Khởi động lại stream nếu auto scan đang bật
         if (_autoScan) {
           try {
@@ -303,7 +330,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                 _processCameraImage(image, frontCamera);
               }
             });
-          } catch(e) {}
+          } catch (e) {}
         }
       }
     }
@@ -312,19 +339,22 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   Future<void> _checkConnectivity() async {
     try {
       final result = await Connectivity().checkConnectivity();
-      if (mounted) setState(() => _isOffline = result.contains(ConnectivityResult.none));
+      if (mounted)
+        setState(() => _isOffline = result.contains(ConnectivityResult.none));
     } catch (_) {
       if (mounted) setState(() => _isOffline = true);
     }
 
     Connectivity().onConnectivityChanged.listen((result) {
-      if (mounted) setState(() => _isOffline = result.contains(ConnectivityResult.none));
+      if (mounted)
+        setState(() => _isOffline = result.contains(ConnectivityResult.none));
     });
   }
 
   Future<void> _handleOfflineScan(XFile image) async {
     try {
-      await AttendanceRepository().saveAttendanceOffline('OFFLINE_PENDING', 0.0);
+      await AttendanceRepository()
+          .saveAttendanceOffline('OFFLINE_PENDING', 0.0);
       if (!mounted) return;
       setState(() {
         _resultSuccess = true;
@@ -338,9 +368,16 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
       });
     } catch (e) {
       if (mounted) {
-        setState(() { _resultSuccess = false; _resultMessage = 'Lỗi lưu offline: $e'; });
+        setState(() {
+          _resultSuccess = false;
+          _resultMessage = 'Lỗi lưu offline: $e';
+        });
         Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) setState(() { _resultSuccess = null; _resultMessage = null; });
+          if (mounted)
+            setState(() {
+              _resultSuccess = null;
+              _resultMessage = null;
+            });
         });
       }
     }
@@ -368,7 +405,8 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
     }
 
     return await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 10)),
+      locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 10)),
     );
   }
 
@@ -378,55 +416,70 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
       double? lng;
 
       File fileToUpload = File(image.path);
-      
+
       // Giai đoạn 1: Crop khuôn mặt nếu có bounding box để giảm tải dung lượng API
       if (boundingBox != null) {
-         final croppedFile = await CameraUtils.cropFaceFromImage(fileToUpload, boundingBox);
-         if (croppedFile != null) {
-           fileToUpload = croppedFile;
-           debugPrint('Đã crop ảnh khuôn mặt thành công');
-         }
+        final croppedFile =
+            await CameraUtils.cropFaceFromImage(fileToUpload, boundingBox);
+        if (croppedFile != null) {
+          fileToUpload = croppedFile;
+          debugPrint('Đã crop ảnh khuôn mặt thành công');
+        }
       }
 
       final bytes = await fileToUpload.readAsBytes();
       final base64Image = base64Encode(bytes);
       final dataUrl = "data:image/jpeg;base64,$base64Image";
 
-      final result = await _apiService.recognizeFace(dataUrl, lat: lat, lng: lng);
+      final result =
+          await _apiService.recognizeFace(dataUrl, lat: lat, lng: lng);
       if (!mounted) return;
 
       if (result['success'] == true) {
         final student = result['student'];
         final att = result['attendance'];
-        
+
         setState(() {
           _resultSuccess = true;
           _resultName = student['ho_ten'] ?? 'N/A';
           _resultMssv = student['mssv'] ?? '';
-          _resultMessage = att != null ? (att['msg'] ?? 'Điểm danh thành công') : 'Nhận diện thành công';
+          _resultMessage = att != null
+              ? (att['msg'] ?? 'Điểm danh thành công')
+              : 'Nhận diện thành công';
           _autoScan = false;
         });
 
-        await AttendanceRepository().saveAttendanceOffline(student['mssv'], student['do_chinh_xac'] ?? 0.99);
+        await AttendanceRepository().saveAttendanceOffline(
+            student['mssv'], student['do_chinh_xac'] ?? 0.99);
 
         Future.delayed(const Duration(seconds: 4), () {
           if (mounted) setState(() => _autoScan = true);
         });
-
       } else {
         setState(() {
           _resultSuccess = false;
           _resultMessage = result['msg'] ?? 'Người lạ, không nhận diện được';
         });
         Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) setState(() { _resultSuccess = null; _resultMessage = null; });
+          if (mounted)
+            setState(() {
+              _resultSuccess = null;
+              _resultMessage = null;
+            });
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() { _resultSuccess = false; _resultMessage = 'Lỗi nhận diện: $e'; });
+        setState(() {
+          _resultSuccess = false;
+          _resultMessage = 'Lỗi nhận diện: $e';
+        });
         Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) setState(() { _resultSuccess = null; _resultMessage = null; });
+          if (mounted)
+            setState(() {
+              _resultSuccess = null;
+              _resultMessage = null;
+            });
         });
       }
     }
@@ -458,14 +511,16 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                       children: [
                         CircularProgressIndicator(color: AppTheme.secondary),
                         SizedBox(height: 16),
-                        Text("Khởi tạo hệ thống...", style: TextStyle(color: AppTheme.textSecondary)),
+                        Text("Khởi tạo hệ thống...",
+                            style: TextStyle(color: AppTheme.textSecondary)),
                       ],
                     ),
                   ),
                 ),
 
           // Lớp phủ tối mờ
-          Positioned.fill(child: Container(color: Colors.black.withValues(alpha: 0.4))),
+          Positioned.fill(
+              child: Container(color: Colors.black.withValues(alpha: 0.4))),
 
           // ====== HUD SCANNER (KHUNG QUÉT) ======
           Center(
@@ -494,7 +549,8 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                   animation: _scanLineAnimation,
                   builder: (context, child) {
                     return CustomPaint(
-                      painter: HudScanLinePainter(progress: _scanLineAnimation.value),
+                      painter: HudScanLinePainter(
+                          progress: _scanLineAnimation.value),
                     );
                   },
                 ),
@@ -508,11 +564,13 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
             right: 0,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
                     _buildHudButton(
-                      child: const Icon(Icons.arrow_back_ios_new, color: AppTheme.textPrimary, size: 18),
+                      child: const Icon(Icons.arrow_back_ios_new,
+                          color: AppTheme.textPrimary, size: 18),
                       onTap: () => Navigator.pop(context),
                     ),
                     const Spacer(),
@@ -522,17 +580,31 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 8, height: 8,
+                            width: 8,
+                            height: 8,
                             decoration: BoxDecoration(
-                              color: _isOffline ? AppTheme.error : AppTheme.success,
+                              color: _isOffline
+                                  ? AppTheme.error
+                                  : AppTheme.success,
                               shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(color: (_isOffline ? AppTheme.error : AppTheme.success).withValues(alpha: 0.6), blurRadius: 8)],
+                              boxShadow: [
+                                BoxShadow(
+                                    color: (_isOffline
+                                            ? AppTheme.error
+                                            : AppTheme.success)
+                                        .withValues(alpha: 0.6),
+                                    blurRadius: 8)
+                              ],
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             _isOffline ? 'OFFLINE' : 'ONLINE',
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                            style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1),
                           ),
                         ],
                       ),
@@ -542,7 +614,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                     _buildHudButton(
                       child: Icon(
                         _autoScan ? Icons.smart_toy : Icons.pause,
-                        color: _autoScan ? AppTheme.secondary : AppTheme.textSecondary,
+                        color: _autoScan
+                            ? AppTheme.secondary
+                            : AppTheme.textSecondary,
                         size: 20,
                       ),
                       onTap: () => setState(() => _autoScan = !_autoScan),
@@ -568,29 +642,41 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                       children: [
                         if (_isScanning)
                           const SizedBox(
-                            width: 14, height: 14,
-                            child: CircularProgressIndicator(color: AppTheme.secondary, strokeWidth: 2),
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                                color: AppTheme.secondary, strokeWidth: 2),
                           )
                         else
                           Icon(
-                            _autoScan ? Icons.radar : Icons.motion_photos_paused, 
-                            color: _autoScan ? AppTheme.secondary : AppTheme.textMuted, 
-                            size: 16
-                          ),
+                              _autoScan
+                                  ? Icons.radar
+                                  : Icons.motion_photos_paused,
+                              color: _autoScan
+                                  ? AppTheme.secondary
+                                  : AppTheme.textMuted,
+                              size: 16),
                         const SizedBox(width: 10),
                         Text(
-                          _isScanning ? "ĐANG TẢI LÊN..." : _autoScan ? _realtimeWarning.toUpperCase() : "TẠM DỪNG",
+                          _isScanning
+                              ? "ĐANG TẢI LÊN..."
+                              : _autoScan
+                                  ? _realtimeWarning.toUpperCase()
+                                  : "TẠM DỪNG",
                           style: TextStyle(
-                            color: _isScanning ? AppTheme.secondary : AppTheme.textPrimary, 
-                            fontSize: 12, 
-                            fontWeight: FontWeight.w900, 
-                            letterSpacing: 2
-                          ),
+                              color: _isScanning
+                                  ? AppTheme.secondary
+                                  : AppTheme.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2),
                         ),
                       ],
                     ),
-                  ).animate(target: _isScanning ? 1 : 0).shimmer(duration: 1.seconds),
-                  
+                  )
+                      .animate(target: _isScanning ? 1 : 0)
+                      .shimmer(duration: 1.seconds),
+
                   // Progress Bar cho quá trình upload/phân tích
                   if (_isScanning || _uploadProgress > 0)
                     Container(
@@ -603,15 +689,18 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                       ),
                       child: FractionallySizedBox(
                         alignment: Alignment.centerLeft,
-                        widthFactor: _uploadProgress > 0 ? _uploadProgress : null,
+                        widthFactor:
+                            _uploadProgress > 0 ? _uploadProgress : null,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppTheme.secondary,
-                            borderRadius: BorderRadius.circular(2),
-                            boxShadow: [
-                              BoxShadow(color: AppTheme.secondary.withValues(alpha: 0.6), blurRadius: 4)
-                            ]
-                          ),
+                              color: AppTheme.secondary,
+                              borderRadius: BorderRadius.circular(2),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: AppTheme.secondary
+                                        .withValues(alpha: 0.6),
+                                    blurRadius: 4)
+                              ]),
                         ),
                       ),
                     ),
@@ -629,11 +718,17 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: AppTheme.modernCardDecoration(
-                  color: (_resultSuccess == true ? AppTheme.success : AppTheme.error).withOpacity(0.15),
+                  color: (_resultSuccess == true
+                          ? AppTheme.success
+                          : AppTheme.error)
+                      .withOpacity(0.15),
                   borderRadius: 24,
                 ).copyWith(
                   border: Border.all(
-                    color: (_resultSuccess == true ? AppTheme.success : AppTheme.error).withOpacity(0.5),
+                    color: (_resultSuccess == true
+                            ? AppTheme.success
+                            : AppTheme.error)
+                        .withOpacity(0.5),
                   ),
                 ),
                 child: Row(
@@ -645,7 +740,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        _resultSuccess == true ? Icons.check_circle : Icons.error_outline,
+                        _resultSuccess == true
+                            ? Icons.check_circle
+                            : Icons.error_outline,
                         color: AppTheme.textPrimary,
                         size: 28,
                       ),
@@ -656,13 +753,24 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (_resultName != null)
-                            Text(_resultName!, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text(_resultName!,
+                                style: const TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold)),
                           if (_resultMssv != null)
-                            Text("MSSV: $_resultMssv", style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                            Text("MSSV: $_resultMssv",
+                                style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12)),
                           if (_resultMessage != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
-                              child: Text(_resultMessage!, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13, fontWeight: FontWeight.w500)),
+                              child: Text(_resultMessage!,
+                                  style: const TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500)),
                             ),
                         ],
                       ),
@@ -674,31 +782,37 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           else
             // Nút chụp thủ công ở dưới cùng
             Positioned(
-               bottom: 40,
-               left: 0,
-               right: 0,
-               child: Center(
-                 child: GestureDetector(
-                   onTap: _isScanning ? null : _captureAndDetectFace,
-                   child: Container(
-                     width: 64,
-                     height: 64,
-                     decoration: BoxDecoration(
-                       shape: BoxShape.circle,
-                       border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
-                     ),
-                     child: Container(
-                       margin: const EdgeInsets.all(4),
-                       decoration: BoxDecoration(
-                         shape: BoxShape.circle, 
-                         color: AppTheme.secondary.withValues(alpha: 0.8),
-                         boxShadow: [BoxShadow(color: AppTheme.secondary.withValues(alpha: 0.5), blurRadius: 10)]
-                       ),
-                       child: const Icon(Icons.camera, color: Colors.white, size: 28),
-                     ),
-                   ),
-                 ),
-               ),
+              bottom: 40,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: _isScanning ? null : _captureAndDetectFace,
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.5), width: 2),
+                    ),
+                    child: Container(
+                      margin: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.secondary.withValues(alpha: 0.8),
+                          boxShadow: [
+                            BoxShadow(
+                                color:
+                                    AppTheme.secondary.withValues(alpha: 0.5),
+                                blurRadius: 10)
+                          ]),
+                      child: const Icon(Icons.camera,
+                          color: Colors.white, size: 28),
+                    ),
+                  ),
+                ),
+              ),
             ),
         ],
       ),
@@ -710,7 +824,8 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: AppTheme.modernCardDecoration(color: AppTheme.surfaceLight.withOpacity(0.8), borderRadius: 16),
+        decoration: AppTheme.modernCardDecoration(
+            color: AppTheme.surfaceLight.withOpacity(0.8), borderRadius: 16),
         child: child,
       ),
     );
@@ -719,7 +834,8 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   Widget _buildHudContainer({required Widget child}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: AppTheme.modernCardDecoration(color: AppTheme.surfaceLight.withOpacity(0.8), borderRadius: 16),
+      decoration: AppTheme.modernCardDecoration(
+          color: AppTheme.surfaceLight.withOpacity(0.8), borderRadius: 16),
       child: child,
     );
   }
@@ -730,16 +846,20 @@ class HudScanFramePainter extends CustomPainter {
   final bool isScanning;
   final bool? isSuccess;
 
-  HudScanFramePainter({required this.pulseValue, required this.isScanning, this.isSuccess});
+  HudScanFramePainter(
+      {required this.pulseValue, required this.isScanning, this.isSuccess});
 
   @override
   void paint(Canvas canvas, Size size) {
     Color frameColor;
     if (isSuccess == true) {
       frameColor = AppTheme.success;
-    } else if (isSuccess == false) frameColor = AppTheme.error;
-    else if (isScanning) frameColor = AppTheme.primary;
-    else frameColor = AppTheme.secondary;
+    } else if (isSuccess == false)
+      frameColor = AppTheme.error;
+    else if (isScanning)
+      frameColor = AppTheme.primary;
+    else
+      frameColor = AppTheme.secondary;
 
     final cornerLength = size.width * 0.2;
     const radius = 40.0; // Góc bo tròn lớn hơn (Modern style)
@@ -760,18 +880,45 @@ class HudScanFramePainter extends CustomPainter {
     _drawCorners(canvas, size, glowPaint, cornerLength, radius);
   }
 
-  void _drawCorners(Canvas canvas, Size size, Paint paint, double cl, double r) {
+  void _drawCorners(
+      Canvas canvas, Size size, Paint paint, double cl, double r) {
     final w = size.width, h = size.height;
 
-    canvas.drawPath(Path()..moveTo(0, cl)..lineTo(0, r)..arcToPoint(Offset(r, 0), radius: Radius.circular(r))..lineTo(cl, 0), paint);
-    canvas.drawPath(Path()..moveTo(w - cl, 0)..lineTo(w - r, 0)..arcToPoint(Offset(w, r), radius: Radius.circular(r))..lineTo(w, cl), paint);
-    canvas.drawPath(Path()..moveTo(0, h - cl)..lineTo(0, h - r)..arcToPoint(Offset(r, h), radius: Radius.circular(r))..lineTo(cl, h), paint);
-    canvas.drawPath(Path()..moveTo(w - cl, h)..lineTo(w - r, h)..arcToPoint(Offset(w, h - r), radius: Radius.circular(r))..lineTo(w, h - cl), paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(0, cl)
+          ..lineTo(0, r)
+          ..arcToPoint(Offset(r, 0), radius: Radius.circular(r))
+          ..lineTo(cl, 0),
+        paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(w - cl, 0)
+          ..lineTo(w - r, 0)
+          ..arcToPoint(Offset(w, r), radius: Radius.circular(r))
+          ..lineTo(w, cl),
+        paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(0, h - cl)
+          ..lineTo(0, h - r)
+          ..arcToPoint(Offset(r, h), radius: Radius.circular(r))
+          ..lineTo(cl, h),
+        paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(w - cl, h)
+          ..lineTo(w - r, h)
+          ..arcToPoint(Offset(w, h - r), radius: Radius.circular(r))
+          ..lineTo(w, h - cl),
+        paint);
   }
 
   @override
   bool shouldRepaint(covariant HudScanFramePainter old) =>
-      old.pulseValue != pulseValue || old.isScanning != isScanning || old.isSuccess != isSuccess;
+      old.pulseValue != pulseValue ||
+      old.isScanning != isScanning ||
+      old.isSuccess != isSuccess;
 }
 
 class HudScanLinePainter extends CustomPainter {
@@ -806,5 +953,6 @@ class HudScanLinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant HudScanLinePainter old) => old.progress != progress;
+  bool shouldRepaint(covariant HudScanLinePainter old) =>
+      old.progress != progress;
 }

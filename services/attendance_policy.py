@@ -10,20 +10,27 @@ from datetime import datetime
 from config import Config
 from db.connection import execute_query, execute_one
 
-
 # ─── Enum trạng thái chuẩn hóa (DB/API dùng mã tiếng Anh) ─────────────────
 
-class AttendanceStatus:
-    PRESENT = "PRESENT"                       # Có mặt đúng giờ
-    LATE = "LATE"                             # Có mặt nhưng đi trễ
-    EXCUSED_ABSENCE = "EXCUSED_ABSENCE"       # Vắng có phép
-    UNEXCUSED_ABSENCE = "UNEXCUSED_ABSENCE"   # Vắng không phép
-    PENDING_REVIEW = "PENDING_REVIEW"         # Chờ giảng viên duyệt
-    INVALID = "INVALID"                       # Kết quả không hợp lệ
-    EARLY_LEAVE = "EARLY_LEAVE"               # Rời lớp sớm
 
-    ALL = [PRESENT, LATE, EXCUSED_ABSENCE, UNEXCUSED_ABSENCE,
-           PENDING_REVIEW, INVALID, EARLY_LEAVE]
+class AttendanceStatus:
+    PRESENT = "PRESENT"  # Có mặt đúng giờ
+    LATE = "LATE"  # Có mặt nhưng đi trễ
+    EXCUSED_ABSENCE = "EXCUSED_ABSENCE"  # Vắng có phép
+    UNEXCUSED_ABSENCE = "UNEXCUSED_ABSENCE"  # Vắng không phép
+    PENDING_REVIEW = "PENDING_REVIEW"  # Chờ giảng viên duyệt
+    INVALID = "INVALID"  # Kết quả không hợp lệ
+    EARLY_LEAVE = "EARLY_LEAVE"  # Rời lớp sớm
+
+    ALL = [
+        PRESENT,
+        LATE,
+        EXCUSED_ABSENCE,
+        UNEXCUSED_ABSENCE,
+        PENDING_REVIEW,
+        INVALID,
+        EARLY_LEAVE,
+    ]
 
     # Mapping sang tiếng Việt cho giao diện
     DISPLAY_VI = {
@@ -65,6 +72,7 @@ class AttendanceStatus:
 
 # ─── Tính trạng thái điểm danh ───────────────────────────────────────────────
 
+
 def compute_status(checkin_time, scheduled_start, grace_period=None):
     """
     Tính trạng thái điểm danh dựa trên thời gian check-in và giờ học dự kiến.
@@ -78,13 +86,13 @@ def compute_status(checkin_time, scheduled_start, grace_period=None):
         (status: str, late_minutes: int)
     """
     if grace_period is None:
-        grace_period = getattr(Config, 'LATE_GRACE_PERIOD_MIN', 15)
+        grace_period = getattr(Config, "LATE_GRACE_PERIOD_MIN", 15)
 
     if not scheduled_start or not checkin_time:
         return AttendanceStatus.PRESENT, 0
 
     # Đảm bảo cả hai đều là datetime
-    if not hasattr(scheduled_start, 'year'):
+    if not hasattr(scheduled_start, "year"):
         return AttendanceStatus.PRESENT, 0
 
     diff_seconds = (checkin_time - scheduled_start).total_seconds()
@@ -102,6 +110,7 @@ def compute_status(checkin_time, scheduled_start, grace_period=None):
 
 
 # ─── Kiểm tra GPS ────────────────────────────────────────────────────────────
+
 
 def validate_gps(sv_lat, sv_lng, session_lat, session_lng, radius=100):
     """
@@ -122,8 +131,7 @@ def validate_gps(sv_lat, sv_lng, session_lat, session_lng, radius=100):
         return True, 0  # Không có tọa độ phiên → bỏ qua kiểm tra
 
     distance = _haversine_distance(
-        float(sv_lat), float(sv_lng),
-        float(session_lat), float(session_lng)
+        float(sv_lat), float(sv_lng), float(session_lat), float(session_lng)
     )
 
     return distance <= radius, distance
@@ -137,14 +145,17 @@ def _haversine_distance(lat1, lon1, lat2, lon2):
     dphi = math.radians(lat2 - lat1)
     dlambda = math.radians(lon2 - lon1)
 
-    a = (math.sin(dphi / 2) ** 2 +
-         math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2)
+    a = (
+        math.sin(dphi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     return R * c
 
 
 # ─── Thống kê phiên — Hàm dùng chung cho Dashboard/Excel/PDF/Telegram ──────
+
 
 def get_session_attendance_summary(session_id):
     """
@@ -186,17 +197,17 @@ def get_session_attendance_summary(session_id):
            FROM phien_diem_danh p
            JOIN lop_hoc l ON p.lop_id = l.id
            WHERE p.id = %s""",
-        (session_id,)
+        (session_id,),
     )
     if not session_row:
         return None
 
-    lop_id = session_row['lop_id']
+    lop_id = session_row["lop_id"]
 
     # Lấy tất cả sinh viên trong lớp
     students = execute_query(
         "SELECT id, mssv, ho_ten, avatar FROM sinh_vien WHERE lop_id = %s AND trang_thai = 1 ORDER BY mssv ASC",
-        (lop_id,)
+        (lop_id,),
     )
     total_students = len(students)
 
@@ -207,7 +218,7 @@ def get_session_attendance_summary(session_id):
            JOIN sinh_vien sv ON d.sinh_vien_id = sv.id
            WHERE d.phien_id = %s
            ORDER BY sv.mssv ASC""",
-        (session_id,)
+        (session_id,),
     )
 
     # Đếm theo trạng thái
@@ -215,29 +226,31 @@ def get_session_attendance_summary(session_id):
     records = []
 
     for r in dd_records:
-        st = r.get('status') or AttendanceStatus.PRESENT
+        st = r.get("status") or AttendanceStatus.PRESENT
         if st in counts:
             counts[st] += 1
         else:
             counts[AttendanceStatus.UNEXCUSED_ABSENCE] += 1
 
-        records.append({
-            "attendance_id": r.get("id"),
-            "sinh_vien_id": r.get("sinh_vien_id"),
-            "mssv": r.get("mssv", ""),
-            "ho_ten": r.get("ho_ten", ""),
-            "avatar": r.get("avatar", ""),
-            "status": st,
-            "display_status": AttendanceStatus.display(st),
-            "symbol": AttendanceStatus.symbol(st),
-            "late_minutes": r.get("late_minutes", 0),
-            "method": r.get("method", ""),
-            "thoi_gian": r.get("thoi_gian"),
-            "ghi_chu": r.get("ghi_chu", ""),
-            "do_chinh_xac": r.get("do_chinh_xac", 0),
-        })
+        records.append(
+            {
+                "attendance_id": r.get("id"),
+                "sinh_vien_id": r.get("sinh_vien_id"),
+                "mssv": r.get("mssv", ""),
+                "ho_ten": r.get("ho_ten", ""),
+                "avatar": r.get("avatar", ""),
+                "status": st,
+                "display_status": AttendanceStatus.display(st),
+                "symbol": AttendanceStatus.symbol(st),
+                "late_minutes": r.get("late_minutes", 0),
+                "method": r.get("method", ""),
+                "thoi_gian": r.get("thoi_gian"),
+                "ghi_chu": r.get("ghi_chu", ""),
+                "do_chinh_xac": r.get("do_chinh_xac", 0),
+            }
+        )
 
-    si_so_chot = session_row.get('si_so_chot') or total_students
+    si_so_chot = session_row.get("si_so_chot") or total_students
     present_count = counts[AttendanceStatus.PRESENT]
     late_count = counts[AttendanceStatus.LATE]
     excused_count = counts[AttendanceStatus.EXCUSED_ABSENCE]
@@ -247,10 +260,10 @@ def get_session_attendance_summary(session_id):
     attendance_rate = ((present_count + late_count) / max(1, si_so_chot)) * 100
 
     # Điểm chuyên cần có trọng số
-    w_p = getattr(Config, 'WEIGHT_PRESENT', 1.0)
-    w_l = getattr(Config, 'WEIGHT_LATE', 0.75)
-    w_e = getattr(Config, 'WEIGHT_EXCUSED', 1.0)
-    weighted = (present_count * w_p + late_count * w_l + excused_count * w_e)
+    w_p = getattr(Config, "WEIGHT_PRESENT", 1.0)
+    w_l = getattr(Config, "WEIGHT_LATE", 0.75)
+    w_e = getattr(Config, "WEIGHT_EXCUSED", 1.0)
+    weighted = present_count * w_p + late_count * w_l + excused_count * w_e
     weighted_score_rate = (weighted / max(1, si_so_chot)) * 100
 
     return {

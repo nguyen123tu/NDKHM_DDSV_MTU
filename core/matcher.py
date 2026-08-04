@@ -13,9 +13,9 @@ import numpy.core.numeric
 import numpy.core.multiarray
 
 # Patch cho numpy 1.x load file pkl từ numpy 2.x
-sys.modules['numpy._core'] = sys.modules['numpy.core']
-sys.modules['numpy._core.numeric'] = sys.modules['numpy.core.numeric']
-sys.modules['numpy._core.multiarray'] = sys.modules['numpy.core.multiarray']
+sys.modules["numpy._core"] = sys.modules["numpy.core"]
+sys.modules["numpy._core.numeric"] = sys.modules["numpy.core.numeric"]
+sys.modules["numpy._core.multiarray"] = sys.modules["numpy.core.multiarray"]
 
 from config import Config
 
@@ -26,7 +26,7 @@ _instance = None
 class FaceMatcher:
     """
     So khớp embedding với cơ sở dữ liệu vector đã train.
-    
+
     Đọc file embeddings.pkl (được tạo bởi FaceTrainer),
     lưu vào RAM để so sánh cực nhanh trong realtime.
     Tự động reload khi file pkl được cập nhật.
@@ -38,22 +38,22 @@ class FaceMatcher:
             pkl_path: Đường dẫn tới file embeddings.pkl
         """
         if pkl_path is None:
-            if Config.AI_ENGINE == 'yolo_resnet':
+            if Config.AI_ENGINE == "yolo_resnet":
                 pkl_path = Config.EMBEDDINGS_YOLO_PATH
-            elif Config.AI_ENGINE == 'deepface':
+            elif Config.AI_ENGINE == "deepface":
                 pkl_path = Config.EMBEDDINGS_DEEPFACE_PATH
             else:
                 pkl_path = Config.EMBEDDINGS_PATH
         self._pkl_path = pkl_path
-        self._known_faces = {}       # {mssv: embedding_vector}
-        self._last_mtime = 0         # Thời gian chỉnh sửa file pkl lần cuối
+        self._known_faces = {}  # {mssv: embedding_vector}
+        self._last_mtime = 0  # Thời gian chỉnh sửa file pkl lần cuối
         self._lock = threading.Lock()  # Thread-safe
         self.load_brain()
 
     def _get_active_model_path(self):
         if os.path.exists(self._pkl_path):
             return self._pkl_path
-        legacy_path = self._pkl_path.replace('.npz', '.pkl')
+        legacy_path = self._pkl_path.replace(".npz", ".pkl")
         if os.path.exists(legacy_path):
             return legacy_path
         return self._pkl_path
@@ -67,30 +67,34 @@ class FaceMatcher:
 
         try:
             with self._lock:
-                if active_path.endswith('.npz'):
+                if active_path.endswith(".npz"):
                     data = np.load(active_path, allow_pickle=False)
                     keys = [str(k) for k in data["keys"]]
                     values = data["values"]
                     self._known_faces = {k: v for k, v in zip(keys, values)}
                 else:
-                    with open(active_path, 'rb') as f:
+                    with open(active_path, "rb") as f:
                         self._known_faces = pickle.load(f)
-                
+
                 # Tối ưu hóa: Tạo Ma trận (N x 512) để so sánh song song hàng nghìn mặt
                 if len(self._known_faces) > 0:
                     self._mssv_list = list(self._known_faces.keys())
                     emb_matrix = np.array(list(self._known_faces.values()))
-                    
+
                     # L2 Normalize ma trận một lần duy nhất lúc load
                     norms = np.linalg.norm(emb_matrix, axis=1, keepdims=True)
                     # Tránh chia cho 0
-                    self._emb_matrix = np.where(norms > 0, emb_matrix / norms, emb_matrix)
+                    self._emb_matrix = np.where(
+                        norms > 0, emb_matrix / norms, emb_matrix
+                    )
                 else:
                     self._mssv_list = []
                     self._emb_matrix = np.array([])
-                
+
                 self._last_mtime = os.path.getmtime(active_path)
-            print(f"[AI MATCHER] Đã nạp {len(self._known_faces)} vector não bộ (Ma trận Tối ưu).")
+            print(
+                f"[AI MATCHER] Đã nạp {len(self._known_faces)} vector não bộ (Ma trận Tối ưu)."
+            )
             return True
         except Exception as e:
             print(f"[AI MATCHER LỖI] Không đọc được file não bộ ({active_path}): {e}")
@@ -115,11 +119,11 @@ class FaceMatcher:
     def match(self, embedding, threshold=None):
         """
         So khớp embedding với cơ sở dữ liệu. Tốc độ siêu cao nhờ Matrix Multiplication.
-        
+
         Args:
             embedding: numpy array 512 chiều
             threshold: Ngưỡng similarity tối thiểu
-            
+
         Returns:
             tuple: (mssv, similarity)
         """
@@ -132,20 +136,20 @@ class FaceMatcher:
         with self._lock:
             if len(self._mssv_list) == 0 or self._emb_matrix.size == 0:
                 return best_match, best_sim
-                
+
             # L2 Normalize input embedding
             norm = np.linalg.norm(embedding)
             if norm > 0:
                 embedding = embedding / norm
-                
+
             # NHÂN MA TRẬN: So sánh 1 vector với TẤT CẢ sinh viên cùng lúc
             # Kết quả là mảng similarities chứa độ giống nhau với từng sinh viên
             similarities = np.dot(self._emb_matrix, embedding)
-            
+
             # Lấy index của sinh viên giống nhất
             best_idx = np.argmax(similarities)
             best_sim = float(similarities[best_idx])
-            
+
             if best_sim > threshold:
                 best_match = self._mssv_list[best_idx]
 
@@ -171,7 +175,7 @@ def get_matcher(pkl_path=None):
     return _instance
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test: Load và kiểm tra
     print("=== TEST FACE MATCHER ===")
     matcher = get_matcher()

@@ -9,6 +9,7 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/neu_container.dart';
 import '../widgets/neu_button.dart';
+import '../widgets/api_image.dart';
 import 'admin_leave_screen.dart';
 import 'student_leave_screen.dart';
 
@@ -160,8 +161,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         labelText: label,
         labelStyle: const TextStyle(color: AppTheme.textSecondary),
         enabledBorder: UnderlineInputBorder(
-            borderSide:
-                BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.5))),
+            borderSide: BorderSide(
+                color: AppTheme.textSecondary.withValues(alpha: 0.5))),
         focusedBorder: const UnderlineInputBorder(
             borderSide: BorderSide(color: AppTheme.primary)),
       ),
@@ -306,8 +307,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         labelText: label,
         labelStyle: const TextStyle(color: AppTheme.textSecondary),
         enabledBorder: UnderlineInputBorder(
-            borderSide:
-                BorderSide(color: AppTheme.textSecondary.withValues(alpha: 0.5))),
+            borderSide: BorderSide(
+                color: AppTheme.textSecondary.withValues(alpha: 0.5))),
         focusedBorder: const UnderlineInputBorder(
             borderSide: BorderSide(color: AppTheme.primary)),
       ),
@@ -347,7 +348,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: Stack(
         children: [
           Container(color: Theme.of(context).scaffoldBackgroundColor),
-
           SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -367,13 +367,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: AppTheme.surfaceLight,
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: (_profileData != null && _profileData!['avatar'] != null)
+                          child: (_profileData != null &&
+                                  _profileData!['avatar'] != null)
                               ? ApiImage(
                                   path: _getAvatarUrl(_profileData!['avatar']),
                                   fit: BoxFit.cover,
-                                  errorWidget: const Icon(Icons.person, size: 50, color: AppTheme.textSecondary),
+                                  errorWidget: const Icon(Icons.person,
+                                      size: 50, color: AppTheme.textSecondary),
                                 )
-                              : const Icon(Icons.person, size: 50, color: AppTheme.textSecondary),
+                              : const Icon(Icons.person,
+                                  size: 50, color: AppTheme.textSecondary),
                         ),
                       ),
                       Positioned(
@@ -413,13 +416,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     .fadeIn(delay: 500.ms)
                     .slideY(begin: 0.1, end: 0),
                 const SizedBox(height: 16),
-                
+
                 // NÚT XIN PHÉP VẮNG MẶT / QUẢN LÝ ĐƠN TỪ
                 SizedBox(
                   width: double.infinity,
                   child: NeuButton(
                     onPressed: () {
-                      final bool isAdmin = _profileData!['role'] == 'admin' || _profileData!['mssv'] == null;
+                      final bool isAdmin = _profileData!['role'] == 'admin' ||
+                          _profileData!['mssv'] == null;
                       if (isAdmin) {
                         Navigator.push(
                           context,
@@ -440,23 +444,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          (_profileData != null && (_profileData!['role'] == 'admin' || _profileData!['mssv'] == null)) 
-                              ? Icons.assignment 
-                              : Icons.edit_document, 
-                          color: AppTheme.secondary
-                        ),
+                            (_profileData != null &&
+                                    (_profileData!['role'] == 'admin' ||
+                                        _profileData!['mssv'] == null))
+                                ? Icons.assignment
+                                : Icons.edit_document,
+                            color: AppTheme.secondary),
                         const SizedBox(width: 8),
                         Text(
-                          (_profileData != null && (_profileData!['role'] == 'admin' || _profileData!['mssv'] == null)) 
-                              ? "Quản lý Đơn vắng mặt" 
-                              : "Xin phép vắng mặt", 
-                          style: const TextStyle(color: AppTheme.secondary, fontWeight: FontWeight.bold)
-                        ),
+                            (_profileData != null &&
+                                    (_profileData!['role'] == 'admin' ||
+                                        _profileData!['mssv'] == null))
+                                ? "Quản lý Đơn vắng mặt"
+                                : "Xin phép vắng mặt",
+                            style: const TextStyle(
+                                color: AppTheme.secondary,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
-                ).animate().fadeIn(delay: 550.ms).scale(begin: const Offset(0.9, 0.9)),
-                
+                )
+                    .animate()
+                    .fadeIn(delay: 550.ms)
+                    .scale(begin: const Offset(0.9, 0.9)),
+
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
@@ -467,7 +478,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Icon(Icons.lock_reset, color: AppTheme.textPrimary),
                         SizedBox(width: 8),
-                        Text("Đổi mật khẩu", style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold)),
+                        Text("Đổi mật khẩu",
+                            style: TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -493,7 +507,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Icon(Icons.logout, color: AppTheme.error),
                         SizedBox(width: 8),
-                        Text("Đăng xuất", style: TextStyle(color: AppTheme.error, fontWeight: FontWeight.bold)),
+                        Text("Đăng xuất",
+                            style: TextStyle(
+                                color: AppTheme.error,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -625,9 +642,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.1)),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 10)
+                                BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    blurRadius: 10)
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,

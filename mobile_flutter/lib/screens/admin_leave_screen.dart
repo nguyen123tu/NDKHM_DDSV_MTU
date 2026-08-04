@@ -49,10 +49,10 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
   }
 
   Future<void> _updateStatus(int requestId, int newStatus) async {
-    final result = newStatus == 1 
+    final result = newStatus == 1
         ? await _leaveService.approveLeaveRequest(requestId)
         : await _leaveService.rejectLeaveRequest(requestId);
-        
+
     if (!mounted) return;
     if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -76,7 +76,7 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: ApiImage(
-            imageUrl: imageUrl,
+            path: imageUrl,
             fit: BoxFit.contain,
           ),
         ),
@@ -114,7 +114,8 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Quản lý đơn từ', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Quản lý đơn từ',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -139,17 +140,23 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppTheme.primary))
                 : _errorMessage != null
-                    ? Center(child: Text(_errorMessage!, style: const TextStyle(color: AppTheme.error)))
+                    ? Center(
+                        child: Text(_errorMessage!,
+                            style: const TextStyle(color: AppTheme.error)))
                     : _requests.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.folder_open, size: 64, color: AppTheme.textMuted),
+                                const Icon(Icons.folder_open,
+                                    size: 64, color: AppTheme.textMuted),
                                 const SizedBox(height: 16),
-                                const Text('Không có đơn xin phép nào', style: TextStyle(color: AppTheme.textSecondary)),
+                                const Text('Không có đơn xin phép nào',
+                                    style: TextStyle(
+                                        color: AppTheme.textSecondary)),
                               ],
                             ).animate().fadeIn(),
                           )
@@ -173,7 +180,7 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
   Widget _buildAdminRequestCard(LeaveRequest req, int index) {
     Color statusColor;
     String statusText;
-    
+
     if (req.trangThai == 1) {
       statusColor = AppTheme.success;
       statusText = 'Đã duyệt';
@@ -198,34 +205,43 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
                   children: [
                     Text(
                       req.hoTen ?? 'Không rõ',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textPrimary),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppTheme.textPrimary),
                     ),
                     Text(
                       '${req.mssv ?? ''} - ${req.tenLop ?? ''}',
-                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                      style: const TextStyle(
+                          color: AppTheme.textMuted, fontSize: 13),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: statusColor.withValues(alpha: 0.5)),
                 ),
-                child: Text(statusText, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                child: Text(statusText,
+                    style: TextStyle(
+                        color: statusColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Text('Lý do:', style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+          const Text('Lý do:',
+              style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
           Text(
             req.lyDo,
             style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
           ),
           const SizedBox(height: 12),
-          
           if (req.minhChungUrl != null && req.minhChungUrl!.isNotEmpty)
             GestureDetector(
               onTap: () => _showImageDialog(req.minhChungUrl!),
@@ -238,18 +254,24 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.image, color: AppTheme.secondary, size: 20),
+                    const Icon(Icons.image,
+                        color: AppTheme.secondary, size: 20),
                     const SizedBox(width: 8),
-                    const Expanded(child: Text('Xem ảnh minh chứng', style: TextStyle(color: AppTheme.secondary, fontSize: 13))),
-                    Icon(Icons.zoom_in, color: AppTheme.secondary.withValues(alpha: 0.5), size: 18),
+                    const Expanded(
+                        child: Text('Xem ảnh minh chứng',
+                            style: TextStyle(
+                                color: AppTheme.secondary, fontSize: 13))),
+                    Icon(Icons.zoom_in,
+                        color: AppTheme.secondary.withValues(alpha: 0.5),
+                        size: 18),
                   ],
                 ),
               ),
             ),
-          
           Row(
             children: [
-              const Icon(Icons.access_time, size: 14, color: AppTheme.textMuted),
+              const Icon(Icons.access_time,
+                  size: 14, color: AppTheme.textMuted),
               const SizedBox(width: 4),
               Text(
                 req.thoiGianTao ?? '',
@@ -257,7 +279,6 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
               ),
             ],
           ),
-          
           if (req.trangThai == 0) ...[
             const SizedBox(height: 16),
             const Divider(color: Colors.white12),
@@ -268,7 +289,9 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
                   child: NeuButton(
                     isPrimary: true,
                     onPressed: () => _updateStatus(req.id, 1),
-                    child: const Text('DUYỆT ĐƠN', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    child: const Text('DUYỆT ĐƠN',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
                 ),
               ],
@@ -276,6 +299,9 @@ class _AdminLeaveScreenState extends State<AdminLeaveScreen> {
           ]
         ],
       ),
-    ).animate().fadeIn(delay: Duration(milliseconds: index * 100)).slideY(begin: 0.1, end: 0);
+    )
+        .animate()
+        .fadeIn(delay: Duration(milliseconds: index * 100))
+        .slideY(begin: 0.1, end: 0);
   }
 }

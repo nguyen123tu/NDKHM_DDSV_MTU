@@ -27,7 +27,8 @@ class _StudentQRScannerScreenState extends State<StudentQRScannerScreen> {
       if (rawValue != null && rawValue.startsWith('MTUFACE_SESSION_')) {
         setState(() => _isProcessing = true);
 
-        final sessionId = int.tryParse(rawValue.replaceFirst('MTUFACE_SESSION_', ''));
+        final sessionId =
+            int.tryParse(rawValue.replaceFirst('MTUFACE_SESSION_', ''));
 
         if (sessionId != null) {
           _controller.dispose();
@@ -73,7 +74,8 @@ class _StudentQRScannerScreenState extends State<StudentQRScannerScreen> {
         title: const Text('Quét mã QR Điểm Danh',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
+        foregroundColor:
+            Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),
@@ -104,13 +106,15 @@ class _StudentQRScannerScreenState extends State<StudentQRScannerScreen> {
             child: Column(
               children: [
                 NeuContainer(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   borderRadius: 16,
                   child: Text(
                     'Hướng camera vào mã QR của giáo viên',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
+                      color: Theme.of(context).textTheme.bodyLarge?.color ??
+                          Colors.black,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -196,8 +200,10 @@ class _StudentQRScannerScreenState extends State<StudentQRScannerScreen> {
     const thickness = 4.0;
     const color = Color(0xFF10B981);
 
-    final isTop = alignment == Alignment.topLeft || alignment == Alignment.topRight;
-    final isLeft = alignment == Alignment.topLeft || alignment == Alignment.bottomLeft;
+    final isTop =
+        alignment == Alignment.topLeft || alignment == Alignment.topRight;
+    final isLeft =
+        alignment == Alignment.topLeft || alignment == Alignment.bottomLeft;
 
     return Positioned(
       top: isTop ? 0 : null,

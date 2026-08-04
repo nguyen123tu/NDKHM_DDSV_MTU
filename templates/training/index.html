@@ -4,18 +4,7 @@
 {% block page_title %}Training Mô hình AI{% endblock %}
 
 {% block extra_css %}
-<style>
-    /* ProgressBar Animation for Training */
-    .progress-bar-animated {
-        background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
-        background-size: 1rem 1rem;
-        animation: progress-bar-stripes 1s linear infinite;
-    }
-    @keyframes progress-bar-stripes {
-        0% { background-position: 1rem 0; }
-        100% { background-position: 0 0; }
-    }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/training_index_style_1.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -209,45 +198,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // CSS Toggle cho panel
-    const btnTrainAll = document.getElementById('btnTrainAll');
-    const idlePanel = document.getElementById('idlePanel');
-    const progressPanel = document.getElementById('progressPanel');
-
-    // Override hoặc móc vào logic cũ nếu cần thiết. Logic gửi ajax được nằm ở static/js/pages/training_index.js
-    // Ở file JS cũ, nó truy xuất #idlePanel và #progressPanel thông qua d-none, d-block (bootstrap). 
-    // Mình sẽ tạo MutationObserver hoặc patch lại JS một chút tại đây nếu cần thiết, 
-    // hoặc thêm helper toggle class cho Tailwind.
-    
-    function showProgress() {
-        idlePanel.classList.add('opacity-0');
-        setTimeout(() => {
-            idlePanel.classList.add('hidden');
-            idlePanel.classList.remove('flex');
-            
-            progressPanel.classList.remove('pointer-events-none', 'z-0');
-            progressPanel.classList.add('z-10');
-            progressPanel.classList.remove('opacity-0');
-        }, 300);
-    }
-
-    function hideProgress() {
-        progressPanel.classList.add('opacity-0');
-        setTimeout(() => {
-            progressPanel.classList.add('pointer-events-none', 'z-0');
-            progressPanel.classList.remove('z-10');
-            
-            idlePanel.classList.remove('hidden');
-            idlePanel.classList.add('flex');
-            // reflow
-            void idlePanel.offsetWidth;
-            idlePanel.classList.remove('opacity-0');
-        }, 300);
-    }
-    
-    // Ghi đè phương thức cũ trong trường hợp training_index.js dùng jQuery show/hide:
-    // Có thể tạm thời bỏ qua vì JS cũ sẽ thêm style="display: none" hoặc d-none, vẫn hoạt động với Tailwind nếu ta kiểm soát tốt.
-</script>
+<script src="{{ url_for('static', filename='js/training_index_script_1.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pages/training_index.js') }}"></script>
 {% endblock %}

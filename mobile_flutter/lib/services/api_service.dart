@@ -9,20 +9,21 @@ class ApiService {
   // CẤU HÌNH ĐỊA CHỈ SERVER
   // URL mặc định — có thể thay đổi từ trong App (Cài đặt Server)
   // ============================================================
-  static const String _defaultBaseUrl = 'https://swathable-untangentially-hadlee.ngrok-free.dev';
-  
+  static const String _defaultBaseUrl =
+      'https://swathable-untangentially-hadlee.ngrok-free.dev';
+
   /// Cache URL trong bộ nhớ để tránh đọc SharedPreferences mỗi lần gọi API
   static String? _cachedBaseUrl;
-  
+
   /// Lấy baseUrl hiện tại (ưu tiên URL tùy chỉnh trong SharedPreferences)
   static String get baseUrl => _cachedBaseUrl ?? _defaultBaseUrl;
-  
+
   /// Khởi tạo baseUrl từ SharedPreferences (gọi 1 lần khi app khởi động)
   static Future<void> initBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
     _cachedBaseUrl = prefs.getString('custom_server_url') ?? _defaultBaseUrl;
   }
-  
+
   /// Lưu URL server tùy chỉnh
   static Future<void> setServerUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
@@ -32,20 +33,20 @@ class ApiService {
     await prefs.setString('custom_server_url', url);
     _cachedBaseUrl = url;
   }
-  
+
   /// Lấy URL server tùy chỉnh (hoặc mặc định)
   static Future<String> getServerUrl() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('custom_server_url') ?? _defaultBaseUrl;
   }
-  
+
   /// Đặt lại về URL mặc định
   static Future<void> resetServerUrl() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('custom_server_url');
     _cachedBaseUrl = _defaultBaseUrl;
   }
-  
+
   /// Chuyển đổi lỗi kỹ thuật thành thông báo thân thiện cho người dùng
   static String friendlyError(dynamic e) {
     final msg = e.toString().toLowerCase();
@@ -64,7 +65,8 @@ class ApiService {
     if (msg.contains('no internet') || msg.contains('network is unreachable')) {
       return 'Không có kết nối Internet. Hãy kiểm tra WiFi/4G.';
     }
-    if (msg.contains('formatexception') || msg.contains('unexpected character')) {
+    if (msg.contains('formatexception') ||
+        msg.contains('unexpected character')) {
       return 'Máy chủ trả về dữ liệu không hợp lệ. Liên hệ Admin.';
     }
     // Trả về lỗi gốc nếu không match
@@ -702,7 +704,8 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> updateStudent(int id, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateStudent(
+      int id, Map<String, dynamic> data) async {
     final headers = await _getHeaders();
     try {
       final response = await http

@@ -28,14 +28,17 @@ class _MainScreenState extends State<MainScreen> {
     // Xác định các màn hình tương ứng với từng tab
     final List<Widget> pages = [
       const HomeScreen(), // 0: Trang chủ
-      isAdmin ? const AdminSessionScreen() : const SessionHistoryScreen(), // 1: Lịch sử/Phiên
+      isAdmin
+          ? const AdminSessionScreen()
+          : const SessionHistoryScreen(), // 1: Lịch sử/Phiên
       const ScheduleScreen(), // 2: Lịch học / Lớp
       const ProfileScreen(), // 3: Cá nhân
     ];
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      extendBody: false, // Tắt extendBody để thanh BottomBar không che mất nội dung
+      extendBody:
+          false, // Tắt extendBody để thanh BottomBar không che mất nội dung
       body: Stack(
         children: List.generate(pages.length, (index) {
           final isSelected = _currentIndex == index;
@@ -55,7 +58,7 @@ class _MainScreenState extends State<MainScreen> {
           );
         }),
       ),
-      
+
       // --- Modern Standard Bottom App Bar ---
       bottomNavigationBar: BottomAppBar(
         color: AppTheme.surface,
@@ -64,23 +67,36 @@ class _MainScreenState extends State<MainScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(icon: Icons.home_rounded, label: isAdmin ? "Tổng quan" : "Trang chủ", index: 0),
-            _buildNavItem(icon: Icons.calendar_month_rounded, label: isAdmin ? "Phiên" : "Lịch sử", index: 1),
-            _buildNavItem(icon: Icons.schedule_rounded, label: isAdmin ? "Lớp" : "Lịch học", index: 2),
-            _buildNavItem(icon: Icons.person_rounded, label: "Tài khoản", index: 3),
+            _buildNavItem(
+                icon: Icons.home_rounded,
+                label: isAdmin ? "Tổng quan" : "Trang chủ",
+                index: 0),
+            _buildNavItem(
+                icon: Icons.calendar_month_rounded,
+                label: isAdmin ? "Phiên" : "Lịch sử",
+                index: 1),
+            _buildNavItem(
+                icon: Icons.schedule_rounded,
+                label: isAdmin ? "Lớp" : "Lịch học",
+                index: 2),
+            _buildNavItem(
+                icon: Icons.person_rounded, label: "Tài khoản", index: 3),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem({required IconData icon, required String label, required int index}) {
+  Widget _buildNavItem(
+      {required IconData icon, required String label, required int index}) {
     final isSelected = _currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final activeColor = isDark ? AppTheme.secondary : AppTheme.primary;
-    final inactiveColor = isDark ? AppTheme.textMuted : AppTheme.textSecondary.withValues(alpha: 0.6);
-    
+    final inactiveColor = isDark
+        ? AppTheme.textMuted
+        : AppTheme.textSecondary.withValues(alpha: 0.6);
+
     return InkWell(
       onTap: () => setState(() => _currentIndex = index),
       borderRadius: BorderRadius.circular(16),
@@ -91,9 +107,12 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 0, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                  horizontal: isSelected ? 16 : 0, vertical: 4),
               decoration: BoxDecoration(
-                color: isSelected ? activeColor.withOpacity(0.15) : Colors.transparent,
+                color: isSelected
+                    ? activeColor.withOpacity(0.15)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(

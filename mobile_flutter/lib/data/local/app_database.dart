@@ -170,12 +170,14 @@ CREATE TABLE cached_history (
     if (oldVersion < 2) {
       // Thêm cột lop_id vào local_students nếu chưa có
       try {
-        await db.execute('ALTER TABLE local_students ADD COLUMN lop_id INTEGER');
+        await db
+            .execute('ALTER TABLE local_students ADD COLUMN lop_id INTEGER');
       } catch (_) {}
 
       // Thêm cột session_id vào local_attendance nếu chưa có
       try {
-        await db.execute('ALTER TABLE local_attendance ADD COLUMN session_id INTEGER');
+        await db.execute(
+            'ALTER TABLE local_attendance ADD COLUMN session_id INTEGER');
       } catch (_) {}
 
       // Tạo các bảng mới

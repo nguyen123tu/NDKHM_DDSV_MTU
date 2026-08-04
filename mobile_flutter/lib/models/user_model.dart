@@ -4,6 +4,7 @@ class UserModel {
   final String role;
   final String name;
   final String? mssv; // MSSV cho sinh viên
+  final String? lopName;
 
   UserModel({
     required this.id,
@@ -11,6 +12,7 @@ class UserModel {
     required this.role,
     required this.name,
     this.mssv,
+    this.lopName,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class UserModel {
       role: json['role'] ?? 'admin',
       name: json['name'] ?? '',
       mssv: json['role'] == 'student' ? (json['username'] ?? '') : null,
+      lopName: json['ten_lop'],
     );
   }
 }

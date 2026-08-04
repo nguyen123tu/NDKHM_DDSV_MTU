@@ -12,7 +12,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class FirebaseMessagingService {
-  static final FirebaseMessagingService _instance = FirebaseMessagingService._internal();
+  static final FirebaseMessagingService _instance =
+      FirebaseMessagingService._internal();
   factory FirebaseMessagingService() => _instance;
   FirebaseMessagingService._internal();
 
@@ -41,11 +42,12 @@ class FirebaseMessagingService {
       debugPrint('Message data: ${message.data}');
 
       if (message.notification != null) {
-        debugPrint('Message also contained a notification: ${message.notification}');
+        debugPrint(
+            'Message also contained a notification: ${message.notification}');
         // Hiện tại chỉ in ra, có thể dùng flutter_local_notifications để hiện popup nếu cần
       }
     });
-    
+
     // Lấy Token của thiết bị
     await updateDeviceToken();
   }
@@ -59,7 +61,7 @@ class FirebaseMessagingService {
         final prefs = await SharedPreferences.getInstance();
         final jwt = prefs.getString('auth_token');
         if (jwt != null && jwt.isNotEmpty) {
-           await ApiService().updateFcmToken(token);
+          await ApiService().updateFcmToken(token);
         }
       }
     } catch (e) {

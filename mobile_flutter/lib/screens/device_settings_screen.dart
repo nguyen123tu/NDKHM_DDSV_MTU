@@ -152,8 +152,9 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(20),
-                  decoration:
-                      AppTheme.modernCardDecoration(borderRadius: 20, color: AppTheme.surfaceLight.withOpacity(0.05)),
+                  decoration: AppTheme.modernCardDecoration(
+                      borderRadius: 20,
+                      color: AppTheme.surfaceLight.withOpacity(0.05)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -224,7 +225,8 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppTheme.textMuted,
                               side: BorderSide(
-                                  color: AppTheme.textMuted.withValues(alpha: 0.5)),
+                                  color: AppTheme.textMuted
+                                      .withValues(alpha: 0.5)),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -251,8 +253,9 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                 Container(
                   padding:
                       const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                  decoration:
-                      AppTheme.modernCardDecoration(borderRadius: 20, color: AppTheme.surfaceLight.withOpacity(0.05)),
+                  decoration: AppTheme.modernCardDecoration(
+                      borderRadius: 20,
+                      color: AppTheme.surfaceLight.withOpacity(0.05)),
                   child: Column(
                     children: [
                       // Gauge
@@ -324,8 +327,9 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
 
                 // ====== TOGGLE SETTINGS ======
                 Container(
-                  decoration:
-                      AppTheme.modernCardDecoration(borderRadius: 20, color: AppTheme.surfaceLight.withOpacity(0.05)),
+                  decoration: AppTheme.modernCardDecoration(
+                      borderRadius: 20,
+                      color: AppTheme.surfaceLight.withOpacity(0.05)),
                   child: Column(
                     children: [
                       _buildToggleTile(

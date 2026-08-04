@@ -37,7 +37,7 @@ class _ApiImageState extends State<ApiImage> {
     super.initState();
     _loadImage();
   }
-  
+
   @override
   void didUpdateWidget(ApiImage oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -56,20 +56,24 @@ class _ApiImageState extends State<ApiImage> {
       }
       return;
     }
-    
+
     try {
-      if (mounted) setState(() { _isLoading = true; _hasError = false; });
-      
+      if (mounted)
+        setState(() {
+          _isLoading = true;
+          _hasError = false;
+        });
+
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      
+
       String cleanPath = widget.path;
       if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
-      
-      final url = cleanPath.startsWith('http') 
-          ? cleanPath 
+
+      final url = cleanPath.startsWith('http')
+          ? cleanPath
           : '${ApiService.baseUrl}/$cleanPath';
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -77,38 +81,50 @@ class _ApiImageState extends State<ApiImage> {
           'ngrok-skip-browser-warning': '69420',
         },
       ).timeout(const Duration(seconds: 15));
-      
+
       if (response.statusCode == 200 && mounted) {
         setState(() {
           _imageBytes = response.bodyBytes;
           _isLoading = false;
         });
       } else {
-        if (mounted) setState(() { _hasError = true; _isLoading = false; });
+        if (mounted)
+          setState(() {
+            _hasError = true;
+            _isLoading = false;
+          });
       }
     } catch (e) {
-      if (mounted) setState(() { _hasError = true; _isLoading = false; });
+      if (mounted)
+        setState(() {
+          _hasError = true;
+          _isLoading = false;
+        });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return widget.placeholder ?? SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      );
+      return widget.placeholder ??
+          SizedBox(
+            width: widget.width,
+            height: widget.height,
+            child:
+                const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          );
     }
-    
+
     if (_hasError || _imageBytes == null) {
-      return widget.errorWidget ?? SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
-      );
+      return widget.errorWidget ??
+          SizedBox(
+            width: widget.width,
+            height: widget.height,
+            child: const Center(
+                child: Icon(Icons.broken_image, color: Colors.grey)),
+          );
     }
-    
+
     return Image.memory(
       _imageBytes!,
       fit: widget.fit,

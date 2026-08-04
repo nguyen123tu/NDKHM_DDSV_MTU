@@ -28,7 +28,9 @@ class NeuContainer extends StatelessWidget {
     // --- Modern Dark Card (Slate 800) ---
     // If isPressed, make it look slightly darker (inner shadow effect simulated by background color)
     final Color bgColor = isPressed ? AppTheme.background : AppTheme.surface;
-    final Color borderColor = isPressed ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.08);
+    final Color borderColor = isPressed
+        ? Colors.white.withOpacity(0.05)
+        : Colors.white.withOpacity(0.08);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
@@ -40,15 +42,19 @@ class NeuContainer extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         shape: shape,
-        borderRadius: shape == BoxShape.circle ? null : BorderRadius.circular(borderRadius),
+        borderRadius: shape == BoxShape.circle
+            ? null
+            : BorderRadius.circular(borderRadius),
         border: Border.all(color: borderColor, width: 1),
-        boxShadow: isPressed ? [] : [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: isPressed
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
       ),
       child: child,
     );

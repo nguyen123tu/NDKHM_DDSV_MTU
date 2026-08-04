@@ -8,15 +8,18 @@ import os
 import glob
 from config import Config
 
+
 def get_avatar_path(mssv):
     """
     Trả về đường dẫn avatar của SV.
     Nếu trong DB không có hoặc không tồn tại file, tự động tìm file ảnh đầu tiên trong database/mssv/.
     """
     sv = execute_one("SELECT avatar FROM sinh_vien WHERE mssv = %s", (mssv,))
-    avatar_path = sv.get('avatar') if sv else None
-    
-    if not avatar_path or not os.path.exists(os.path.join(Config.BASE_DIR, avatar_path)):
+    avatar_path = sv.get("avatar") if sv else None
+
+    if not avatar_path or not os.path.exists(
+        os.path.join(Config.BASE_DIR, avatar_path)
+    ):
         # Tìm file trong dataset
         db_path = os.path.join(Config.DATABASE_DIR, mssv)
         images = glob.glob(f"{db_path}/*.jpg") + glob.glob(f"{db_path}/*.png")
@@ -24,20 +27,20 @@ def get_avatar_path(mssv):
             avatar_path = f"database/{mssv}/{os.path.basename(images[0])}"
         else:
             avatar_path = None
-            
+
     return avatar_path
 
 
 def get_all(lop_id=None, search=None, page=1, per_page=20):
     """
     Lấy danh sách sinh viên có phân trang và filter.
-    
+
     Args:
         lop_id: Lọc theo lớp (optional)
         search: Tìm kiếm theo tên hoặc MSSV (optional)
         page: Trang hiện tại (1-indexed)
         per_page: Số bản ghi mỗi trang
-        
+
     Returns:
         dict: {"items": list, "total": int, "pages": int, "current": int}
     """
@@ -76,12 +79,7 @@ def get_all(lop_id=None, search=None, page=1, per_page=20):
     params.extend([offset, per_page])
     items = execute_query(data_sql, tuple(params))
 
-    return {
-        "items": items,
-        "total": total,
-        "pages": pages,
-        "current": page
-    }
+    return {"items": items, "total": total, "pages": pages, "current": page}
 
 
 def get_by_id(student_id):
@@ -117,22 +115,26 @@ def get_name_by_mssv(mssv):
 def create(data):
     """
     Thêm sinh viên mới.
-    
+
     Args:
         data: dict với keys: mssv, ho_ten, email, sdt, lop_id, avatar, ngay_sinh, gioi_tinh
-        
+
     Returns:
         int: ID sinh viên mới, hoặc -1 nếu lỗi
     """
     from werkzeug.security import generate_password_hash
-    
+
     sql = """
         INSERT INTO sinh_vien (mssv, password_hash, ho_ten, email, sdt, lop_id, avatar, ngay_sinh, gioi_tinh)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     default_pwd = data.get("mssv")
-    pwd_hash = generate_password_hash(default_pwd, method='pbkdf2:sha256') if default_pwd else None
-    
+    pwd_hash = (
+        generate_password_hash(default_pwd, method="pbkdf2:sha256")
+        if default_pwd
+        else None
+    )
+
     params = (
         data.get("mssv"),
         pwd_hash,
@@ -142,7 +144,7 @@ def create(data):
         data.get("lop_id"),
         data.get("avatar"),
         data.get("ngay_sinh"),
-        data.get("gioi_tinh")
+        data.get("gioi_tinh"),
     )
     return execute_update(sql, params)
 
@@ -150,15 +152,27 @@ def create(data):
 def update(student_id, data):
     """
     Cập nhật thông tin sinh viên.
-    
+
     Args:
         student_id: ID sinh viên
         data: dict chứa các trường cần cập nhật
-        
+
     Returns:
         bool: True nếu thành công
     """
-    allowed_fields = ["ho_ten", "email", "sdt", "lop_id", "avatar", "ngay_sinh", "gioi_tinh", "da_train", "trang_thai", "trang_thai_face", "password_hash"]
+    allowed_fields = [
+        "ho_ten",
+        "email",
+        "sdt",
+        "lop_id",
+        "avatar",
+        "ngay_sinh",
+        "gioi_tinh",
+        "da_train",
+        "trang_thai",
+        "trang_thai_face",
+        "password_hash",
+    ]
     set_parts = []
     params = []
 
@@ -181,16 +195,16 @@ def delete(student_id):
     import shutil
     import os
     from config import Config
-    
+
     sv = get_by_id(student_id)
     if not sv:
         return False
-        
-    mssv = sv['mssv']
+
+    mssv = sv["mssv"]
 
     sql = "DELETE FROM sinh_vien WHERE id = %s"
     result = execute_update(sql, (student_id,))
-    
+
     if result >= 0:
         student_dir = os.path.join(Config.DATABASE_DIR, mssv)
         if os.path.exists(student_dir):

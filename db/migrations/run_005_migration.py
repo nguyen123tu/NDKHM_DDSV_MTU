@@ -1,14 +1,15 @@
 import sys
 import os
 
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8')
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from db.connection import execute_update
+
 
 def run_migration():
     print("[MIGRATION 005] Bat dau kiem tra va cap nhat cau truc CSDL cho diem danh...")
@@ -138,7 +139,7 @@ def run_migration():
             CREATE INDEX idx_event_phien_id ON attendance_events(phien_id);
             CREATE INDEX idx_event_sv_id ON attendance_events(sinh_vien_id);
         END;
-        """
+        """,
     ]
 
     for i, cmd in enumerate(commands, 1):
@@ -150,5 +151,6 @@ def run_migration():
 
     print("[DONE] MIGRATION 005 completed.")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     run_migration()

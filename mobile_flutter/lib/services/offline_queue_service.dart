@@ -77,7 +77,8 @@ class OfflineQueueService {
           await _markCompleted(action['id'] as int);
           successCount++;
         } else {
-          await _incrementRetry(action['id'] as int, 'Server trả về lỗi hoặc Token hết hạn');
+          await _incrementRetry(
+              action['id'] as int, 'Server trả về lỗi hoặc Token hết hạn');
           failedCount++;
         }
       } catch (e) {
@@ -86,7 +87,8 @@ class OfflineQueueService {
       }
     }
 
-    debugPrint('[QUEUE] Xử lý xong: $successCount thành công, $failedCount thất bại');
+    debugPrint(
+        '[QUEUE] Xử lý xong: $successCount thành công, $failedCount thất bại');
     return {'success': successCount, 'failed': failedCount};
   }
 
@@ -94,31 +96,35 @@ class OfflineQueueService {
   Future<bool> _executeAction(Map<String, dynamic> action) async {
     final endpoint = action['endpoint'] as String;
     final method = action['method'] as String;
-    final payload = jsonDecode(action['payload'] as String) as Map<String, dynamic>;
-    
+    final payload =
+        jsonDecode(action['payload'] as String) as Map<String, dynamic>;
+
     final url = Uri.parse('${ApiService.baseUrl}$endpoint');
-    
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
-    
+
     final headers = {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
 
     http.Response response;
-    
+
     switch (method.toUpperCase()) {
       case 'POST':
-        response = await http.post(url, headers: headers, body: jsonEncode(payload))
+        response = await http
+            .post(url, headers: headers, body: jsonEncode(payload))
             .timeout(const Duration(seconds: 15));
         break;
       case 'PUT':
-        response = await http.put(url, headers: headers, body: jsonEncode(payload))
+        response = await http
+            .put(url, headers: headers, body: jsonEncode(payload))
             .timeout(const Duration(seconds: 15));
         break;
       case 'DELETE':
-        response = await http.delete(url, headers: headers)
+        response = await http
+            .delete(url, headers: headers)
             .timeout(const Duration(seconds: 15));
         break;
       default:
@@ -152,7 +158,8 @@ class OfflineQueueService {
     );
 
     // Kiểm tra nếu đã hết retry → đánh dấu failed
-    final action = await db.query('offline_queue', where: 'id = ?', whereArgs: [id]);
+    final action =
+        await db.query('offline_queue', where: 'id = ?', whereArgs: [id]);
     if (action.isNotEmpty) {
       final retryCount = action.first['retry_count'] as int? ?? 0;
       final maxRetries = action.first['max_retries'] as int? ?? 5;
@@ -163,7 +170,8 @@ class OfflineQueueService {
           where: 'id = ?',
           whereArgs: [id],
         );
-        debugPrint('[QUEUE] Thao tác ID=$id đã thất bại sau $maxRetries lần thử.');
+        debugPrint(
+            '[QUEUE] Thao tác ID=$id đã thất bại sau $maxRetries lần thử.');
       }
     }
   }

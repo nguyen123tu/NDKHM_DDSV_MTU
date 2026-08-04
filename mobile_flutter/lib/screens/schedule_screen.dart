@@ -34,7 +34,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi tải lịch: $e")));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Lỗi tải lịch: $e")));
       }
     }
   }
@@ -58,7 +59,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         children: [
           Container(color: Theme.of(context).scaffoldBackgroundColor),
           _isLoading
-              ? const Center(child: CircularProgressIndicator(color: AppTheme.secondary))
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppTheme.secondary))
               : _schedules.isEmpty
                   ? _buildEmptyState()
                   : ListView.builder(
@@ -79,9 +81,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.calendar_today_outlined, size: 80, color: AppTheme.textMuted),
+          Icon(Icons.calendar_today_outlined,
+              size: 80, color: AppTheme.textMuted),
           SizedBox(height: 16),
-          Text("Chưa có dữ liệu lịch học", style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
+          Text("Chưa có dữ liệu lịch học",
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
         ],
       ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8)),
     );
@@ -99,7 +103,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               width: 80,
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), bottomLeft: Radius.circular(16)),
+                borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.white.withValues(alpha: 0.8),
@@ -117,8 +123,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    _getThuString(item['thu']), 
-                    style: const TextStyle(color: AppTheme.secondary, fontWeight: FontWeight.bold, fontSize: 16),
+                    _getThuString(item['thu']),
+                    style: const TextStyle(
+                        color: AppTheme.secondary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
                   ),
                 ],
               ),
@@ -131,35 +140,46 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item['mon_hoc'] ?? 'Môn học', 
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.textPrimary),
+                      item['mon_hoc'] ?? 'Môn học',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: AppTheme.textPrimary),
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.access_time, size: 16, color: AppTheme.accent),
+                        const Icon(Icons.access_time,
+                            size: 16, color: AppTheme.accent),
                         const SizedBox(width: 6),
                         Text(
-                          "${(item['gio_bat_dau']?.toString().length ?? 0) >= 5 ? item['gio_bat_dau'].toString().substring(0, 5) : (item['gio_bat_dau'] ?? '')} - ${(item['gio_ket_thuc']?.toString().length ?? 0) >= 5 ? item['gio_ket_thuc'].toString().substring(0, 5) : (item['gio_ket_thuc'] ?? '')}", 
-                          style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                          "${(item['gio_bat_dau']?.toString().length ?? 0) >= 5 ? item['gio_bat_dau'].toString().substring(0, 5) : (item['gio_bat_dau'] ?? '')} - ${(item['gio_ket_thuc']?.toString().length ?? 0) >= 5 ? item['gio_ket_thuc'].toString().substring(0, 5) : (item['gio_ket_thuc'] ?? '')}",
+                          style: const TextStyle(
+                              fontSize: 14, color: AppTheme.textSecondary),
                         ),
                         const Spacer(),
-                        const Icon(Icons.room, size: 16, color: AppTheme.primary),
+                        const Icon(Icons.room,
+                            size: 16, color: AppTheme.primary),
                         const SizedBox(width: 6),
                         Text(
-                          "${item['phong_hoc'] ?? item['phong'] ?? ''}", 
-                          style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                          "${item['phong_hoc'] ?? item['phong'] ?? ''}",
+                          style: const TextStyle(
+                              fontSize: 14, color: AppTheme.textSecondary),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.person, size: 16, color: AppTheme.textMuted),
+                        const Icon(Icons.person,
+                            size: 16, color: AppTheme.textMuted),
                         const SizedBox(width: 6),
                         Text(
-                          "GV: ${item['giang_vien'] ?? item['giao_vien'] ?? ''}", 
-                          style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+                          "GV: ${item['giang_vien'] ?? item['giao_vien'] ?? ''}",
+                          style: const TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textSecondary,
+                              fontStyle: FontStyle.italic),
                         ),
                       ],
                     )
@@ -170,6 +190,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ],
         ),
       ),
-    ).animate().fadeIn(delay: Duration(milliseconds: 100 * index)).slideX(begin: 0.1, end: 0);
+    )
+        .animate()
+        .fadeIn(delay: Duration(milliseconds: 100 * index))
+        .slideX(begin: 0.1, end: 0);
   }
 }

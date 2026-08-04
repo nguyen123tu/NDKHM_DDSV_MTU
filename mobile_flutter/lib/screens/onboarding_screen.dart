@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/neu_container.dart';
 import '../widgets/neu_button.dart';
+
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -18,19 +19,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<Map<String, dynamic>> _pages = [
     {
       "title": "NHẬN DIỆN KHUÔN MẶT\nTỰ ĐỘNG",
-      "subtitle": "Nhận diện khuôn mặt tự động, thông báo kết quả kèm hình ảnh tức thì qua ứng dụng của phụ huynh",
+      "subtitle":
+          "Nhận diện khuôn mặt tự động, thông báo kết quả kèm hình ảnh tức thì qua ứng dụng của phụ huynh",
       "icon": Icons.face_retouching_natural,
       "color": AppTheme.primary,
     },
     {
       "title": "XÁC THỰC\nKHUÔN MẶT",
-      "subtitle": "Giảm thiểu tối đa sai sót với độ chính xác lên tới 99,99% cùng với tính năng Liveness Face",
+      "subtitle":
+          "Giảm thiểu tối đa sai sót với độ chính xác lên tới 99,99% cùng với tính năng Liveness Face",
       "icon": Icons.security,
       "color": AppTheme.secondary,
     },
     {
       "title": "THÔNG BÁO ĐIỂM DANH\nTHÀNH CÔNG",
-      "subtitle": "Ứng dụng gửi thông báo kết quả ngay khi điểm danh thành công",
+      "subtitle":
+          "Ứng dụng gửi thông báo kết quả ngay khi điểm danh thành công",
       "icon": Icons.mark_email_read,
       "color": AppTheme.success,
     },
@@ -55,7 +59,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.topRight,
                 child: TextButton(
                   onPressed: _completeOnboarding,
-                  child: const Text("Bỏ qua", style: TextStyle(color: AppTheme.textSecondary)),
+                  child: const Text("Bỏ qua",
+                      style: TextStyle(color: AppTheme.textSecondary)),
                 ),
               ),
 
@@ -86,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ),
                           const SizedBox(height: 50),
-                          
+
                           // Tiêu đề
                           Text(
                             _pages[index]["title"],
@@ -99,7 +104,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          
+
                           // Phụ đề
                           Text(
                             _pages[index]["subtitle"],
@@ -125,12 +130,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   (index) => buildDot(index, context),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
 
               // Nút Tiếp Tục / Bắt Đầu
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40.0, vertical: 20),
                 child: SizedBox(
                   width: double.infinity,
                   child: NeuButton(
@@ -147,7 +153,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     },
                     child: Center(
                       child: Text(
-                        _currentPage == _pages.length - 1 ? "Bắt Đầu Ngay" : "Tiếp tục",
+                        _currentPage == _pages.length - 1
+                            ? "Bắt Đầu Ngay"
+                            : "Tiếp tục",
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -173,7 +181,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       margin: const EdgeInsets.only(right: 5),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: _currentPage == index ? AppTheme.primary : AppTheme.textMuted.withValues(alpha: 0.3),
+        color: _currentPage == index
+            ? AppTheme.primary
+            : AppTheme.textMuted.withValues(alpha: 0.3),
       ),
     );
   }

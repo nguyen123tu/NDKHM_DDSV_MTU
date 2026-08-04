@@ -21,7 +21,7 @@ from config import Config
 class KnowledgeBuilder:
     """
     Thu thập toàn bộ kiến thức từ dự án và lưu vào ChromaDB.
-    
+
     Nguồn kiến thức:
     - bao_cao_do_an.md (Báo cáo đồ án ~64KB)
     - db/schema.sql (Cấu trúc CSDL)
@@ -30,8 +30,8 @@ class KnowledgeBuilder:
     - config.py (Cấu hình hệ thống)
     """
 
-    CHUNK_SIZE = 800       # Ký tự mỗi chunk
-    CHUNK_OVERLAP = 200    # Ký tự overlap giữa các chunk
+    CHUNK_SIZE = 800  # Ký tự mỗi chunk
+    CHUNK_OVERLAP = 200  # Ký tự overlap giữa các chunk
     COLLECTION_NAME = "mtuface_knowledge"
 
     # Các file/thư mục cần index
@@ -75,8 +75,7 @@ class KnowledgeBuilder:
         # Khởi tạo ChromaDB
         os.makedirs(self._chroma_dir, exist_ok=True)
         self._client = chromadb.PersistentClient(
-            path=self._chroma_dir,
-            settings=Settings(anonymized_telemetry=False)
+            path=self._chroma_dir, settings=Settings(anonymized_telemetry=False)
         )
         self._collection = None
 
@@ -109,7 +108,7 @@ class KnowledgeBuilder:
             results = collection.query(
                 query_texts=[query],
                 n_results=n_results,
-                include=["documents", "metadatas", "distances"]
+                include=["documents", "metadatas", "distances"],
             )
 
             chunks = []
@@ -117,12 +116,14 @@ class KnowledgeBuilder:
                 for i, doc in enumerate(results["documents"][0]):
                     meta = results["metadatas"][0][i] if results["metadatas"] else {}
                     dist = results["distances"][0][i] if results["distances"] else 0
-                    chunks.append({
-                        "text": doc,
-                        "source": meta.get("source", "unknown"),
-                        "category": meta.get("category", "unknown"),
-                        "distance": float(dist),
-                    })
+                    chunks.append(
+                        {
+                            "text": doc,
+                            "source": meta.get("source", "unknown"),
+                            "category": meta.get("category", "unknown"),
+                            "distance": float(dist),
+                        }
+                    )
             return chunks
         except Exception as e:
             print(f"[KnowledgeBuilder] Search error: {e}")
@@ -162,8 +163,7 @@ class KnowledgeBuilder:
                 pass
 
             collection = self._client.get_or_create_collection(
-                name=self.COLLECTION_NAME,
-                metadata={"hnsw:space": "cosine"}
+                name=self.COLLECTION_NAME, metadata={"hnsw:space": "cosine"}
             )
 
             all_chunks = []
@@ -179,7 +179,9 @@ class KnowledgeBuilder:
                     chunks = self._process_markdown(fpath, fname)
                     all_chunks.extend(chunks)
                     sources_info.append({"file": fname, "chunks": len(chunks)})
-                    self._update_progress("building", 0.1, f"Đã đọc: {fname} ({len(chunks)} đoạn)")
+                    self._update_progress(
+                        "building", 0.1, f"Đã đọc: {fname} ({len(chunks)} đoạn)"
+                    )
 
             # Database schema
             for fname in self.KNOWLEDGE_SOURCES["database"]:
@@ -216,7 +218,9 @@ class KnowledgeBuilder:
                 self._update_progress("building", progress, f"Đã quét: {code_dir}/")
 
             # ── Bước 2: Index vào ChromaDB (60%) ──
-            self._update_progress("building", 0.4, f"Đang index {len(all_chunks)} đoạn kiến thức...")
+            self._update_progress(
+                "building", 0.4, f"Đang index {len(all_chunks)} đoạn kiến thức..."
+            )
 
             # Loại bỏ ID trùng lặp
             seen_ids = set()
@@ -230,7 +234,7 @@ class KnowledgeBuilder:
             batch_size = 50
             total = len(all_chunks)
             for start in range(0, total, batch_size):
-                batch = all_chunks[start:start + batch_size]
+                batch = all_chunks[start : start + batch_size]
                 ids = [c["id"] for c in batch]
                 docs = [c["text"] for c in batch]
                 metas = [c["metadata"] for c in batch]
@@ -242,23 +246,32 @@ class KnowledgeBuilder:
                 )
 
                 progress = 0.4 + (0.6 * min(start + batch_size, total) / total)
-                self._update_progress("building", progress,
-                    f"Đã index {min(start + batch_size, total)}/{total} đoạn")
+                self._update_progress(
+                    "building",
+                    progress,
+                    f"Đã index {min(start + batch_size, total)}/{total} đoạn",
+                )
 
             # Lưu status
-            self._save_status({
-                "last_built": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "total_chunks": total,
-                "sources": sources_info,
-            })
+            self._save_status(
+                {
+                    "last_built": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "total_chunks": total,
+                    "sources": sources_info,
+                }
+            )
 
-            self._update_progress("done", 1.0,
-                f"✅ Hoàn tất! Đã index {total} đoạn kiến thức từ {len(sources_info)} file.")
+            self._update_progress(
+                "done",
+                1.0,
+                f"✅ Hoàn tất! Đã index {total} đoạn kiến thức từ {len(sources_info)} file.",
+            )
 
         except Exception as e:
             self._update_progress("error", 0, f"❌ Lỗi: {str(e)}")
             print(f"[KnowledgeBuilder] Build error: {e}")
             import traceback
+
             traceback.print_exc()
 
     # ─── TEXT PROCESSING ─────────────────────────────────────────────────
@@ -269,7 +282,7 @@ class KnowledgeBuilder:
             content = f.read()
 
         # Chia theo heading (##, ###)
-        sections = re.split(r'\n(?=#{1,3}\s)', content)
+        sections = re.split(r"\n(?=#{1,3}\s)", content)
         chunks = []
 
         for section in sections:
@@ -282,19 +295,21 @@ class KnowledgeBuilder:
             for i, chunk_text in enumerate(sub_chunks):
                 chunk_id = self._make_id(source_name, chunk_text)
                 # Trích heading làm title
-                title_match = re.match(r'^(#{1,3})\s+(.+)', chunk_text)
+                title_match = re.match(r"^(#{1,3})\s+(.+)", chunk_text)
                 title = title_match.group(2) if title_match else source_name
 
-                chunks.append({
-                    "id": chunk_id,
-                    "text": chunk_text,
-                    "metadata": {
-                        "source": source_name,
-                        "category": "documentation",
-                        "title": title[:200],
-                        "chunk_index": i,
+                chunks.append(
+                    {
+                        "id": chunk_id,
+                        "text": chunk_text,
+                        "metadata": {
+                            "source": source_name,
+                            "category": "documentation",
+                            "title": title[:200],
+                            "chunk_index": i,
+                        },
                     }
-                })
+                )
 
         return chunks
 
@@ -304,7 +319,7 @@ class KnowledgeBuilder:
             content = f.read()
 
         # Chia theo statement
-        statements = re.split(r';\s*\n', content)
+        statements = re.split(r";\s*\n", content)
         chunks = []
 
         for stmt in statements:
@@ -313,22 +328,24 @@ class KnowledgeBuilder:
                 continue
 
             # Thêm context header
-            table_match = re.search(r'CREATE TABLE\s+`?(\w+)`?', stmt, re.IGNORECASE)
+            table_match = re.search(r"CREATE TABLE\s+`?(\w+)`?", stmt, re.IGNORECASE)
             table_name = table_match.group(1) if table_match else "SQL"
 
             chunk_text = f"[SQL Schema - Bảng {table_name}]\n{stmt}"
             chunk_id = self._make_id(source_name, chunk_text)
 
-            chunks.append({
-                "id": chunk_id,
-                "text": chunk_text,
-                "metadata": {
-                    "source": source_name,
-                    "category": "database",
-                    "title": f"Bảng {table_name}",
-                    "chunk_index": 0,
+            chunks.append(
+                {
+                    "id": chunk_id,
+                    "text": chunk_text,
+                    "metadata": {
+                        "source": source_name,
+                        "category": "database",
+                        "title": f"Bảng {table_name}",
+                        "chunk_index": 0,
+                    },
                 }
-            })
+            )
 
         return chunks
 
@@ -346,16 +363,18 @@ class KnowledgeBuilder:
         doc_match = re.match(r'^"""(.*?)"""', content, re.DOTALL)
         if doc_match:
             doc_text = f"[Module: {source_name}]\n{doc_match.group(1).strip()}"
-            chunks.append({
-                "id": self._make_id(source_name, "module_doc"),
-                "text": doc_text,
-                "metadata": {
-                    "source": source_name,
-                    "category": category,
-                    "title": f"Module {source_name}",
-                    "chunk_index": 0,
+            chunks.append(
+                {
+                    "id": self._make_id(source_name, "module_doc"),
+                    "text": doc_text,
+                    "metadata": {
+                        "source": source_name,
+                        "category": category,
+                        "title": f"Module {source_name}",
+                        "chunk_index": 0,
+                    },
                 }
-            })
+            )
 
         # Trích class + function definitions
         # Tìm các class/function cùng docstring
@@ -363,52 +382,62 @@ class KnowledgeBuilder:
         for match in re.finditer(pattern, content, re.DOTALL):
             sig = match.group(1).strip()
             doc = match.group(2).strip() if match.group(2) else ""
-            chunk_text = f"[Code: {source_name}]\n{sig}\n{doc}" if doc else f"[Code: {source_name}]\n{sig}"
+            chunk_text = (
+                f"[Code: {source_name}]\n{sig}\n{doc}"
+                if doc
+                else f"[Code: {source_name}]\n{sig}"
+            )
 
             if len(chunk_text) < 30:
                 continue
 
-            chunks.append({
-                "id": self._make_id(source_name, sig),
-                "text": chunk_text,
-                "metadata": {
-                    "source": source_name,
-                    "category": category,
-                    "title": sig[:200],
-                    "chunk_index": 0,
+            chunks.append(
+                {
+                    "id": self._make_id(source_name, sig),
+                    "text": chunk_text,
+                    "metadata": {
+                        "source": source_name,
+                        "category": category,
+                        "title": sig[:200],
+                        "chunk_index": 0,
+                    },
                 }
-            })
+            )
 
         # Nếu file nhỏ, index toàn bộ nội dung
         if len(content) < self.CHUNK_SIZE * 2:
             full_text = f"[Toàn bộ mã nguồn: {source_name}]\n{content}"
             sub_chunks = self._split_text(full_text)
             for i, ct in enumerate(sub_chunks):
-                chunks.append({
-                    "id": self._make_id(source_name, f"full_{i}"),
-                    "text": ct,
-                    "metadata": {
-                        "source": source_name,
-                        "category": category,
-                        "title": f"Mã nguồn {source_name}",
-                        "chunk_index": i,
+                chunks.append(
+                    {
+                        "id": self._make_id(source_name, f"full_{i}"),
+                        "text": ct,
+                        "metadata": {
+                            "source": source_name,
+                            "category": category,
+                            "title": f"Mã nguồn {source_name}",
+                            "chunk_index": i,
+                        },
                     }
-                })
+                )
         else:
             # Index từng phần
             sub_chunks = self._split_text(content)
             for i, ct in enumerate(sub_chunks):
                 chunk_text = f"[Code: {source_name}]\n{ct}"
-                chunks.append({
-                    "id": self._make_id(source_name, f"part_{i}"),
-                    "text": chunk_text,
-                    "metadata": {
-                        "source": source_name,
-                        "category": category,
-                        "title": f"Mã nguồn {source_name} - phần {i+1}",
-                        "chunk_index": i,
+                chunks.append(
+                    {
+                        "id": self._make_id(source_name, f"part_{i}"),
+                        "text": chunk_text,
+                        "metadata": {
+                            "source": source_name,
+                            "category": category,
+                            "title": f"Mã nguồn {source_name} - phần {i+1}",
+                            "chunk_index": i,
+                        },
                     }
-                })
+                )
 
         return chunks
 
@@ -474,6 +503,7 @@ class KnowledgeBuilder:
 
 # ─── SINGLETON ───────────────────────────────────────────────────────────
 _builder_instance = None
+
 
 def get_knowledge_builder() -> KnowledgeBuilder:
     global _builder_instance

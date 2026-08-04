@@ -89,8 +89,8 @@ class AboutScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppTheme.secondary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: AppTheme.secondary.withValues(alpha: 0.3)),
+                    border: Border.all(
+                        color: AppTheme.secondary.withValues(alpha: 0.3)),
                   ),
                   child: const Text(
                     "Phiên bản 2.0",
@@ -141,8 +141,9 @@ class AboutScreen extends StatelessWidget {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
-                  decoration:
-                      AppTheme.modernCardDecoration(borderRadius: 20, color: AppTheme.surfaceLight.withOpacity(0.05)),
+                  decoration: AppTheme.modernCardDecoration(
+                      borderRadius: 20,
+                      color: AppTheme.surfaceLight.withOpacity(0.05)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -180,7 +181,8 @@ class AboutScreen extends StatelessWidget {
                 Text(
                   "© 2026 MTU Face Attendance System",
                   style: TextStyle(
-                      color: AppTheme.textMuted.withValues(alpha: 0.5), fontSize: 12),
+                      color: AppTheme.textMuted.withValues(alpha: 0.5),
+                      fontSize: 12),
                 ).animate().fadeIn(delay: 800.ms),
 
                 const SizedBox(height: 40),

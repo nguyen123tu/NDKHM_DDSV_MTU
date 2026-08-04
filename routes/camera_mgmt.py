@@ -7,7 +7,8 @@ from . import camera_mgmt_bp
 from utils.decorators import login_required
 from core.camera import get_camera_manager
 
-@camera_mgmt_bp.route('/')
+
+@camera_mgmt_bp.route("/")
 @login_required
 def index():
     """
@@ -21,9 +22,10 @@ def index():
       500:
         description: Lỗi máy chủ
     """
-    return render_template('camera/manage.html')
+    return render_template("camera/manage.html")
 
-@camera_mgmt_bp.route('/api/list')
+
+@camera_mgmt_bp.route("/api/list")
 @login_required
 def list_cameras():
     """
@@ -40,19 +42,20 @@ def list_cameras():
     # Fix cứng dữ liệu mẫu vì chưa code Database Camera Management hoàn chỉnh
     cam_manager = get_camera_manager()
     connected = cam_manager.list_connected()
-    
+
     cams = [
         {
-            "id": 0, 
-            "ten_cam": "Camera Laptop (Default)", 
-            "url_hoac_index": "0", 
+            "id": 0,
+            "ten_cam": "Camera Laptop (Default)",
+            "url_hoac_index": "0",
             "vi_tri": "Bàn GV",
-            "is_connected": 0 in connected
+            "is_connected": 0 in connected,
         }
     ]
     return jsonify({"cameras": cams})
 
-@camera_mgmt_bp.route('/api/scan-usb')
+
+@camera_mgmt_bp.route("/api/scan-usb")
 @login_required
 def scan_usb():
     """

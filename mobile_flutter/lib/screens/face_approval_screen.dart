@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/api_image.dart';
@@ -29,7 +28,8 @@ class _FaceApprovalScreenState extends State<FaceApprovalScreen> {
         setState(() => _pendingList = res['data']);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Lỗi: $e")));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -39,11 +39,13 @@ class _FaceApprovalScreenState extends State<FaceApprovalScreen> {
     try {
       final res = await _apiService.approveFace(id, status);
       if (res['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(res['message'])));
         _loadPending();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Lỗi: $e")));
     }
   }
 
@@ -52,7 +54,8 @@ class _FaceApprovalScreenState extends State<FaceApprovalScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text("Phê duyệt khuôn mặt", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Phê duyệt khuôn mặt",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
@@ -67,7 +70,8 @@ class _FaceApprovalScreenState extends State<FaceApprovalScreen> {
                   itemBuilder: (context, index) {
                     final item = _pendingList[index];
                     return Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15)),
                       margin: const EdgeInsets.only(bottom: 16),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
@@ -80,16 +84,21 @@ class _FaceApprovalScreenState extends State<FaceApprovalScreen> {
                                   width: 60,
                                   height: 60,
                                   child: ApiImage(
-                                    path: item['avatar'].contains('uploads/avatars')
-                                      ? "static/${item['avatar']}"
-                                      : "database/${item['avatar']}",
+                                    path: item['avatar']
+                                            .contains('uploads/avatars')
+                                        ? "static/${item['avatar']}"
+                                        : "database/${item['avatar']}",
                                     fit: BoxFit.cover,
-                                    errorWidget: const Icon(Icons.person, size: 30, color: Colors.grey),
+                                    errorWidget: const Icon(Icons.person,
+                                        size: 30, color: Colors.grey),
                                   ),
                                 ),
                               ),
-                              title: Text(item['ho_ten'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text("${item['mssv']} • ${item['ma_lop']}"),
+                              title: Text(item['ho_ten'],
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                              subtitle:
+                                  Text("${item['mssv']} • ${item['ma_lop']}"),
                             ),
                             const Divider(),
                             Row(
@@ -97,15 +106,20 @@ class _FaceApprovalScreenState extends State<FaceApprovalScreen> {
                               children: [
                                 TextButton.icon(
                                   onPressed: () => _handleAction(item['id'], 3),
-                                  icon: const Icon(Icons.close, color: Colors.red),
-                                  label: const Text("Từ chối", style: TextStyle(color: Colors.red)),
+                                  icon: const Icon(Icons.close,
+                                      color: Colors.red),
+                                  label: const Text("Từ chối",
+                                      style: TextStyle(color: Colors.red)),
                                 ),
                                 const SizedBox(width: 8),
                                 ElevatedButton.icon(
                                   onPressed: () => _handleAction(item['id'], 2),
-                                  icon: const Icon(Icons.check, color: Colors.white),
-                                  label: const Text("Phê duyệt", style: TextStyle(color: Colors.white)),
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                                  icon: const Icon(Icons.check,
+                                      color: Colors.white),
+                                  label: const Text("Phê duyệt",
+                                      style: TextStyle(color: Colors.white)),
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green),
                                 ),
                               ],
                             )

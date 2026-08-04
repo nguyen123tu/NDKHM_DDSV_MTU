@@ -11,19 +11,22 @@ class AttendanceRepository {
   Future<String> saveAttendanceOffline(String mssv, double confidence) async {
     final db = await _appDatabase.database;
     final localUuid = _uuid.v4(); // Tạo chuỗi chống trùng lặp duy nhất
-    
+
     await db.insert(
       'local_attendance',
       {
         'local_uuid': localUuid,
         'mssv': mssv,
-        'check_time': DateTime.now().toIso8601String().split('.')[0].replaceFirst('T', ' '),
+        'check_time': DateTime.now()
+            .toIso8601String()
+            .split('.')[0]
+            .replaceFirst('T', ' '),
         'confidence': confidence,
         'sync_status': 0, // 0 = PENDING, chưa gửi lên server
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    
+
     return localUuid;
   }
 
@@ -41,15 +44,16 @@ class AttendanceRepository {
   Future<void> markAsSynced(List<String> localUuids) async {
     final db = await _appDatabase.database;
     final batch = db.batch();
-    
+
     for (var uuid in localUuids) {
       // Cách 1: Đánh dấu thành 1
       // batch.update('local_attendance', {'sync_status': 1}, where: 'local_uuid = ?', whereArgs: [uuid]);
-      
+
       // Cách 2: Xóa luôn khỏi điện thoại cho nhẹ máy (Khuyên dùng)
-      batch.delete('local_attendance', where: 'local_uuid = ?', whereArgs: [uuid]);
+      batch.delete('local_attendance',
+          where: 'local_uuid = ?', whereArgs: [uuid]);
     }
-    
+
     await batch.commit(noResult: true);
   }
 }

@@ -116,7 +116,8 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Lịch sử điểm danh', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text('Lịch sử điểm danh',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         actions: [
@@ -124,14 +125,17 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF1E293B)))
           : _error != null
-              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              ? Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 12),
                   Text(_error!, style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 12),
-                  ElevatedButton(onPressed: _loadHistory, child: const Text('Thử lại')),
+                  ElevatedButton(
+                      onPressed: _loadHistory, child: const Text('Thử lại')),
                 ]))
               : _sessions.isEmpty
                   ? _buildEmptyState()
@@ -140,24 +144,34 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
                         itemCount: _sessions.length,
-                        itemBuilder: (context, index) => _buildSessionCard(_sessions[index]),
+                        itemBuilder: (context, index) =>
+                            _buildSessionCard(_sessions[index]),
                       ),
                     ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+    return Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: const Color(0xFF1E293B).withValues(alpha: 0.06), shape: BoxShape.circle),
+        decoration: BoxDecoration(
+            color: const Color(0xFF1E293B).withValues(alpha: 0.06),
+            shape: BoxShape.circle),
         child: const Icon(Icons.history, color: Color(0xFF1E293B), size: 48),
       ),
       const SizedBox(height: 20),
-      const Text('Chưa có lịch sử', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+      const Text('Chưa có lịch sử',
+          style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B))),
       const SizedBox(height: 8),
       Text('Các phiên điểm danh đã đóng sẽ hiển thị ở đây',
-          style: TextStyle(color: const Color(0xFF1E293B).withValues(alpha: 0.5), fontSize: 14)),
+          style: TextStyle(
+              color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+              fontSize: 14)),
     ]));
   }
 
@@ -175,19 +189,25 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
     String timeDisplay = '';
     try {
       final dt = DateTime.parse(batDau);
-      dateDisplay = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
-      timeDisplay = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      dateDisplay =
+          '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+      timeDisplay =
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
       if (ketThuc.isNotEmpty) {
         final dtEnd = DateTime.parse(ketThuc);
-        timeDisplay += ' - ${dtEnd.hour.toString().padLeft(2, '0')}:${dtEnd.minute.toString().padLeft(2, '0')}';
+        timeDisplay +=
+            ' - ${dtEnd.hour.toString().padLeft(2, '0')}:${dtEnd.minute.toString().padLeft(2, '0')}';
       }
     } catch (_) {}
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(
-          builder: (_) => AdminSessionDetailScreen(sessionId: session['id'], tenLop: tenLop),
-        ));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AdminSessionDetailScreen(
+                  sessionId: session['id'], tenLop: tenLop),
+            ));
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -195,7 +215,12 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4))
+          ],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -206,22 +231,34 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
                 color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.history, color: Color(0xFF6366F1), size: 24),
+              child:
+                  const Icon(Icons.history, color: Color(0xFF6366F1), size: 24),
             ),
             const SizedBox(width: 14),
             // Tên lớp
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(tenLop, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
-              const SizedBox(height: 2),
-              Text(maLop, style: TextStyle(color: const Color(0xFF1E293B).withValues(alpha: 0.5), fontSize: 12)),
-            ])),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(tenLop,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Color(0xFF1E293B))),
+                  const SizedBox(height: 2),
+                  Text(maLop,
+                      style: TextStyle(
+                          color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                          fontSize: 12)),
+                ])),
             // Nút xóa đã bị ẩn
             const SizedBox(),
           ]),
           const SizedBox(height: 12),
           // Thông tin chi tiết
           Row(children: [
-            _infoChip(Icons.calendar_today, dateDisplay, const Color(0xFF6366F1)),
+            _infoChip(
+                Icons.calendar_today, dateDisplay, const Color(0xFF6366F1)),
             const SizedBox(width: 8),
             _infoChip(Icons.access_time, timeDisplay, const Color(0xFF2E96EB)),
           ]),
@@ -229,7 +266,8 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
           Row(children: [
             _infoChip(Icons.people, '$total SV', const Color(0xFF1E293B)),
             const SizedBox(width: 8),
-            _infoChip(Icons.check_circle, '$present có mặt', const Color(0xFF10B981)),
+            _infoChip(
+                Icons.check_circle, '$present có mặt', const Color(0xFF10B981)),
             const SizedBox(width: 8),
             _infoChip(Icons.cancel, '$absent vắng', Colors.redAccent),
           ]),
@@ -241,11 +279,17 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
   Widget _infoChip(IconData icon, String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 12, color: color),
         const SizedBox(width: 4),
-        Flexible(child: Text(text, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+        Flexible(
+            child: Text(text,
+                style: TextStyle(
+                    fontSize: 11, color: color, fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis)),
       ]),
     );
   }

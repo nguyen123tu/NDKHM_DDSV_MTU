@@ -12,82 +12,8 @@
         rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        primary: '#3b82f6',
-                        secondary: '#10b981',
-                        tertiary: '#8b5cf6',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-
-        /* Animated gradient background */
-        .bg-animated {
-            background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 40%, #faf5ff 70%, #f0fdf4 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        /* Floating orbs */
-        .orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.4;
-            animation: float 20s ease-in-out infinite;
-        }
-
-        .orb-1 { width: 400px; height: 400px; background: #bfdbfe; top: -10%; left: -5%; animation-delay: 0s; }
-        .orb-2 { width: 300px; height: 300px; background: #bbf7d0; bottom: -5%; right: -5%; animation-delay: -7s; }
-        .orb-3 { width: 200px; height: 200px; background: #e9d5ff; top: 50%; left: 60%; animation-delay: -14s; }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(30px, -30px) scale(1.05); }
-            50% { transform: translate(-20px, 20px) scale(0.95); }
-            75% { transform: translate(10px, -10px) scale(1.02); }
-        }
-
-        /* Input styling */
-        .input-field {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            color: #111827;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .input-field:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
-
-        .input-field::placeholder {
-            color: #9ca3af;
-        }
-
-        /* Grid pattern */
-        .grid-pattern {
-            background-image:
-                linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-        }
-    </style>
+    <script src="{{ url_for('static', filename='js/auth_login_script_1.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth_login_style_1.css') }}">
 </head>
 
 <body class="h-full bg-animated text-gray-800 antialiased overflow-hidden">
@@ -191,19 +117,7 @@
         </div>
     </div>
 
-    <script>
-        function togglePassword() {
-            const f = document.getElementById('passwordField');
-            const i = document.getElementById('toggleIcon');
-            if (f.type === 'password') {
-                f.type = 'text';
-                i.textContent = 'visibility_off';
-            } else {
-                f.type = 'password';
-                i.textContent = 'visibility';
-            }
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/auth_login_script_2.js') }}"></script>
 </body>
 
 </html>

@@ -74,7 +74,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: Stack(
         children: [
           Container(color: Theme.of(context).scaffoldBackgroundColor),
-
           _isLoading
               ? const Center(
                   child: CircularProgressIndicator(color: AppTheme.primary))

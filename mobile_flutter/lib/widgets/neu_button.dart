@@ -61,22 +61,26 @@ class _NeuButtonState extends State<NeuButton> {
           padding: widget.padding,
           decoration: BoxDecoration(
             shape: widget.shape,
-            borderRadius: widget.shape == BoxShape.circle ? null : BorderRadius.circular(widget.borderRadius),
+            borderRadius: widget.shape == BoxShape.circle
+                ? null
+                : BorderRadius.circular(widget.borderRadius),
             gradient: widget.isPrimary ? AppTheme.primaryGradient : null,
             color: widget.isPrimary ? null : AppTheme.surfaceLight,
-            boxShadow: widget.isPrimary && !_isPressed ? [
-              BoxShadow(
-                color: AppTheme.primary.withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              )
-            ] : null,
+            boxShadow: widget.isPrimary && !_isPressed
+                ? [
+                    BoxShadow(
+                      color: AppTheme.primary.withOpacity(0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    )
+                  ]
+                : null,
           ),
           child: DefaultTextStyle(
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
             child: IconTheme(
               data: const IconThemeData(color: Colors.white),
               child: content,

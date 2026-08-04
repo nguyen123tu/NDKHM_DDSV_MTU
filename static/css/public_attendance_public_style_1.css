@@ -1,0 +1,25 @@
+.hover-white:hover { color: white !important; }
+    .transition { transition: all 0.3s ease; }
+    .w-20px { width: 20px; display: inline-block; }
+    .face-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    .face-grid img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .face-empty {
+        background: rgba(255,255,255,0.05);
+        border: 1px dashed rgba(255,255,255,0.2);
+        border-radius: 6px;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255,255,255,0.3);
+    }

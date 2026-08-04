@@ -233,7 +233,8 @@ class _AdminStudentEditScreenState extends State<AdminStudentEditScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.error.withValues(alpha: 0.8),
+                          backgroundColor:
+                              AppTheme.error.withValues(alpha: 0.8),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(

@@ -32,7 +32,8 @@ class AuthProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
-    final useBiometric = prefs.getBool('use_biometric') ?? true; // Default to true to force login screen
+    final useBiometric = prefs.getBool('use_biometric') ??
+        true; // Default to true to force login screen
 
     final token = prefs.getString('auth_token');
     if (token != null && !useBiometric) {
@@ -77,7 +78,7 @@ class AuthProvider with ChangeNotifier {
         if (data['success'] == true) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('auth_token', data['token']);
-          
+
           final u = data['user'];
           await prefs.setString('auth_username', u['username']);
           await prefs.setString('auth_name', u['name'] ?? '');
@@ -89,11 +90,11 @@ class AuthProvider with ChangeNotifier {
           _user = UserModel.fromJson(u);
           _isLoading = false;
           _isOfflineMode = false;
-          
+
           // Cập nhật FCM Token lên server sau khi đã có auth_token
           try {
             await FirebaseMessagingService().updateDeviceToken();
-          } catch(e) {
+          } catch (e) {
             debugPrint("Không thể cập nhật FCM token lúc login: $e");
           }
 
@@ -118,7 +119,7 @@ class AuthProvider with ChangeNotifier {
   /// Thử đăng nhập offline bằng cached credentials
   Future<String?> _tryOfflineLogin(String username, String password) async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     final cachedUsername = prefs.getString('cached_login_username');
     final cachedHash = prefs.getString('cached_login_hash');
 
@@ -149,9 +150,11 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// Cache credentials: lưu username + hash(password) vào SharedPreferences
-  Future<void> _cacheCredentials(SharedPreferences prefs, String username, String password) async {
+  Future<void> _cacheCredentials(
+      SharedPreferences prefs, String username, String password) async {
     await prefs.setString('cached_login_username', username);
-    await prefs.setString('cached_login_hash', _hashPassword(username, password));
+    await prefs.setString(
+        'cached_login_hash', _hashPassword(username, password));
   }
 
   /// Hash password cục bộ (SHA-256 với salt = username)

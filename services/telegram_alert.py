@@ -9,6 +9,7 @@ import os
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
+
 def _is_telegram_configured():
     """Kiểm tra xem token và chat_id đã được cấu hình đúng trong .env chưa"""
     invalid_tokens = ("", "YOUR_BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN_HERE")
@@ -18,12 +19,13 @@ def _is_telegram_configured():
         and TELEGRAM_CHAT_ID not in invalid_chats
     )
 
+
 def send_telegram_message(message):
     """Gửi tin nhắn văn bản tới Telegram"""
     if not _is_telegram_configured():
         print(f"[CẢNH BÁO TELEGRAM MÔ PHỎNG] Tin nhắn: {message}")
         return False
-        
+
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         data = {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "HTML"}
@@ -33,6 +35,7 @@ def send_telegram_message(message):
         print(f"[TELEGRAM LỖI] {e}")
         return False
 
+
 def send_telegram_photo(frame, message="Phát hiện đối tượng!"):
     """
     Gửi khung hình ảnh và thông báo tới Telegram qua HTTP API.
@@ -40,16 +43,18 @@ def send_telegram_photo(frame, message="Phát hiện đối tượng!"):
     """
     if not _is_telegram_configured():
         print(f"[CẢNH BÁO TELEGRAM MÔ PHỎNG] Tin nhắn: {message}")
-        print("=> Bạn chưa cấu hình Token Telegram hợp lệ trong .env nên không thể gửi thật.")
+        print(
+            "=> Bạn chưa cấu hình Token Telegram hợp lệ trong .env nên không thể gửi thật."
+        )
         return False
-        
+
     try:
         # Encode OpenCV frame (BGR) to JPG format in memory
-        ret, buffer = cv2.imencode('.jpg', frame)
+        ret, buffer = cv2.imencode(".jpg", frame)
         if not ret:
             print("Lỗi khi nén ảnh để gửi Telegram.")
             return False
-            
+
         io_buf = io.BytesIO(buffer)
         io_buf.name = "alert.jpg"
 
@@ -58,7 +63,7 @@ def send_telegram_photo(frame, message="Phát hiện đối tượng!"):
         files = {"photo": io_buf}
 
         response = requests.post(url, data=data, files=files)
-        
+
         if response.status_code == 200:
             print("[TELEGRAM] Đã gửi thông báo thành công!")
             return True
@@ -70,9 +75,11 @@ def send_telegram_photo(frame, message="Phát hiện đối tượng!"):
         print(f"[TELEGRAM LỖI] Lỗi kết nối gửi ảnh: {e}")
         return False
 
+
 # Chạy thử nếu chạy trực tiếp file này (không gọi qua thư viện khác)
 if __name__ == "__main__":
     import numpy as np
+
     # Tạo một ảnh rỗng đen để gửi thử
     test_img = np.zeros((300, 300, 3), dtype=np.uint8)
     # Lệnh sẽ mô phỏng hoặc gửi nếu đã điền mã

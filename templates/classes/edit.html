@@ -212,11 +212,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    function confirmDelete() {
-        if (confirm('CẢNH BÁO: Xóa lớp học sẽ làm mất toàn bộ danh sách sinh viên và lịch sử điểm danh của lớp này. Bạn có chắc chắn muốn xóa?')) {
-            document.getElementById('deleteForm').submit();
-        }
-    }
-</script>
+<script src="{{ url_for('static', filename='js/classes_edit_script_1.js') }}"></script>
 {% endblock %}

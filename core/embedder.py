@@ -14,7 +14,7 @@ _instance = None
 class FaceEmbedder:
     """
     Trích xuất embedding vector 512 chiều từ khuôn mặt.
-    
+
     Embedding vector là "dấu vân tay số" của khuôn mặt,
     dùng để so sánh 2 khuôn mặt có giống nhau không.
     """
@@ -22,20 +22,17 @@ class FaceEmbedder:
     def __init__(self):
         """Khởi tạo InsightFace model cho embedding extraction."""
         print("[AI] Đang tải FaceEmbedder (buffalo_l)...")
-        self._app = FaceAnalysis(
-            name='buffalo_l',
-            providers=['CPUExecutionProvider']
-        )
+        self._app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
         self._app.prepare(ctx_id=0, det_size=(640, 640))
         print("[AI] FaceEmbedder đã sẵn sàng.")
 
     def embed(self, frame):
         """
         Trích xuất embedding từ frame chứa khuôn mặt.
-        
+
         Args:
             frame: numpy array BGR từ OpenCV
-            
+
         Returns:
             numpy array: Embedding vector 512 chiều (L2 normalized),
                          hoặc None nếu không tìm thấy khuôn mặt.
@@ -58,10 +55,10 @@ class FaceEmbedder:
     def embed_from_file(self, image_path):
         """
         Trích xuất embedding từ file ảnh.
-        
+
         Args:
             image_path: Đường dẫn tới file ảnh (jpg/png)
-            
+
         Returns:
             numpy array hoặc None
         """
@@ -74,10 +71,10 @@ class FaceEmbedder:
     def embed_multiple(self, frame):
         """
         Trích xuất embedding cho TẤT CẢ khuôn mặt trong frame.
-        
+
         Args:
             frame: numpy array BGR
-            
+
         Returns:
             list: [(face_object, embedding_normalized), ...]
         """
@@ -103,7 +100,7 @@ def get_embedder():
     return _instance
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test: Trích xuất embedding từ webcam
     print("=== TEST FACE EMBEDDER ===")
     embedder = get_embedder()
@@ -118,5 +115,5 @@ if __name__ == '__main__':
             print(f"First 5 values: {emb[:5]}")
         else:
             print("Không phát hiện khuôn mặt trong frame.")
-    
+
     cap.release()

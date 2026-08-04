@@ -35,7 +35,7 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
       final lastSync = await SyncManager.instance.getLastSyncTime();
 
       final db = await AppDatabase.instance.database;
-      
+
       final pendingResult = await db.rawQuery(
         'SELECT COUNT(*) as c FROM local_attendance WHERE sync_status = 0',
       );
@@ -68,7 +68,8 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Trạng thái đồng bộ', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Trạng thái đồng bộ',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
@@ -95,14 +96,16 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Expanded(child: _buildDataCard(
+                      Expanded(
+                          child: _buildDataCard(
                         icon: Icons.people,
                         title: 'Sinh viên',
                         value: '$_localStudents',
                         color: const Color(0xFF4F46E5),
                       )),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildDataCard(
+                      Expanded(
+                          child: _buildDataCard(
                         icon: Icons.event,
                         title: 'Phiên ĐD',
                         value: '$_localSessions',
@@ -155,18 +158,24 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
                               },
                         icon: connectivity.isSyncing
                             ? const SizedBox(
-                                width: 20, height: 20,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2),
                               )
                             : const Icon(Icons.sync),
                         label: Text(
-                          connectivity.isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ ngay',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          connectivity.isSyncing
+                              ? 'Đang đồng bộ...'
+                              : 'Đồng bộ ngay',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF4F46E5),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
                           elevation: 2,
                         ),
                       ),
@@ -178,16 +187,20 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
                       decoration: BoxDecoration(
                         color: Colors.redAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                        border: Border.all(
+                            color: Colors.redAccent.withValues(alpha: 0.3)),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.wifi_off, color: Colors.redAccent, size: 20),
+                          Icon(Icons.wifi_off,
+                              color: Colors.redAccent, size: 20),
                           SizedBox(width: 10),
                           Text(
                             'Kết nối Internet để đồng bộ',
-                            style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -205,11 +218,13 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.access_time, size: 16, color: Color(0xFF94A3B8)),
+                          const Icon(Icons.access_time,
+                              size: 16, color: Color(0xFF94A3B8)),
                           const SizedBox(width: 8),
                           Text(
                             'Sync lần cuối: ${_formatSyncTime(_lastSyncTime!)}',
-                            style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                            style: const TextStyle(
+                                fontSize: 13, color: Color(0xFF94A3B8)),
                           ),
                         ],
                       ),
@@ -235,7 +250,9 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: (isOnline ? const Color(0xFF10B981) : const Color(0xFFDC2626)).withValues(alpha: 0.3),
+            color:
+                (isOnline ? const Color(0xFF10B981) : const Color(0xFFDC2626))
+                    .withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -262,14 +279,18 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
               children: [
                 Text(
                   isOnline ? 'Đang kết nối' : 'Mất kết nối',
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   isOnline
                       ? 'Dữ liệu sẽ được đồng bộ tự động'
                       : 'Dữ liệu được lưu cục bộ trên thiết bị',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
                 ),
               ],
             ),
@@ -282,7 +303,8 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+      style: const TextStyle(
+          fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
     );
   }
 
@@ -297,7 +319,12 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,9 +338,12 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(height: 12),
-          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 24, fontWeight: FontWeight.bold, color: color)),
           const SizedBox(height: 2),
-          Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+          Text(title,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
         ],
       ),
     );
@@ -331,7 +361,12 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: Row(
         children: [
@@ -345,12 +380,18 @@ class _SyncStatusScreenState extends State<SyncStatusScreen> {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1E293B))),
+            child: Text(title,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF1E293B))),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: count > 0 ? color.withValues(alpha: 0.1) : const Color(0xFFF1F5F9),
+              color: count > 0
+                  ? color.withValues(alpha: 0.1)
+                  : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(

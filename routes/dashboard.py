@@ -5,13 +5,18 @@ Route Dashboard (Trang chủ Admin)
 from flask import render_template, jsonify, session
 from . import dashboard_bp
 from utils.decorators import login_required
-from services.attendance_service import get_today_summary, get_weekly_chart_data, get_top_absent_students
+from services.attendance_service import (
+    get_today_summary,
+    get_weekly_chart_data,
+    get_top_absent_students,
+)
 from services.student_service import get_all as get_all_students
 from services.class_service import get_all as get_all_classes
 
 from db.connection import execute_one as db_execute_one
 
-@dashboard_bp.route('/')
+
+@dashboard_bp.route("/")
 @login_required
 def index():
     """
@@ -27,26 +32,31 @@ def index():
     """
     # Lấy thông kê hôm nay
     today_stats = get_today_summary()
-    
+
     # Lấy tổng quan hệ thống (dùng hàm count cơ bản)
-    total_students = get_all_students(per_page=1)['total']
+    total_students = get_all_students(per_page=1)["total"]
     total_classes = len(get_all_classes())
-    
+
     # Lấy top sinh viên vắng nhiều nhất (30 ngày gần nhất)
     top_absent = get_top_absent_students(limit=5)
-    
-    # Lấy số lượng sinh viên chờ duyệt khuôn mặt
-    pending_row = db_execute_one("SELECT COUNT(*) as count FROM sinh_vien WHERE trang_thai_face = 1")
-    total_pending = int(pending_row['count'] or 0) if pending_row else 0
-    
-    return render_template('dashboard/index.html',
-                          today_stats=today_stats,
-                          total_students=total_students,
-                          total_classes=total_classes,
-                          top_absent=top_absent,
-                          total_pending=total_pending)
 
-@dashboard_bp.route('/api/weekly-chart')
+    # Lấy số lượng sinh viên chờ duyệt khuôn mặt
+    pending_row = db_execute_one(
+        "SELECT COUNT(*) as count FROM sinh_vien WHERE trang_thai_face = 1"
+    )
+    total_pending = int(pending_row["count"] or 0) if pending_row else 0
+
+    return render_template(
+        "dashboard/index.html",
+        today_stats=today_stats,
+        total_students=total_students,
+        total_classes=total_classes,
+        top_absent=top_absent,
+        total_pending=total_pending,
+    )
+
+
+@dashboard_bp.route("/api/weekly-chart")
 @login_required
 def weekly_chart():
     """
@@ -61,7 +71,8 @@ def weekly_chart():
     data = get_weekly_chart_data()
     return jsonify(data)
 
-@dashboard_bp.route('/kiosk')
+
+@dashboard_bp.route("/kiosk")
 @login_required
 def kiosk():
     """
@@ -75,8 +86,8 @@ def kiosk():
     """
     # Lọc lớp học nếu là giảng viên
     giang_vien_id = None
-    if session.get('admin_role') == 'giang_vien':
-        giang_vien_id = session.get('admin_id')
-        
+    if session.get("admin_role") == "giang_vien":
+        giang_vien_id = session.get("admin_id")
+
     classes = get_all_classes(giang_vien_id=giang_vien_id)
-    return render_template('dashboard/kiosk.html', classes=classes)
+    return render_template("dashboard/kiosk.html", classes=classes)

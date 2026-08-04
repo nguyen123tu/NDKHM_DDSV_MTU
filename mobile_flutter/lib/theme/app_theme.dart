@@ -93,11 +93,16 @@ class AppTheme {
         surface: surface,
         error: error,
       ),
-      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.bold),
-        displayMedium: GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.bold),
-        titleLarge: GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.w600),
-        titleMedium: GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.w500),
+      textTheme:
+          GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).copyWith(
+        displayLarge:
+            GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.bold),
+        displayMedium:
+            GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.bold),
+        titleLarge:
+            GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.w600),
+        titleMedium:
+            GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.w500),
         bodyLarge: GoogleFonts.inter(color: textPrimary),
         bodyMedium: GoogleFonts.inter(color: textSecondary),
       ),
@@ -128,5 +133,5 @@ class AppTheme {
   }
 
   // Khôi phục light theme cũ nếu cần fallback, nhưng ta sẽ ép chạy darkTheme
-  static ThemeData get lightTheme => darkTheme; 
+  static ThemeData get lightTheme => darkTheme;
 }

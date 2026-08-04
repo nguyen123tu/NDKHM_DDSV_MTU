@@ -5,6 +5,7 @@ Utils: Helpers cho toàn hệ thống.
 import math
 from datetime import datetime
 
+
 def remove_accents(input_str):
     """
     Loại bỏ dấu tiếng Việt khỏi chuỗi.
@@ -12,9 +13,9 @@ def remove_accents(input_str):
     """
     if not input_str:
         return ""
-    
-    s1 = u'ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠạẢảẤấẦầẨẩẪẫẬậẮắẰằẲẳẴẵẶặẸẹẺẻẼẽẾếỀềỂểỄễỆệỈỉỊịỌọỎỏỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹ'
-    s0 = u'AAAAEEEIIOOOOUUYaaaaeeeiioooouuyAaDdIiUuOoUuAaAaAaAaAaAaAaAaAaAaAaAaEeEeEeEeEeEeEeEeIiIiOoOoOoOoOoOoOoOoOoOoOoOoUuUuUuUuUuUuUuYyYyYyYy'
+
+    s1 = "ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠạẢảẤấẦầẨẩẪẫẬậẮắẰằẲẳẴẵẶặẸẹẺẻẼẽẾếỀềỂểỄễỆệỈỉỊịỌọỎỏỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹ"
+    s0 = "AAAAEEEIIOOOOUUYaaaaeeeiioooouuyAaDdIiUuOoUuAaAaAaAaAaAaAaAaAaAaAaAaEeEeEeEeEeEeEeEeIiIiOoOoOoOoOoOoOoOoOoOoOoOoUuUuUuUuUuUuUuYyYyYyYy"
     s = ""
     for c in input_str:
         if c in s1:
@@ -23,7 +24,8 @@ def remove_accents(input_str):
             s += c
     return s
 
-def format_datetime(dt, fmt='%H:%M %d/%m/%Y'):
+
+def format_datetime(dt, fmt="%H:%M %d/%m/%Y"):
     """
     Format datetime object sang chuỗi.
     """
@@ -32,10 +34,11 @@ def format_datetime(dt, fmt='%H:%M %d/%m/%Y'):
     if isinstance(dt, str):
         try:
             # Nếu truyền vào là string từ DB
-            dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+            dt = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
         except ValueError:
             return dt
     return dt.strftime(fmt)
+
 
 def paginate(query_result, page, per_page):
     """
@@ -47,17 +50,13 @@ def paginate(query_result, page, per_page):
     start = (page - 1) * per_page
     end = start + per_page
     items = query_result[start:end]
-    
-    return {
-        "items": items,
-        "total": total,
-        "pages": pages,
-        "current": page
-    }
+
+    return {"items": items, "total": total, "pages": pages, "current": page}
+
 
 def allowed_image(filename):
     """
     Kiểm tra phần mở rộng file ảnh có hợp lệ không.
     """
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS

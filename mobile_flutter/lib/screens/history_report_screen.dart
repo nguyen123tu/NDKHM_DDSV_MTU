@@ -91,7 +91,8 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
         title: const Text("Báo cáo điểm danh",
             style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
+        foregroundColor:
+            Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
         elevation: 0.0,
         actions: [
           if (_history.isNotEmpty)
@@ -189,8 +190,9 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                     onPressed: _fetchHistory,
                     child: const Center(
                       child: Text("LỌC DỮ LIỆU",
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold)),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ),
@@ -215,8 +217,8 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                             child: ListTile(
                               leading: const CircleAvatar(
                                   backgroundColor: AppTheme.secondary,
-                                  child: Icon(Icons.person,
-                                      color: Colors.white)),
+                                  child:
+                                      Icon(Icons.person, color: Colors.white)),
                               title: Text(item['ho_ten'],
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
@@ -229,24 +231,38 @@ class _HistoryReportScreenState extends State<HistoryReportScreen> {
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.login, size: 12, color: Colors.green),
+                                      const Icon(Icons.login,
+                                          size: 12, color: Colors.green),
                                       const SizedBox(width: 4),
                                       Text(
-                                          item['thoi_gian'] != null ? item['thoi_gian'].toString().split(' ').last : '--:--',
+                                          item['thoi_gian'] != null
+                                              ? item['thoi_gian']
+                                                  .toString()
+                                                  .split(' ')
+                                                  .last
+                                              : '--:--',
                                           style: const TextStyle(
-                                              fontWeight: FontWeight.bold, color: Colors.green)),
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green)),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.logout, size: 12, color: Colors.orange),
+                                      const Icon(Icons.logout,
+                                          size: 12, color: Colors.orange),
                                       const SizedBox(width: 4),
                                       Text(
-                                          item['gio_ra'] != null ? item['gio_ra'].toString().split(' ').last : '--:--',
+                                          item['gio_ra'] != null
+                                              ? item['gio_ra']
+                                                  .toString()
+                                                  .split(' ')
+                                                  .last
+                                              : '--:--',
                                           style: const TextStyle(
-                                              fontWeight: FontWeight.bold, color: Colors.orange)),
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.orange)),
                                     ],
                                   ),
                                 ],

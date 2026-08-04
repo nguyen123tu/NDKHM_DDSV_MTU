@@ -61,7 +61,8 @@ class _StudentLeaveScreenState extends State<StudentLeaveScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Đơn xin phép', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Đơn xin phép',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -72,17 +73,22 @@ class _StudentLeaveScreenState extends State<StudentLeaveScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.primary))
           : _errorMessage != null
-              ? Center(child: Text(_errorMessage!, style: const TextStyle(color: AppTheme.error)))
+              ? Center(
+                  child: Text(_errorMessage!,
+                      style: const TextStyle(color: AppTheme.error)))
               : _requests.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.description_outlined, size: 64, color: AppTheme.textMuted),
+                          const Icon(Icons.description_outlined,
+                              size: 64, color: AppTheme.textMuted),
                           const SizedBox(height: 16),
-                          const Text('Bạn chưa có đơn xin phép nào', style: TextStyle(color: AppTheme.textSecondary)),
+                          const Text('Bạn chưa có đơn xin phép nào',
+                              style: TextStyle(color: AppTheme.textSecondary)),
                         ],
                       ).animate().fadeIn(),
                     )
@@ -101,7 +107,8 @@ class _StudentLeaveScreenState extends State<StudentLeaveScreen> {
         onPressed: _showCreateForm,
         backgroundColor: AppTheme.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Tạo đơn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text('Tạo đơn',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ).animate().scale(delay: 500.ms),
     );
   }
@@ -137,10 +144,14 @@ class _StudentLeaveScreenState extends State<StudentLeaveScreen> {
             children: [
               Text(
                 req.tenLop ?? 'Lớp không xác định',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textPrimary),
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppTheme.textPrimary),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -151,7 +162,11 @@ class _StudentLeaveScreenState extends State<StudentLeaveScreen> {
                   children: [
                     Icon(statusIcon, size: 14, color: statusColor),
                     const SizedBox(width: 4),
-                    Text(statusText, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text(statusText,
+                        style: TextStyle(
+                            color: statusColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -165,7 +180,8 @@ class _StudentLeaveScreenState extends State<StudentLeaveScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.access_time, size: 14, color: AppTheme.textMuted),
+              const Icon(Icons.access_time,
+                  size: 14, color: AppTheme.textMuted),
               const SizedBox(width: 4),
               Text(
                 req.thoiGianTao ?? '',
@@ -205,7 +221,8 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
     if (!mounted) return;
     if (result['success'] == true) {
       setState(() {
-        _classes = result['data'] != null ? List<dynamic>.from(result['data']) : [];
+        _classes =
+            result['data'] != null ? List<dynamic>.from(result['data']) : [];
         if (_classes.isNotEmpty) {
           _selectedLopId = int.parse(_classes[0]['id'].toString());
         }
@@ -218,7 +235,8 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final pickedFile =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
     if (pickedFile != null) {
       setState(() => _imageFile = pickedFile);
     }
@@ -226,12 +244,13 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
 
   Future<void> _submit() async {
     if (_selectedLopId == null || _lyDoController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn lớp và nhập Lý do')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng chọn lớp và nhập Lý do')));
       return;
     }
 
     setState(() => _isSubmitting = true);
-    
+
     String? base64Image;
     try {
       if (_imageFile != null) {
@@ -241,7 +260,8 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi đọc ảnh: $e'), backgroundColor: AppTheme.error));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Lỗi đọc ảnh: $e'), backgroundColor: AppTheme.error));
       return;
     }
 
@@ -256,9 +276,13 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
 
     if (result['success'] == true) {
       Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gửi đơn thành công'), backgroundColor: AppTheme.success));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Gửi đơn thành công'),
+          backgroundColor: AppTheme.success));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? 'Lỗi gửi đơn'), backgroundColor: AppTheme.error));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(result['message'] ?? 'Lỗi gửi đơn'),
+          backgroundColor: AppTheme.error));
     }
   }
 
@@ -281,26 +305,39 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(10))),
+              child: Container(
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                      color: Colors.grey[600],
+                      borderRadius: BorderRadius.circular(10))),
             ),
             const SizedBox(height: 20),
-            const Text('Tạo đơn xin phép', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+            const Text('Tạo đơn xin phép',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary)),
             const SizedBox(height: 20),
-            
+
             // Lớp ID Input (Dropdown)
             NeuContainer(
               isPressed: true,
               child: _isLoadingClasses
                   ? const Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+                      child: Center(
+                          child: CircularProgressIndicator(
+                              color: AppTheme.primary)),
                     )
                   : DropdownButtonFormField<int>(
                       value: _selectedLopId,
                       items: _classes.map((c) {
                         return DropdownMenuItem<int>(
                           value: c['id'],
-                          child: Text('${c['ten_lop']} (${c['ma_lop']})', style: const TextStyle(color: AppTheme.textPrimary)),
+                          child: Text('${c['ten_lop']} (${c['ma_lop']})',
+                              style:
+                                  const TextStyle(color: AppTheme.textPrimary)),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -318,7 +355,7 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
                     ),
             ),
             const SizedBox(height: 16),
-            
+
             // Lý do Input
             NeuContainer(
               isPressed: true,
@@ -338,7 +375,7 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Image Picker
             GestureDetector(
               onTap: _pickImage,
@@ -350,8 +387,13 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        _imageFile != null ? 'Đã chọn ảnh minh chứng' : 'Đính kèm ảnh minh chứng (Giấy khám bệnh, etc.)',
-                        style: TextStyle(color: _imageFile != null ? AppTheme.success : AppTheme.textSecondary),
+                        _imageFile != null
+                            ? 'Đã chọn ảnh minh chứng'
+                            : 'Đính kèm ảnh minh chứng (Giấy khám bệnh, etc.)',
+                        style: TextStyle(
+                            color: _imageFile != null
+                                ? AppTheme.success
+                                : AppTheme.textSecondary),
                       ),
                     ),
                     if (_imageFile != null)
@@ -360,7 +402,7 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -368,13 +410,14 @@ class _CreateLeaveFormState extends State<_CreateLeaveForm> {
                 isPrimary: true,
                 onPressed: _isSubmitting ? null : _submit,
                 child: Center(
-                  child: _isSubmitting 
+                  child: _isSubmitting
                       ? const SizedBox(
-                          width: 24, 
-                          height: 24, 
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                        ) 
-                      : const Text('GỬI ĐƠN', style: TextStyle(fontWeight: FontWeight.bold)),
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Text('GỬI ĐƠN',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
             ),

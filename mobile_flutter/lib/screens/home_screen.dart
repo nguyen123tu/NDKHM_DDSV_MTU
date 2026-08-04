@@ -89,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ).animate().fadeIn(duration: 1000.ms),
-          
+
           Positioned(
             bottom: 100,
             left: -150,
@@ -238,8 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       padding: const EdgeInsets.all(10),
                                       shape: BoxShape.circle,
                                       child: const Icon(Icons.person,
-                                          color: AppTheme.primary,
-                                          size: 20),
+                                          color: AppTheme.primary, size: 20),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -268,8 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       padding: const EdgeInsets.all(10),
                                       shape: BoxShape.circle,
                                       child: const Icon(Icons.more_vert,
-                                          color: AppTheme.primary,
-                                          size: 20),
+                                          color: AppTheme.primary, size: 20),
                                     ),
                                     itemBuilder: (context) => [
                                       const PopupMenuItem(
@@ -327,7 +325,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           userName,
@@ -340,7 +339,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ).animate().fadeIn(delay: 150.ms),
                                         if (!isAdmin)
                                           Padding(
-                                            padding: const EdgeInsets.only(top: 4),
+                                            padding:
+                                                const EdgeInsets.only(top: 4),
                                             child: Text(
                                               "${auth.user?.mssv ?? ''} - ${auth.user?.lopName ?? 'Không có lớp'}",
                                               style: TextStyle(
@@ -371,7 +371,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 style: TextStyle(
                                                     color: AppTheme.warning,
                                                     fontSize: 10,
-                                                    fontWeight: FontWeight.bold)),
+                                                    fontWeight:
+                                                        FontWeight.bold)),
                                           ],
                                         ),
                                       ),
@@ -599,7 +600,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text(title,
-              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 12)),
+              style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  fontSize: 12)),
         ],
       ),
     );
@@ -662,21 +665,42 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildActionCard(
-                  title: "Lịch Sử",
-                  subtitle: "Lịch sử điểm danh",
-                  icon: Icons.history,
-                  gradient: const [AppTheme.secondary, AppTheme.primary],
-                  onTap: () {
-                    // Navigate to history if available, or just show a message for now
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Tính năng đang phát triển')),
-                    );
-                  },
+                  title: "Quét QR",
+                  subtitle: "Quét mã điểm danh",
+                  icon: Icons.qr_code_scanner,
+                  gradient: const [Color(0xFFF59E0B), Color(0xFFB45309)],
+                  onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const StudentQRScannerScreen())),
                 ),
               ),
             ]
           ],
         ),
+        if (!isAdmin) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionCard(
+                  title: "Lịch Sử",
+                  subtitle: "Lịch sử điểm danh",
+                  icon: Icons.history,
+                  gradient: const [AppTheme.secondary, AppTheme.primary],
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Tính năng đang phát triển')),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: SizedBox()), // Empty slot for balance
+            ],
+          ),
+        ],
         if (!isAdmin) ...[
           const SizedBox(height: 24),
           Text(
@@ -690,7 +714,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Consumer<AttendanceProvider>(
             builder: (context, attendance, child) {
               if (attendance.history.isEmpty) {
-                return const Text("Chưa có dữ liệu", style: TextStyle(color: AppTheme.textMuted));
+                return const Text("Chưa có dữ liệu",
+                    style: TextStyle(color: AppTheme.textMuted));
               }
               final lastRecord = attendance.history.first;
               return NeuContainer(
@@ -701,15 +726,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: lastRecord.trangThai.toUpperCase() == 'PRESENT' ? AppTheme.success.withValues(alpha: 0.1) : 
-                               (lastRecord.trangThai.toUpperCase() == 'LATE' ? AppTheme.warning.withValues(alpha: 0.1) : AppTheme.error.withValues(alpha: 0.1)),
+                        color: lastRecord.trangThai.toUpperCase() == 'PRESENT'
+                            ? AppTheme.success.withValues(alpha: 0.1)
+                            : (lastRecord.trangThai.toUpperCase() == 'LATE'
+                                ? AppTheme.warning.withValues(alpha: 0.1)
+                                : AppTheme.error.withValues(alpha: 0.1)),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        lastRecord.trangThai.toUpperCase() == 'PRESENT' ? Icons.check_circle : 
-                        (lastRecord.trangThai.toUpperCase() == 'LATE' ? Icons.watch_later : Icons.cancel),
-                        color: lastRecord.trangThai.toUpperCase() == 'PRESENT' ? AppTheme.success : 
-                               (lastRecord.trangThai.toUpperCase() == 'LATE' ? AppTheme.warning : AppTheme.error),
+                        lastRecord.trangThai.toUpperCase() == 'PRESENT'
+                            ? Icons.check_circle
+                            : (lastRecord.trangThai.toUpperCase() == 'LATE'
+                                ? Icons.watch_later
+                                : Icons.cancel),
+                        color: lastRecord.trangThai.toUpperCase() == 'PRESENT'
+                            ? AppTheme.success
+                            : (lastRecord.trangThai.toUpperCase() == 'LATE'
+                                ? AppTheme.warning
+                                : AppTheme.error),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -717,17 +751,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(lastRecord.thoiGian, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text("Giờ ra: ${lastRecord.gioRa ?? '--:--'}", style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+                          Text(lastRecord.thoiGian,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text("Giờ ra: ${lastRecord.gioRa ?? '--:--'}",
+                              style: const TextStyle(
+                                  color: AppTheme.textMuted, fontSize: 12)),
                         ],
                       ),
                     ),
                     Text(
-                      lastRecord.trangThai.toUpperCase() == 'PRESENT' ? 'Có mặt' : 
-                      (lastRecord.trangThai.toUpperCase() == 'LATE' ? 'Đi trễ' : 'Vắng'),
+                      lastRecord.trangThai.toUpperCase() == 'PRESENT'
+                          ? 'Có mặt'
+                          : (lastRecord.trangThai.toUpperCase() == 'LATE'
+                              ? 'Đi trễ'
+                              : 'Vắng'),
                       style: TextStyle(
-                        color: lastRecord.trangThai.toUpperCase() == 'PRESENT' ? AppTheme.success : 
-                               (lastRecord.trangThai.toUpperCase() == 'LATE' ? AppTheme.warning : AppTheme.error),
+                        color: lastRecord.trangThai.toUpperCase() == 'PRESENT'
+                            ? AppTheme.success
+                            : (lastRecord.trangThai.toUpperCase() == 'LATE'
+                                ? AppTheme.warning
+                                : AppTheme.error),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -754,18 +798,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: _buildActionCard(
-                  title: "Quét QR",
-                  subtitle: "Quét QR sinh viên",
-                  icon: Icons.qr_code_scanner,
-                  gradient: const [Color(0xFFF59E0B), Color(0xFFB45309)],
-                  onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const StudentQRScannerScreen())),
-                ),
-              ),
+              const Expanded(child: SizedBox()), // Nút QR cũ đã chuyển qua sinh viên
             ],
           ),
         ],
@@ -790,20 +823,19 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: gradient,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: gradient.first.withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              ),
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: gradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gradient.first.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    )
+                  ]),
               child: Icon(icon, color: Colors.white, size: 28),
             ),
             const SizedBox(height: 16),
@@ -815,7 +847,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 4),
             Text(subtitle,
                 style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: 12)),
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                    fontSize: 12)),
           ],
         ),
       ),

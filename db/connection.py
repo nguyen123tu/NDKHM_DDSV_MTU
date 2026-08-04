@@ -12,6 +12,7 @@ import re
 _pool = None
 _pool_lock = threading.Lock()
 
+
 def _get_pool():
     global _pool
     if _pool is None:
@@ -19,9 +20,14 @@ def _get_pool():
             if _pool is None:
                 try:
                     from dbutils.pooled_db import PooledDB
+
                     _pool = PooledDB(
                         creator=pymssql,
-                        maxconnections=Config.DB_MAX_CONNECTIONS if hasattr(Config, 'DB_MAX_CONNECTIONS') else 20,
+                        maxconnections=(
+                            Config.DB_MAX_CONNECTIONS
+                            if hasattr(Config, "DB_MAX_CONNECTIONS")
+                            else 20
+                        ),
                         mincached=2,
                         maxcached=10,
                         blocking=True,
@@ -31,16 +37,19 @@ def _get_pool():
                         password=Config.DB_PASSWORD,
                         database=Config.DB_NAME,
                         as_dict=True,
-                        autocommit=False
+                        autocommit=False,
                     )
                     print("[DB POOL] Đã khởi tạo kết nối Pool (DBUtils.PooledDB)")
                 except ImportError:
-                    print("[DB POOL WARNING] Chưa cài DBUtils, sử dụng kết nối trực tiếp pymssql")
+                    print(
+                        "[DB POOL WARNING] Chưa cài DBUtils, sử dụng kết nối trực tiếp pymssql"
+                    )
                     _pool = "NO_POOL"
                 except Exception as e:
                     print(f"[DB POOL ERROR] Lỗi khởi tạo Pool: {e}")
                     _pool = "NO_POOL"
     return _pool
+
 
 def get_db():
     """Lấy kết nối tới MS SQL Server (qua Pool nếu khả dụng)."""
@@ -57,12 +66,13 @@ def get_db():
                 password=Config.DB_PASSWORD,
                 database=Config.DB_NAME,
                 as_dict=True,
-                autocommit=False
+                autocommit=False,
             )
             return conn
     except Exception as e:
         print(f"[DB ERROR] Khong the lay connection: {e}")
         return None
+
 
 def close_db(conn):
     """Đóng hoặc trả kết nối về Pool."""
@@ -71,6 +81,7 @@ def close_db(conn):
             conn.close()
         except Exception as e:
             print(f"[DB WARNING] Lỗi đóng connection: {e}")
+
 
 def execute_query(sql, params=None, dictionary=True):
     """
@@ -90,9 +101,10 @@ def execute_query(sql, params=None, dictionary=True):
         print(f"[DB ERROR] Query that bai: {e}\n  SQL: {sql}")
         return []
     finally:
-        if 'cursor' in locals():
+        if "cursor" in locals():
             cursor.close()
         close_db(conn)
+
 
 def execute_one(sql, params=None, dictionary=True):
     """
@@ -112,9 +124,10 @@ def execute_one(sql, params=None, dictionary=True):
         print(f"[DB ERROR] Query that bai: {e}\n  SQL: {sql}")
         return None
     finally:
-        if 'cursor' in locals():
+        if "cursor" in locals():
             cursor.close()
         close_db(conn)
+
 
 def execute_update(sql, params=None):
     """
@@ -135,7 +148,7 @@ def execute_update(sql, params=None):
         print(f"[DB ERROR] Update that bai: {e}\n  SQL: {sql}")
         return -1
     finally:
-        if 'cursor' in locals():
+        if "cursor" in locals():
             cursor.close()
         close_db(conn)
 
@@ -153,6 +166,7 @@ class transaction:
             # Tự động commit nếu không có exception
             # Tự động rollback nếu có exception
     """
+
     def __init__(self):
         self.conn = None
 
@@ -175,6 +189,7 @@ class transaction:
                 close_db(self.conn)
         return False  # Không nuốt exception
 
+
 def init_database():
     """Khởi tạo Database và bảng từ schema.sql."""
     try:
@@ -184,22 +199,24 @@ def init_database():
             port=Config.DB_PORT,
             user=Config.DB_USER,
             password=Config.DB_PASSWORD,
-            autocommit=True
+            autocommit=True,
         )
         cursor = setup_conn.cursor()
-        
-        cursor.execute(f"SELECT name FROM sys.databases WHERE name = N'{Config.DB_NAME}'")
+
+        cursor.execute(
+            f"SELECT name FROM sys.databases WHERE name = N'{Config.DB_NAME}'"
+        )
         if not cursor.fetchone():
             cursor.execute(f"CREATE DATABASE [{Config.DB_NAME}]")
             print(f"[DB] Database '{Config.DB_NAME}' da duoc tao.")
         else:
             print(f"[DB] Database '{Config.DB_NAME}' da san sang.")
-            
+
         cursor.close()
         setup_conn.close()
 
         # Bước 2: Chạy schema.sql
-        schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
+        schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
         if os.path.exists(schema_path):
             conn = pymssql.connect(
                 server=Config.DB_HOST,
@@ -207,20 +224,26 @@ def init_database():
                 user=Config.DB_USER,
                 password=Config.DB_PASSWORD,
                 database=Config.DB_NAME,
-                autocommit=True
+                autocommit=True,
             )
             cursor = conn.cursor()
-            with open(schema_path, 'r', encoding='utf-8') as f:
+            with open(schema_path, "r", encoding="utf-8") as f:
                 sql_content = f.read()
 
             # Split statements by GO (case-insensitive, whole line)
-            statements = [s.strip() for s in re.split(r'(?i)^\s*GO\s*$', sql_content, flags=re.MULTILINE) if s.strip()]
+            statements = [
+                s.strip()
+                for s in re.split(r"(?i)^\s*GO\s*$", sql_content, flags=re.MULTILINE)
+                if s.strip()
+            ]
             for stmt in statements:
                 if stmt:
                     try:
                         cursor.execute(stmt)
                     except Exception as e:
-                        print(f"[DB ERROR] Error executing statement: {e}\nStatement: {stmt[:100]}...")
+                        print(
+                            f"[DB ERROR] Error executing statement: {e}\nStatement: {stmt[:100]}..."
+                        )
                         raise RuntimeError(f"Database initialization failed: {e}")
             cursor.close()
             conn.close()
@@ -232,10 +255,12 @@ def init_database():
         print(f"[DB ERROR] Khoi tao that bai: {e}")
         raise
 
+
 def seed_database():
     print("[DB] Seed cho MSSQL chua duoc cau hinh. Bo qua.")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     print("Testing DB connection...")
     init_database()
     results = execute_query("SELECT 1 as test")

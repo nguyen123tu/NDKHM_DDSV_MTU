@@ -7,7 +7,7 @@ import '../data/local/app_database.dart';
 
 class AttendanceProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
-  
+
   DashboardStats? _stats;
   List<AttendanceRecord> _history = [];
   bool _isLoading = false;
@@ -75,7 +75,8 @@ class AttendanceProvider with ChangeNotifier {
       if (statsRows.isNotEmpty) {
         Map<String, dynamic> statsMap = {};
         for (var row in statsRows) {
-          statsMap[row['key'] as String] = int.tryParse(row['value'] as String) ?? row['value'];
+          statsMap[row['key'] as String] =
+              int.tryParse(row['value'] as String) ?? row['value'];
         }
         if (statsMap.isNotEmpty) {
           _stats = DashboardStats(
@@ -87,19 +88,22 @@ class AttendanceProvider with ChangeNotifier {
       }
 
       // Load cached history
-      final historyRows = await db.query('cached_history', orderBy: 'thoi_gian DESC', limit: 20);
+      final historyRows = await db.query('cached_history',
+          orderBy: 'thoi_gian DESC', limit: 20);
       if (historyRows.isNotEmpty) {
-        _history = historyRows.map((row) => AttendanceRecord(
-          id: row['id'] as int?,
-          thoiGian: row['thoi_gian'] as String? ?? '',
-          gioRa: row['gio_ra'] as String?,
-          trangThai: row['trang_thai'] as String? ?? 'Unknown',
-          hoTen: row['ho_ten'] as String? ?? 'Unknown',
-          mssv: row['mssv'] as String? ?? '',
-          maLop: row['ma_lop'] as String? ?? '',
-          avatar: row['avatar'] as String?,
-          evidencePath: row['evidence_path'] as String?,
-        )).toList();
+        _history = historyRows
+            .map((row) => AttendanceRecord(
+                  id: row['id'] as int?,
+                  thoiGian: row['thoi_gian'] as String? ?? '',
+                  gioRa: row['gio_ra'] as String?,
+                  trangThai: row['trang_thai'] as String? ?? 'Unknown',
+                  hoTen: row['ho_ten'] as String? ?? 'Unknown',
+                  mssv: row['mssv'] as String? ?? '',
+                  maLop: row['ma_lop'] as String? ?? '',
+                  avatar: row['avatar'] as String?,
+                  evidencePath: row['evidence_path'] as String?,
+                ))
+            .toList();
       }
 
       // Bổ sung pending offline attendance vào stats
@@ -111,7 +115,8 @@ class AttendanceProvider with ChangeNotifier {
         _stats = DashboardStats(
           total: _stats!.total,
           present: _stats!.present + pendingCount,
-          absent: _stats!.absent > pendingCount ? _stats!.absent - pendingCount : 0,
+          absent:
+              _stats!.absent > pendingCount ? _stats!.absent - pendingCount : 0,
         );
       }
 
@@ -138,7 +143,11 @@ class AttendanceProvider with ChangeNotifier {
       for (var entry in statsData.entries) {
         batch.insert(
           'cached_stats',
-          {'key': entry.key, 'value': entry.value.toString(), 'updated_at': now},
+          {
+            'key': entry.key,
+            'value': entry.value.toString(),
+            'updated_at': now
+          },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -156,17 +165,20 @@ class AttendanceProvider with ChangeNotifier {
 
       final batch = db.batch();
       for (var record in records) {
-        batch.insert('cached_history', {
-          'id': record['id'],
-          'ho_ten': record['ho_ten'],
-          'mssv': record['mssv'],
-          'ma_lop': record['ma_lop'],
-          'thoi_gian': record['thoi_gian'],
-          'gio_ra': record['gio_ra'],
-          'trang_thai': record['trang_thai'],
-          'avatar': record['avatar'],
-          'evidence_path': record['evidence_path'],
-        }, conflictAlgorithm: ConflictAlgorithm.replace);
+        batch.insert(
+            'cached_history',
+            {
+              'id': record['id'],
+              'ho_ten': record['ho_ten'],
+              'mssv': record['mssv'],
+              'ma_lop': record['ma_lop'],
+              'thoi_gian': record['thoi_gian'],
+              'gio_ra': record['gio_ra'],
+              'trang_thai': record['trang_thai'],
+              'avatar': record['avatar'],
+              'evidence_path': record['evidence_path'],
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace);
       }
       await batch.commit(noResult: true);
     } catch (e) {

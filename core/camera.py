@@ -10,11 +10,14 @@ import urllib.request
 import os
 
 # Ép OpenCV sử dụng giao thức TCP cho RTSP và tối ưu buffer để giảm lag tối đa
-os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|analyzeduration;0|probesize;32|stimeout;5000000"
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = (
+    "rtsp_transport;tcp|fflags;nobuffer|analyzeduration;0|probesize;32|stimeout;5000000"
+)
 
 
 class IPCamera:
     """Đọc luồng MJPEG từ IP Camera bằng urllib để tránh lỗi timeout của OpenCV"""
+
     def __init__(self, url):
         self.url = url
         self.is_opened = False
@@ -36,16 +39,18 @@ class IPCamera:
             self.is_opened = False
 
     def _update(self):
-        bytes_data = b''
+        bytes_data = b""
         while self.running:
             try:
                 bytes_data += self.stream.read(2048)
-                a = bytes_data.find(b'\xff\xd8')
-                b = bytes_data.find(b'\xff\xd9')
+                a = bytes_data.find(b"\xff\xd8")
+                b = bytes_data.find(b"\xff\xd9")
                 if a != -1 and b != -1:
-                    jpg = bytes_data[a:b+2]
-                    bytes_data = bytes_data[b+2:]
-                    frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                    jpg = bytes_data[a : b + 2]
+                    bytes_data = bytes_data[b + 2 :]
+                    frame = cv2.imdecode(
+                        np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR
+                    )
                     if frame is not None:
                         with self.lock:
                             self.frame = frame
@@ -70,12 +75,13 @@ class IPCamera:
 
 class ThreadedCamera:
     """Đọc luồng Camera (USB/RTSP) bằng Thread riêng biệt để tránh lag do buffer của OpenCV"""
+
     def __init__(self, source):
-        if isinstance(source, int) and os.name == 'nt':
+        if isinstance(source, int) and os.name == "nt":
             self.cap = cv2.VideoCapture(source, cv2.CAP_DSHOW)
         else:
             self.cap = cv2.VideoCapture(source)
-            
+
         # Tắt buffer nếu có thể
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.is_opened = self.cap.isOpened()
@@ -103,6 +109,7 @@ class ThreadedCamera:
                 else:
                     # Nếu rớt mạng, tạm dừng 0.1s tránh tốn CPU rồi thử lại
                     import time
+
                     time.sleep(0.1)
             except:
                 break
@@ -126,26 +133,26 @@ class ThreadedCamera:
 class CameraManager:
     """
     Quản lý nhiều camera cùng lúc.
-    
+
     Mỗi camera được lưu dưới dạng {camera_id: VideoCapture}.
     Thread-safe với threading.Lock cho mọi thao tác.
     """
 
     def __init__(self):
-        self._cameras = {}           # {camera_id: cv2.VideoCapture}
+        self._cameras = {}  # {camera_id: cv2.VideoCapture}
         self._lock = threading.Lock()
         print("[CAMERA] CameraManager đã khởi tạo.")
 
     def connect(self, camera_id, source):
         """
         Kết nối tới camera.
-        
+
         Args:
             camera_id: ID định danh camera (int hoặc string)
             source: Nguồn video:
                     - int (0, 1, 2...) → USB webcam
                     - string URL → IP/RTSP/RTMP camera
-                    
+
         Returns:
             bool: True nếu kết nối thành công
         """
@@ -161,20 +168,26 @@ class CameraManager:
                     source = int(source)
 
                 if isinstance(source, str) and source.startswith("http"):
-                    print(f"[CAMERA] Dùng bộ đọc thủ công (IPCamera) cho luồng HTTP: {source}")
+                    print(
+                        f"[CAMERA] Dùng bộ đọc thủ công (IPCamera) cho luồng HTTP: {source}"
+                    )
                     cap = IPCamera(source)
                 elif isinstance(source, str) and source.startswith("rtsp"):
                     print(f"[CAMERA] Dùng ThreadedCamera cho luồng RTSP: {source}")
                     cap = ThreadedCamera(source)
                 else:
                     cap = ThreadedCamera(source)
-                    
+
                 if cap.isOpened():
                     self._cameras[camera_id] = cap
-                    print(f"[CAMERA] Kết nối thành công camera {camera_id} (source={source})")
+                    print(
+                        f"[CAMERA] Kết nối thành công camera {camera_id} (source={source})"
+                    )
                     return True
                 else:
-                    print(f"[CAMERA] Không thể kết nối camera {camera_id} (source={source})")
+                    print(
+                        f"[CAMERA] Không thể kết nối camera {camera_id} (source={source})"
+                    )
                     return False
             except Exception as e:
                 print(f"[CAMERA LỖI] {e}")
@@ -201,10 +214,10 @@ class CameraManager:
     def get_frame(self, camera_id):
         """
         Đọc 1 frame từ camera.
-        
+
         Args:
             camera_id: ID camera
-            
+
         Returns:
             numpy array: Frame BGR, hoặc None nếu lỗi
         """
@@ -232,10 +245,10 @@ class CameraManager:
     def list_available_usb(max_test=10):
         """
         Quét tìm camera USB có sẵn trên máy tính.
-        
+
         Args:
             max_test: Số index tối đa để thử (0 → max_test-1)
-            
+
         Returns:
             list[int]: Danh sách index camera USB hoạt động
         """
@@ -260,7 +273,7 @@ def get_camera_manager():
     return _instance
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test: Quét USB camera và hiển thị feed
     print("=== TEST CAMERA MANAGER ===")
     available = CameraManager.list_available_usb()
@@ -276,7 +289,7 @@ if __name__ == '__main__':
             if frame is None:
                 break
             cv2.imshow(f"Camera {cam_id}", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
         manager.disconnect_all()

@@ -12,7 +12,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
   late AnimationController _pulseController;
 
   @override
@@ -65,10 +66,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       ),
                     ),
                   ),
-                )
-                    .animate()
-                    .fadeIn(duration: 600.ms)
-                    .scale(begin: const Offset(0.5, 0.5), end: const Offset(1, 1), curve: Curves.easeOutBack),
+                ).animate().fadeIn(duration: 600.ms).scale(
+                    begin: const Offset(0.5, 0.5),
+                    end: const Offset(1, 1),
+                    curve: Curves.easeOutBack),
 
                 const SizedBox(height: 32),
 
@@ -81,7 +82,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     fontWeight: FontWeight.bold,
                     letterSpacing: 4,
                   ),
-                ).animate().fadeIn(delay: 300.ms, duration: 500.ms).slideY(begin: 0.3, end: 0),
+                )
+                    .animate()
+                    .fadeIn(delay: 300.ms, duration: 500.ms)
+                    .slideY(begin: 0.3, end: 0),
 
                 const SizedBox(height: 12),
 
@@ -109,7 +113,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         return LinearProgressIndicator(
                           backgroundColor: Colors.white.withValues(alpha: 0.08),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.secondary.withValues(alpha: 0.5 + _pulseController.value * 0.5),
+                            AppTheme.secondary.withValues(
+                                alpha: 0.5 + _pulseController.value * 0.5),
                           ),
                           minHeight: 3,
                         );

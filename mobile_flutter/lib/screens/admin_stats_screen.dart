@@ -83,7 +83,6 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
       body: Stack(
         children: [
           Container(color: Theme.of(context).scaffoldBackgroundColor),
-
           _isLoading
               ? const Center(
                   child: CircularProgressIndicator(color: AppTheme.secondary))

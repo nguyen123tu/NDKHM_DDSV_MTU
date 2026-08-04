@@ -32,7 +32,7 @@ class SyncManager {
     var connectivityResult = await (Connectivity().checkConnectivity());
     bool hasConnection = true;
     hasConnection = !connectivityResult.contains(ConnectivityResult.none);
-  
+
     if (!hasConnection) {
       debugPrint('[SYNC] Không có mạng. Bỏ qua đồng bộ.');
       return;
@@ -41,7 +41,7 @@ class SyncManager {
     _isSyncing = true;
     debugPrint('[SYNC] ═══════════════════════════════════════');
     debugPrint('[SYNC] Bắt đầu tiến trình đồng bộ ngầm...');
-    
+
     // PUSH trước (đẩy data offline lên server)
     await pushAttendance();
     await OfflineQueueService.instance.processQueue();
@@ -69,11 +69,13 @@ class SyncManager {
   Future<void> pullStudents() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final lastSyncTime = prefs.getString('last_sync_time') ?? '1970-01-01 00:00:00';
+      final lastSyncTime =
+          prefs.getString('last_sync_time') ?? '1970-01-01 00:00:00';
       final token = prefs.getString('auth_token');
 
       final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/api/mobile/sync/students?last_sync_time=$lastSyncTime'),
+        Uri.parse(
+            '${ApiService.baseUrl}/api/mobile/sync/students?last_sync_time=$lastSyncTime'),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
@@ -89,7 +91,8 @@ class SyncManager {
           }
           final serverTime = data['server_time'];
           await prefs.setString('last_sync_time', serverTime);
-          debugPrint('[SYNC PULL] ✓ Sinh viên: ${students.length} bản ghi. Time: $serverTime');
+          debugPrint(
+              '[SYNC PULL] ✓ Sinh viên: ${students.length} bản ghi. Time: $serverTime');
         }
       }
     } catch (e) {
@@ -116,7 +119,8 @@ class SyncManager {
         if (data['success'] == true) {
           final List<dynamic> sessions = data['data'];
           await _sessionRepo.upsertSessions(sessions);
-          debugPrint('[SYNC PULL] ✓ Phiên điểm danh: ${sessions.length} phiên đang mở');
+          debugPrint(
+              '[SYNC PULL] ✓ Phiên điểm danh: ${sessions.length} phiên đang mở');
         }
       }
     } catch (e) {
@@ -195,23 +199,26 @@ class SyncManager {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
 
-      final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/api/mobile/sync/attendance'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({'logs': pendingLogs}),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse('${ApiService.baseUrl}/api/mobile/sync/attendance'),
+            headers: {
+              'Content-Type': 'application/json',
+              if (token != null) 'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({'logs': pendingLogs}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           final List<dynamic> syncedUuids = data['synced_local_uuids'] ?? [];
           final List<dynamic> errors = data['errors'] ?? [];
-          
-          final List<String> uuidsToRemove = syncedUuids.cast<String>().toList();
-          
+
+          final List<String> uuidsToRemove =
+              syncedUuids.cast<String>().toList();
+
           // Lấy luôn các UUID bị lỗi (ví dụ: "Sinh viên không tồn tại" hoặc "OFFLINE_PENDING")
           // Để xóa khỏi hàng đợi, tránh việc app kẹt đồng bộ và thử lại mãi mãi.
           for (var err in errors) {
@@ -222,7 +229,8 @@ class SyncManager {
 
           if (uuidsToRemove.isNotEmpty) {
             await _attendanceRepo.markAsSynced(uuidsToRemove);
-            debugPrint('[SYNC PUSH] ✓ Đã dọn dẹp ${uuidsToRemove.length} lượt điểm danh (Thành công: ${syncedUuids.length}, Lỗi: ${errors.length})');
+            debugPrint(
+                '[SYNC PUSH] ✓ Đã dọn dẹp ${uuidsToRemove.length} lượt điểm danh (Thành công: ${syncedUuids.length}, Lỗi: ${errors.length})');
           }
         }
       }
@@ -241,11 +249,14 @@ class SyncManager {
       final db = await AppDatabase.instance.database;
       final now = DateTime.now().toIso8601String();
 
-      await db.insert('sync_metadata', {
-        'data_type': 'full_sync',
-        'last_sync_time': now,
-        'last_sync_status': 'success',
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      await db.insert(
+          'sync_metadata',
+          {
+            'data_type': 'full_sync',
+            'last_sync_time': now,
+            'last_sync_status': 'success',
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
       debugPrint('[SYNC META ERROR] $e');
     }
@@ -272,7 +283,7 @@ class SyncManager {
     Connectivity().onConnectivityChanged.listen((result) {
       bool hasConnection = true;
       hasConnection = !result.contains(ConnectivityResult.none);
-    
+
       if (hasConnection) {
         debugPrint('[NETWORK] Đã kết nối Internet. Kích hoạt Sync ngầm...');
         syncAll();

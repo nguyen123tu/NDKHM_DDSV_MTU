@@ -124,8 +124,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: AppTheme.primary.withOpacity(0.15),
               ),
             ),
-          ).animate().fadeIn(duration: 1000.ms).scale(begin: const Offset(0.8, 0.8)),
-          
+          )
+              .animate()
+              .fadeIn(duration: 1000.ms)
+              .scale(begin: const Offset(0.8, 0.8)),
+
           Positioned(
             bottom: -50,
             right: -100,
@@ -137,7 +140,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: AppTheme.secondary.withOpacity(0.15),
               ),
             ),
-          ).animate().fadeIn(duration: 1000.ms, delay: 300.ms).scale(begin: const Offset(0.8, 0.8)),
+          )
+              .animate()
+              .fadeIn(duration: 1000.ms, delay: 300.ms)
+              .scale(begin: const Offset(0.8, 0.8)),
 
           // Blur Overlay
           Positioned.fill(
@@ -165,16 +171,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppTheme.surfaceLight,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primary.withOpacity(0.2),
-                                  blurRadius: 20,
-                                  spreadRadius: 5,
-                                )
-                              ]
-                            ),
+                                shape: BoxShape.circle,
+                                color: AppTheme.surfaceLight,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withOpacity(0.2),
+                                    blurRadius: 20,
+                                    spreadRadius: 5,
+                                  )
+                                ]),
                             child: ClipOval(
                               child: Image.asset(
                                 "assets/images/logo_MTU.png",
@@ -288,9 +293,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                         height: 20,
                                         width: 20,
                                         child: CircularProgressIndicator(
-                                            color: Colors.white, strokeWidth: 2),
+                                            color: Colors.white,
+                                            strokeWidth: 2),
                                       )
-                                    : const Text("ĐĂNG NHẬP", style: TextStyle(fontWeight: FontWeight.bold)),
+                                    : const Text("ĐĂNG NHẬP",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
                               ),
                             ),
                           ).animate().fadeIn(delay: 350.ms),
@@ -321,7 +329,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   children: [
                                     Icon(Icons.fingerprint, size: 28),
                                     SizedBox(width: 12),
-                                    Text("Vân tay / Face ID", style: TextStyle(fontWeight: FontWeight.bold)),
+                                    Text("Vân tay / Face ID",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ),

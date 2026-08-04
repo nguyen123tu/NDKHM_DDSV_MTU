@@ -141,8 +141,8 @@ class _AdminStudentListScreenState extends State<AdminStudentListScreen> {
                                     contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 16, vertical: 8),
                                     leading: CircleAvatar(
-                                      backgroundColor:
-                                          AppTheme.primary.withValues(alpha: 0.2),
+                                      backgroundColor: AppTheme.primary
+                                          .withValues(alpha: 0.2),
                                       child: const Icon(Icons.person,
                                           color: AppTheme.secondary),
                                     ),

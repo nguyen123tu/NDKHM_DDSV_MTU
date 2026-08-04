@@ -2,6 +2,7 @@
 Security Module
 Chứa các hàm bảo mật: JWT, tính toán GPS, và Anti-Replay (Nonce)
 """
+
 import math
 import time
 from datetime import datetime, timedelta
@@ -16,12 +17,14 @@ _used_nonces = {}
 _nonce_lock = threading.Lock()
 _table_checked = False
 
+
 def _ensure_nonce_table():
     global _table_checked
     if _table_checked:
         return
     try:
         from db.connection import execute_update
+
         query = """
         IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='replay_nonces' and xtype='U')
         CREATE TABLE replay_nonces (
@@ -33,7 +36,9 @@ def _ensure_nonce_table():
         _table_checked = True
     except Exception as e:
         import logging
+
         logging.warning("Could not ensure replay_nonces table: %s", e)
+
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Tính khoảng cách (mét) giữa 2 tọa độ GPS bằng công thức Haversine"""
@@ -42,11 +47,12 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     phi2 = lat2 * math.pi / 180
     delta_phi = (lat2 - lat1) * math.pi / 180
     delta_lambda = (lon2 - lon1) * math.pi / 180
-    a = math.sin(delta_phi / 2) * math.sin(delta_phi / 2) + \
-        math.cos(phi1) * math.cos(phi2) * \
-        math.sin(delta_lambda / 2) * math.sin(delta_lambda / 2)
+    a = math.sin(delta_phi / 2) * math.sin(delta_phi / 2) + math.cos(phi1) * math.cos(
+        phi2
+    ) * math.sin(delta_lambda / 2) * math.sin(delta_lambda / 2)
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
+
 
 def make_token(user, is_student=False):
     """Tạo JWT cho mobile app."""
@@ -59,11 +65,13 @@ def make_token(user, is_student=False):
     }
     return jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm="HS256")
 
+
 def extract_bearer_token():
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         return None
     return auth_header.split(" ", 1)[1].strip()
+
 
 def require_mobile_auth():
     """Kiểm tra JWT Token từ Header"""
@@ -78,6 +86,7 @@ def require_mobile_auth():
     except jwt.InvalidTokenError:
         return None, (jsonify({"success": False, "message": "Token không hợp lệ"}), 401)
 
+
 def verify_nonce(nonce, timestamp_ms, max_age_seconds=10):
     """
     Kiểm tra Anti-Replay:
@@ -86,45 +95,57 @@ def verify_nonce(nonce, timestamp_ms, max_age_seconds=10):
     """
     if not nonce or not timestamp_ms:
         return False, "Thiếu nonce hoặc timestamp (Yêu cầu bảo mật Anti-Replay)"
-        
+
     try:
         ts_sec = float(timestamp_ms) / 1000.0
     except ValueError:
         return False, "Timestamp không hợp lệ"
-        
+
     now = time.time()
-    
+
     # 1. Kiểm tra độ trễ (Chống gửi gói tin cũ)
     if abs(now - ts_sec) > max_age_seconds:
-        return False, f"Yêu cầu quá hạn (Vượt quá {max_age_seconds} giây). Có dấu hiệu Replay Attack!"
-        
+        return (
+            False,
+            f"Yêu cầu quá hạn (Vượt quá {max_age_seconds} giây). Có dấu hiệu Replay Attack!",
+        )
+
     # 2. Kiểm tra Nonce đã dùng chưa (Thread-Safe & DB Persistence)
     with _nonce_lock:
         # Dọn dẹp các nonce đã cũ trong bộ nhớ
         expired_keys = [k for k, exp in _used_nonces.items() if now > exp]
         for k in expired_keys:
             del _used_nonces[k]
-            
+
         if nonce in _used_nonces:
             return False, "Mã Nonce đã được sử dụng. Có dấu hiệu Replay Attack!"
-            
+
         # Thử kiểm tra và lưu trong Database để bền vững giữa các worker/restart
         try:
             from db.connection import execute_query, execute_update
+
             _ensure_nonce_table()
             # Dọn dẹp nonce cũ trong DB
             execute_update("DELETE FROM replay_nonces WHERE expires_at < %s", (now,))
-            
-            row = execute_query("SELECT nonce FROM replay_nonces WHERE nonce = %s", (nonce,))
+
+            row = execute_query(
+                "SELECT nonce FROM replay_nonces WHERE nonce = %s", (nonce,)
+            )
             if row:
                 return False, "Mã Nonce đã được sử dụng. Có dấu hiệu Replay Attack!"
-                
-            execute_update("INSERT INTO replay_nonces (nonce, expires_at) VALUES (%s, %s)", (nonce, now + max_age_seconds))
+
+            execute_update(
+                "INSERT INTO replay_nonces (nonce, expires_at) VALUES (%s, %s)",
+                (nonce, now + max_age_seconds),
+            )
         except Exception as e:
             import logging
-            logging.warning("Replay nonce DB check/save failed, falling back to in-memory: %s", e)
-            
+
+            logging.warning(
+                "Replay nonce DB check/save failed, falling back to in-memory: %s", e
+            )
+
         # Lưu nonce với thời gian hết hạn
         _used_nonces[nonce] = now + max_age_seconds
-        
+
     return True, None

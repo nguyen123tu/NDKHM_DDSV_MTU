@@ -486,15 +486,16 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                             fontWeight: FontWeight.bold),
                         code: TextStyle(
                           color: AppTheme.secondary,
-                          backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
+                          backgroundColor:
+                              AppTheme.primary.withValues(alpha: 0.15),
                           fontSize: 13,
                           fontFamily: 'monospace',
                         ),
                         codeblockDecoration: BoxDecoration(
                           color: const Color(0xFF0D1117),
                           borderRadius: BorderRadius.circular(8),
-                          border:
-                              Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1)),
                         ),
                         codeblockPadding: const EdgeInsets.all(12),
                         listBullet: const TextStyle(
@@ -694,8 +695,8 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                     color: AppTheme.textMuted.withValues(alpha: 0.5),
                     fontSize: 14,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   border: InputBorder.none,
                 ),
                 onSubmitted: (text) {

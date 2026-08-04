@@ -95,7 +95,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           (c) => c.lensDirection == CameraLensDirection.front,
           orElse: () => _cameras![0],
         );
-        _controller = CameraController(frontCamera, ResolutionPreset.medium, enableAudio: false);
+        _controller = CameraController(frontCamera, ResolutionPreset.medium,
+            enableAudio: false);
         await _controller!.initialize();
         if (!mounted) return;
         setState(() => _isCameraReady = true);
@@ -223,14 +224,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       final result = await _apiService.registerFace(
-          _mssvCtrl.text.trim(),
-          _nameCtrl.text.trim(), 
-          _selectedLopId!, 
-          base64List,
-          email: _emailCtrl.text.trim(),
-          sdt: _sdtCtrl.text.trim(),
-          ngaySinh: _selectedDate != null ? "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}" : null,
-          gioiTinh: _selectedGender,
+        _mssvCtrl.text.trim(),
+        _nameCtrl.text.trim(),
+        _selectedLopId!,
+        base64List,
+        email: _emailCtrl.text.trim(),
+        sdt: _sdtCtrl.text.trim(),
+        ngaySinh: _selectedDate != null
+            ? "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}"
+            : null,
+        gioiTinh: _selectedGender,
       );
       if (!mounted) return;
 
@@ -331,39 +334,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.transparent,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
-        leading: _currentStep == 1 
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => setState(() => _currentStep = 0),
-            ) 
-          : const BackButton(),
+        leading: _currentStep == 1
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _currentStep = 0),
+              )
+            : const BackButton(),
         actions: [
           if (_currentStep == 1)
             Container(
-            margin: const EdgeInsets.only(right: 16, top: 10, bottom: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: _capturedImages.length >= _minPhotos
-                  ? Colors.greenAccent.withValues(alpha: 0.2)
-                  : AppTheme.surfaceLight,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: _capturedImages.length >= _minPhotos
-                      ? Colors.greenAccent.withValues(alpha: 0.5)
-                      : Colors.white10),
-            ),
-            child: Center(
-              child: Text(
-                "${_capturedImages.length}/$_maxPhotos ảnh",
-                style: TextStyle(
+              margin: const EdgeInsets.only(right: 16, top: 10, bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: _capturedImages.length >= _minPhotos
+                    ? Colors.greenAccent.withValues(alpha: 0.2)
+                    : AppTheme.surfaceLight,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
                     color: _capturedImages.length >= _minPhotos
-                        ? Colors.greenAccent
-                        : AppTheme.textSecondary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13),
+                        ? Colors.greenAccent.withValues(alpha: 0.5)
+                        : Colors.white10),
+              ),
+              child: Center(
+                child: Text(
+                  "${_capturedImages.length}/$_maxPhotos ảnh",
+                  style: TextStyle(
+                      color: _capturedImages.length >= _minPhotos
+                          ? Colors.greenAccent
+                          : AppTheme.textSecondary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13),
+                ),
               ),
             ),
-          ),
         ],
       ),
       body: Stack(
@@ -395,7 +398,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Container(
                           height: 4,
                           decoration: BoxDecoration(
-                            color: _currentStep >= 1 ? AppTheme.primary : Colors.white10,
+                            color: _currentStep >= 1
+                                ? AppTheme.primary
+                                : Colors.white10,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -407,518 +412,570 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 if (_currentStep == 0) ...[
                   // Form card
                   NeuContainer(
-                  padding: const EdgeInsets.all(20),
-                  borderRadius: 16,
-                  child: Column(
-                    children: [
-                      _buildInputField(
-                        controller: _mssvCtrl,
-                        label: "Mã Sinh Viên (MSSV)",
-                        icon: Icons.badge,
-                        readOnly: isStudent,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInputField(
-                        controller: _nameCtrl,
-                        label: "Họ và Tên",
-                        icon: Icons.person,
-                        readOnly: isStudent,
-                      ),
-                      const SizedBox(height: 16),
-                      // Dropdown
-                      if (_isLoadingClasses)
-                        const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(
-                              child: CircularProgressIndicator(
-                                  color: AppTheme.primary, strokeWidth: 2)),
-                        )
-                      else if (_classes.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(
-                            child: Text(
-                              "Không có lớp học nào.",
-                              style: TextStyle(color: Colors.redAccent),
-                            ),
-                          ),
-                        )
-                      else
-                        IgnorePointer(
-                          ignoring: isStudent,
-                          child: DropdownButtonFormField<int>(
-                            decoration: InputDecoration(
-                              labelText: "Lớp Học",
-                              labelStyle: const TextStyle(
-                                  color: AppTheme.textSecondary, fontSize: 14),
-                              prefixIcon: const Icon(Icons.school,
-                                  color: AppTheme.primary, size: 22),
-                              filled: true,
-                              fillColor: isStudent
-                                  ? Colors.white.withValues(alpha: 0.02)
-                                  : Colors.white.withValues(alpha: 0.05),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none),
-                              enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide:
-                                      const BorderSide(color: Colors.white10)),
-                              focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                      color: AppTheme.primary, width: 1.5)),
-                            ),
-                            dropdownColor: AppTheme.surfaceLight,
-                            initialValue: _selectedLopId,
-                            style: TextStyle(
-                                color: isStudent
-                                    ? AppTheme.textMuted
-                                    : AppTheme.textPrimary,
-                                fontSize: 15),
-                            items: _classes
-                                .map<DropdownMenuItem<int>>((dynamic c) {
-                              return DropdownMenuItem<int>(
-                                  value: c['id'] as int,
-                                  child:
-                                      Text("${c['ten_lop']} (${c['ma_lop']})"));
-                            }).toList(),
-                            onChanged: (int? newValue) {
-                              setState(() {
-                                _selectedLopId = newValue;
-                              });
-                            },
-                          ),
+                    padding: const EdgeInsets.all(20),
+                    borderRadius: 16,
+                    child: Column(
+                      children: [
+                        _buildInputField(
+                          controller: _mssvCtrl,
+                          label: "Mã Sinh Viên (MSSV)",
+                          icon: Icons.badge,
+                          readOnly: isStudent,
                         ),
-                      const SizedBox(height: 16),
-                      _buildInputField(
-                        controller: _emailCtrl,
-                        label: "Email",
-                        icon: Icons.email,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInputField(
-                        controller: _sdtCtrl,
-                        label: "Số Điện Thoại",
-                        icon: Icons.phone,
-                      ),
-                      const SizedBox(height: 16),
-                      // Ngày sinh DatePicker
-                      GestureDetector(
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: _selectedDate ?? DateTime(2000),
-                            firstDate: DateTime(1950),
-                            lastDate: DateTime.now(),
-                          );
-                          if (date != null) {
-                            setState(() => _selectedDate = date);
-                          }
-                        },
-                        child: NeuContainer(
-                          isPressed: true,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          borderRadius: 12,
-                          child: Row(
-                            children: [
-                              const Icon(Icons.calendar_today, color: AppTheme.primary, size: 22),
-                              const SizedBox(width: 12),
-                              Text(
-                                _selectedDate == null 
-                                  ? "Ngày Sinh" 
-                                  : "${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}",
-                                style: TextStyle(
-                                  color: _selectedDate == null ? AppTheme.textSecondary : AppTheme.textPrimary,
-                                  fontSize: 15,
-                                ),
+                        const SizedBox(height: 16),
+                        _buildInputField(
+                          controller: _nameCtrl,
+                          label: "Họ và Tên",
+                          icon: Icons.person,
+                          readOnly: isStudent,
+                        ),
+                        const SizedBox(height: 16),
+                        // Dropdown
+                        if (_isLoadingClasses)
+                          const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                                child: CircularProgressIndicator(
+                                    color: AppTheme.primary, strokeWidth: 2)),
+                          )
+                        else if (_classes.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                              child: Text(
+                                "Không có lớp học nào.",
+                                style: TextStyle(color: Colors.redAccent),
                               ),
-                            ],
+                            ),
+                          )
+                        else
+                          IgnorePointer(
+                            ignoring: isStudent,
+                            child: DropdownButtonFormField<int>(
+                              decoration: InputDecoration(
+                                labelText: "Lớp Học",
+                                labelStyle: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 14),
+                                prefixIcon: const Icon(Icons.school,
+                                    color: AppTheme.primary, size: 22),
+                                filled: true,
+                                fillColor: isStudent
+                                    ? Colors.white.withValues(alpha: 0.02)
+                                    : Colors.white.withValues(alpha: 0.05),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none),
+                                enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: Colors.white10)),
+                                focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: AppTheme.primary, width: 1.5)),
+                              ),
+                              dropdownColor: AppTheme.surfaceLight,
+                              initialValue: _selectedLopId,
+                              style: TextStyle(
+                                  color: isStudent
+                                      ? AppTheme.textMuted
+                                      : AppTheme.textPrimary,
+                                  fontSize: 15),
+                              items: _classes
+                                  .map<DropdownMenuItem<int>>((dynamic c) {
+                                return DropdownMenuItem<int>(
+                                    value: c['id'] as int,
+                                    child: Text(
+                                        "${c['ten_lop']} (${c['ma_lop']})"));
+                              }).toList(),
+                              onChanged: (int? newValue) {
+                                setState(() {
+                                  _selectedLopId = newValue;
+                                });
+                              },
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        _buildInputField(
+                          controller: _emailCtrl,
+                          label: "Email",
+                          icon: Icons.email,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildInputField(
+                          controller: _sdtCtrl,
+                          label: "Số Điện Thoại",
+                          icon: Icons.phone,
+                        ),
+                        const SizedBox(height: 16),
+                        // Ngày sinh DatePicker
+                        GestureDetector(
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _selectedDate ?? DateTime(2000),
+                              firstDate: DateTime(1950),
+                              lastDate: DateTime.now(),
+                            );
+                            if (date != null) {
+                              setState(() => _selectedDate = date);
+                            }
+                          },
+                          child: NeuContainer(
+                            isPressed: true,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            borderRadius: 12,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today,
+                                    color: AppTheme.primary, size: 22),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _selectedDate == null
+                                      ? "Ngày Sinh"
+                                      : "${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}",
+                                  style: TextStyle(
+                                    color: _selectedDate == null
+                                        ? AppTheme.textSecondary
+                                        : AppTheme.textPrimary,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Giới tính Dropdown
-                      DropdownButtonFormField<int>(
-                        decoration: InputDecoration(
-                          labelText: "Giới Tính",
-                          labelStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                          prefixIcon: const Icon(Icons.wc, color: AppTheme.primary, size: 22),
-                          filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.05),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.white10)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primary, width: 1.5)),
+                        const SizedBox(height: 16),
+                        // Giới tính Dropdown
+                        DropdownButtonFormField<int>(
+                          decoration: InputDecoration(
+                            labelText: "Giới Tính",
+                            labelStyle: const TextStyle(
+                                color: AppTheme.textSecondary, fontSize: 14),
+                            prefixIcon: const Icon(Icons.wc,
+                                color: AppTheme.primary, size: 22),
+                            filled: true,
+                            fillColor: Colors.white.withValues(alpha: 0.05),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    const BorderSide(color: Colors.white10)),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                    color: AppTheme.primary, width: 1.5)),
+                          ),
+                          dropdownColor: AppTheme.surfaceLight,
+                          initialValue: _selectedGender,
+                          style: const TextStyle(
+                              color: AppTheme.textPrimary, fontSize: 15),
+                          items: const [
+                            DropdownMenuItem(value: 1, child: Text("Nam")),
+                            DropdownMenuItem(value: 0, child: Text("Nữ")),
+                          ],
+                          onChanged: (val) =>
+                              setState(() => _selectedGender = val),
                         ),
-                        dropdownColor: AppTheme.surfaceLight,
-                        initialValue: _selectedGender,
-                        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
-                        items: const [
-                          DropdownMenuItem(value: 1, child: Text("Nam")),
-                          DropdownMenuItem(value: 0, child: Text("Nữ")),
-                        ],
-                        onChanged: (val) => setState(() => _selectedGender = val),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
-
-                const SizedBox(height: 24),
-                // Nút Tiếp tục (chỉ hiển thị ở bước 0)
-                if (_currentStep == 0)
-                  SizedBox(
-                    width: double.infinity,
-                    child: NeuButton(
-                      isPrimary: true,
-                      onPressed: () {
-                        if (_mssvCtrl.text.isEmpty || _nameCtrl.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Vui lòng nhập đủ MSSV và Tên!")));
-                          return;
-                        }
-                        if (_selectedLopId == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Vui lòng chọn lớp học!")));
-                          return;
-                        }
-                        setState(() => _currentStep = 1);
-                      },
-                      child: const Center(child: Text("Tiếp tục", style: TextStyle(fontWeight: FontWeight.bold))),
+                      ],
                     ),
-                  ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 400.ms)
+                      .slideY(begin: 0.1, end: 0),
+
+                  const SizedBox(height: 24),
+                  // Nút Tiếp tục (chỉ hiển thị ở bước 0)
+                  if (_currentStep == 0)
+                    SizedBox(
+                      width: double.infinity,
+                      child: NeuButton(
+                        isPrimary: true,
+                        onPressed: () {
+                          if (_mssvCtrl.text.isEmpty ||
+                              _nameCtrl.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text("Vui lòng nhập đủ MSSV và Tên!")));
+                            return;
+                          }
+                          if (_selectedLopId == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text("Vui lòng chọn lớp học!")));
+                            return;
+                          }
+                          setState(() => _currentStep = 1);
+                        },
+                        child: const Center(
+                            child: Text("Tiếp tục",
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                      ),
+                    ),
                 ],
 
                 if (_currentStep == 1) ...[
                   // Camera section header
-                Row(
-                  children: [
-                    const Icon(Icons.camera_front,
-                        color: AppTheme.primary, size: 20),
-                    const SizedBox(width: 8),
-                    const Text("Camera Khuôn Mặt",
-                        style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold)),
-                    const Spacer(),
-                    if (_capturedImages.isNotEmpty)
-                      GestureDetector(
-                        onTap: _isRegistering
-                            ? null
-                            : () => setState(() => _capturedImages.clear()),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: Colors.redAccent.withValues(alpha: 0.3)),
-                          ),
-                          child: const Text("Xóa tất cả",
-                              style: TextStyle(
-                                  color: Colors.redAccent, fontSize: 12)),
-                        ),
-                      ),
-                  ],
-                ).animate().fadeIn(delay: 200.ms),
-                const SizedBox(height: 16),
-
-                // Camera preview
-                Center(
-                  child: Container(
-                    height: 340,
-                    width: 280,
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceLight,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: _capturedImages.length >= _maxPhotos
-                            ? Colors.greenAccent.withValues(alpha: 0.5)
-                            : AppTheme.primary.withValues(alpha: 0.5),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                            color: _capturedImages.length >= _maxPhotos
-                                ? Colors.greenAccent.withValues(alpha: 0.1)
-                                : AppTheme.primary.withValues(alpha: 0.15),
-                            blurRadius: 20,
-                            spreadRadius: 2),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(22),
-                      child: _isCameraReady
-                          ? Stack(
-                              children: [
-                                Positioned.fill(
-                                    child: FittedBox(
-                                      fit: BoxFit.cover,
-                                      child: SizedBox(
-                                        width: _controller!.value.previewSize?.height ?? 1,
-                                        height: _controller!.value.previewSize?.width ?? 1,
-                                        child: CameraPreview(_controller!),
-                                      ),
-                                    )),
-                                Positioned.fill(
-                                    child: CustomPaint(
-                                        painter: OvalOverlayPainter())),
-                                Positioned(
-                                  bottom: 16,
-                                  left: 0,
-                                  right: 0,
-                                  child: Center(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.7),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                            color: AppTheme.secondary
-                                                .withValues(alpha: 0.5)),
-                                      ),
-                                      child: Text(
-                                        _currentPoseGuide,
-                                        style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
-                          : const Center(
-                              child: CircularProgressIndicator(
-                                  color: AppTheme.primary)),
-                    ),
-                  ),
-                )
-                    .animate()
-                    .fadeIn(delay: 300.ms)
-                    .scale(begin: const Offset(0.9, 0.9)),
-
-                const SizedBox(height: 20),
-
-                // Thumbnail list
-                // Thumbnail list (Dùng SizedBox cố định chiều cao để không đẩy nút chụp xuống)
-                SizedBox(
-                  height: 120,
-                  child: _capturedImages.isNotEmpty ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      const Text("Ảnh đã chụp",
+                      const Icon(Icons.camera_front,
+                          color: AppTheme.primary, size: 20),
+                      const SizedBox(width: 8),
+                      const Text("Camera Khuôn Mặt",
                           style: TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 72,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _capturedImages.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: Stack(
+                              color: AppTheme.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      if (_capturedImages.isNotEmpty)
+                        GestureDetector(
+                          onTap: _isRegistering
+                              ? null
+                              : () => setState(() => _capturedImages.clear()),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color:
+                                      Colors.redAccent.withValues(alpha: 0.3)),
+                            ),
+                            child: const Text("Xóa tất cả",
+                                style: TextStyle(
+                                    color: Colors.redAccent, fontSize: 12)),
+                          ),
+                        ),
+                    ],
+                  ).animate().fadeIn(delay: 200.ms),
+                  const SizedBox(height: 16),
+
+                  // Camera preview
+                  Center(
+                    child: Container(
+                      height: 340,
+                      width: 280,
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: _capturedImages.length >= _maxPhotos
+                              ? Colors.greenAccent.withValues(alpha: 0.5)
+                              : AppTheme.primary.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                              color: _capturedImages.length >= _maxPhotos
+                                  ? Colors.greenAccent.withValues(alpha: 0.1)
+                                  : AppTheme.primary.withValues(alpha: 0.15),
+                              blurRadius: 20,
+                              spreadRadius: 2),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: _isCameraReady
+                            ? Stack(
                                 children: [
-                                  Container(
-                                    width: 64,
-                                    height: 64,
-                                    margin: const EdgeInsets.only(top: 6, right: 6),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                          color: AppTheme.primary.withValues(alpha: 0.8),
-                                          width: 2),
-                                      image: DecorationImage(
-                                          image: MemoryImage(
-                                              base64Decode(_capturedImages[index])),
-                                          fit: BoxFit.cover),
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.3),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 4))
-                                      ],
+                                  Positioned.fill(
+                                      child: FittedBox(
+                                    fit: BoxFit.cover,
+                                    child: SizedBox(
+                                      width: _controller!
+                                              .value.previewSize?.height ??
+                                          1,
+                                      height: _controller!
+                                              .value.previewSize?.width ??
+                                          1,
+                                      child: CameraPreview(_controller!),
                                     ),
-                                  ),
+                                  )),
+                                  Positioned.fill(
+                                      child: CustomPaint(
+                                          painter: OvalOverlayPainter())),
                                   Positioned(
+                                    bottom: 16,
+                                    left: 0,
                                     right: 0,
-                                    top: 0,
-                                    child: GestureDetector(
-                                      onTap: () => setState(
-                                          () => _capturedImages.removeAt(index)),
+                                    child: Center(
                                       child: Container(
-                                        padding: const EdgeInsets.all(4),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 8),
                                         decoration: BoxDecoration(
-                                          color: Colors.redAccent,
-                                          shape: BoxShape.circle,
+                                          color: Colors.black
+                                              .withValues(alpha: 0.7),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
                                           border: Border.all(
-                                              color: AppTheme.background, width: 2),
+                                              color: AppTheme.secondary
+                                                  .withValues(alpha: 0.5)),
                                         ),
-                                        child: const Icon(Icons.close,
-                                            color: Colors.white, size: 12),
+                                        child: Text(
+                                          _currentPoseGuide,
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ],
-                              ).animate().scale(begin: const Offset(0.5, 0.5)),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ) : const SizedBox.shrink(),
-                ),
-                const SizedBox(height: 16),
-
-                // Hướng dẫn
-                NeuContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.lightbulb_outline,
-                              color: AppTheme.secondary.withValues(alpha: 0.8),
-                              size: 24),
-                          const SizedBox(width: 12),
-                          const Text(
-                            "Hướng dẫn chụp ảnh",
-                            style: TextStyle(
-                                color: AppTheme.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "• Tối thiểu 5 ảnh, khuyến nghị 15-20 ảnh\n"
-                        "• Chụp nhiều góc: thẳng, trái, phải, lên, xuống\n"
-                        "• Chụp cả biểu cảm: cười, nghiêm túc\n"
-                        "• Chụp ở nhiều điều kiện sáng khác nhau\n"
-                        "• Càng nhiều ảnh → AI nhận diện càng chính xác!",
-                        style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 13,
-                            height: 1.6),
-                      ),
-                      const SizedBox(height: 10),
-                      // Progress bar
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: _capturedImages.length / _maxPhotos,
-                          backgroundColor: Colors.white.withValues(alpha: 0.1),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            _capturedImages.length >= _minPhotos
-                                ? AppTheme.success
-                                : AppTheme.secondary,
-                          ),
-                          minHeight: 6,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        _capturedImages.length < _minPhotos
-                            ? 'Cần thêm ${_minPhotos - _capturedImages.length} ảnh nữa'
-                            : _capturedImages.length < _maxPhotos
-                                ? 'Đủ điều kiện! Chụp thêm ${_maxPhotos - _capturedImages.length} ảnh nữa để tăng độ chính xác'
-                                : 'Đã đạt tối đa $_maxPhotos ảnh ✓',
-                        style: TextStyle(
-                          color: _capturedImages.length >= _minPhotos
-                              ? AppTheme.success
-                              : AppTheme.textMuted,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(delay: 400.ms),
-                const SizedBox(height: 24),
-
-                // Nút hành động
-                // Nút chụp ảnh (hiển thị khi chưa đạt tối đa)
-                if (_capturedImages.length < _maxPhotos)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton.icon(
-                      onPressed: _takeSinglePicture,
-                      icon: const Icon(Icons.camera_alt,
-                          color: Colors.white, size: 22),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.surfaceLight,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: const BorderSide(
-                                color: AppTheme.primary, width: 1)),
-                        elevation: 0,
-                      ),
-                      label: Text(
-                          "Chụp ảnh (${_capturedImages.length}/$_maxPhotos)",
-                          style: const TextStyle(
-                              color: AppTheme.primary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                  ).animate().fadeIn(delay: 500.ms),
-
-                // Nút gửi đăng ký (hiển thị khi đã đủ tối thiểu)
-                if (_capturedImages.length >= _minPhotos) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: Container(
-                      decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                              colors: [Color(0xFF10B981), Color(0xFF059669)]),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 6)),
-                          ]),
-                      child: ElevatedButton.icon(
-                        onPressed: _isRegistering ? null : _submitRegistration,
-                        icon: _isRegistering
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
+                              )
+                            : const Center(
                                 child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2))
-                            : const Icon(Icons.cloud_upload,
-                                color: Colors.white, size: 22),
+                                    color: AppTheme.primary)),
+                      ),
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(delay: 300.ms)
+                      .scale(begin: const Offset(0.9, 0.9)),
+
+                  const SizedBox(height: 20),
+
+                  // Thumbnail list
+                  // Thumbnail list (Dùng SizedBox cố định chiều cao để không đẩy nút chụp xuống)
+                  SizedBox(
+                    height: 120,
+                    child: _capturedImages.isNotEmpty
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Ảnh đã chụp",
+                                  style: TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                height: 72,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: _capturedImages.length,
+                                  itemBuilder: (context, index) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: Stack(
+                                        children: [
+                                          Container(
+                                            width: 64,
+                                            height: 64,
+                                            margin: const EdgeInsets.only(
+                                                top: 6, right: 6),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                  color: AppTheme.primary
+                                                      .withValues(alpha: 0.8),
+                                                  width: 2),
+                                              image: DecorationImage(
+                                                  image: MemoryImage(
+                                                      base64Decode(
+                                                          _capturedImages[
+                                                              index])),
+                                                  fit: BoxFit.cover),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                    color: Colors.black
+                                                        .withValues(alpha: 0.3),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 4))
+                                              ],
+                                            ),
+                                          ),
+                                          Positioned(
+                                            right: 0,
+                                            top: 0,
+                                            child: GestureDetector(
+                                              onTap: () => setState(() =>
+                                                  _capturedImages
+                                                      .removeAt(index)),
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.all(4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.redAccent,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                      color:
+                                                          AppTheme.background,
+                                                      width: 2),
+                                                ),
+                                                child: const Icon(Icons.close,
+                                                    color: Colors.white,
+                                                    size: 12),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                          .animate()
+                                          .scale(begin: const Offset(0.5, 0.5)),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Hướng dẫn
+                  NeuContainer(
+                    padding: const EdgeInsets.all(16),
+                    borderRadius: 16,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.lightbulb_outline,
+                                color:
+                                    AppTheme.secondary.withValues(alpha: 0.8),
+                                size: 24),
+                            const SizedBox(width: 12),
+                            const Text(
+                              "Hướng dẫn chụp ảnh",
+                              style: TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          "• Tối thiểu 5 ảnh, khuyến nghị 15-20 ảnh\n"
+                          "• Chụp nhiều góc: thẳng, trái, phải, lên, xuống\n"
+                          "• Chụp cả biểu cảm: cười, nghiêm túc\n"
+                          "• Chụp ở nhiều điều kiện sáng khác nhau\n"
+                          "• Càng nhiều ảnh → AI nhận diện càng chính xác!",
+                          style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                              height: 1.6),
+                        ),
+                        const SizedBox(height: 10),
+                        // Progress bar
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: _capturedImages.length / _maxPhotos,
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.1),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              _capturedImages.length >= _minPhotos
+                                  ? AppTheme.success
+                                  : AppTheme.secondary,
+                            ),
+                            minHeight: 6,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _capturedImages.length < _minPhotos
+                              ? 'Cần thêm ${_minPhotos - _capturedImages.length} ảnh nữa'
+                              : _capturedImages.length < _maxPhotos
+                                  ? 'Đủ điều kiện! Chụp thêm ${_maxPhotos - _capturedImages.length} ảnh nữa để tăng độ chính xác'
+                                  : 'Đã đạt tối đa $_maxPhotos ảnh ✓',
+                          style: TextStyle(
+                            color: _capturedImages.length >= _minPhotos
+                                ? AppTheme.success
+                                : AppTheme.textMuted,
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 400.ms),
+                  const SizedBox(height: 24),
+
+                  // Nút hành động
+                  // Nút chụp ảnh (hiển thị khi chưa đạt tối đa)
+                  if (_capturedImages.length < _maxPhotos)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: _takeSinglePicture,
+                        icon: const Icon(Icons.camera_alt,
+                            color: Colors.white, size: 22),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
+                          backgroundColor: AppTheme.surfaceLight,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                              borderRadius: BorderRadius.circular(16),
+                              side: const BorderSide(
+                                  color: AppTheme.primary, width: 1)),
+                          elevation: 0,
                         ),
                         label: Text(
-                          _isRegistering
-                              ? "Đang gửi ${_capturedImages.length} ảnh..."
-                              : "Gửi Đăng Ký (${_capturedImages.length} ảnh)",
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold),
+                            "Chụp ảnh (${_capturedImages.length}/$_maxPhotos)",
+                            style: const TextStyle(
+                                color: AppTheme.primary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    ).animate().fadeIn(delay: 500.ms),
+
+                  // Nút gửi đăng ký (hiển thị khi đã đủ tối thiểu)
+                  if (_capturedImages.length >= _minPhotos) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: Container(
+                        decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                                colors: [Color(0xFF10B981), Color(0xFF059669)]),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: const Color(0xFF10B981)
+                                      .withValues(alpha: 0.4),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6)),
+                            ]),
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              _isRegistering ? null : _submitRegistration,
+                          icon: _isRegistering
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2))
+                              : const Icon(Icons.cloud_upload,
+                                  color: Colors.white, size: 22),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                          label: Text(
+                            _isRegistering
+                                ? "Đang gửi ${_capturedImages.length} ảnh..."
+                                : "Gửi Đăng Ký (${_capturedImages.length} ảnh)",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
-                    ),
-                  ).animate().fadeIn(),
-                ],
+                    ).animate().fadeIn(),
+                  ],
                 ], // End if _currentStep == 1
 
                 const SizedBox(height: 40),

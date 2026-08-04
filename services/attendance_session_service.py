@@ -34,7 +34,9 @@ class AttendanceSessionService:
     ):
         """Tạo mới một phiên điểm danh hợp nhất (Web Camera / Mobile App)"""
         # Kiểm tra lớp học
-        lop = execute_one("SELECT id, ma_lop, ten_lop FROM lop_hoc WHERE id = %s", (lop_id,))
+        lop = execute_one(
+            "SELECT id, ma_lop, ten_lop FROM lop_hoc WHERE id = %s", (lop_id,)
+        )
         if not lop:
             return None, "Lớp học không tồn tại"
 
@@ -53,9 +55,18 @@ class AttendanceSessionService:
             VALUES (%s, %s, %s, 1, %s, %s, %s, %s, GETDATE(), %s, %s, %s, %s, %s)
         """
         params = (
-            lop_id, admin_id, loai_phien, mo_ta,
-            gio_hoc_du_kien, mo_checkin, dong_checkin, het_han,
-            vi_do, kinh_do, radius or 100, 1 if require_gps else 0
+            lop_id,
+            admin_id,
+            loai_phien,
+            mo_ta,
+            gio_hoc_du_kien,
+            mo_checkin,
+            dong_checkin,
+            het_han,
+            vi_do,
+            kinh_do,
+            radius or 100,
+            1 if require_gps else 0,
         )
         try:
             with transaction() as conn:
@@ -64,14 +75,18 @@ class AttendanceSessionService:
                 inserted = cursor.fetchone()
                 if not inserted:
                     return None, "Không thể lấy ID phiên điểm danh mới tạo"
-                new_id = inserted['id']
-                
+                new_id = inserted["id"]
+
                 cursor.execute("SELECT * FROM phien_diem_danh WHERE id = %s", (new_id,))
                 session = cursor.fetchone()
                 return session, None
         except Exception as e:
             error_str = str(e)
-            if 'idx_unique_active_session' in error_str or 'UNIQUE KEY' in error_str or 'Violation of UNIQUE KEY constraint' in error_str:
+            if (
+                "idx_unique_active_session" in error_str
+                or "UNIQUE KEY" in error_str
+                or "Violation of UNIQUE KEY constraint" in error_str
+            ):
                 return None, f"Lớp {lop['ma_lop']} đã có phiên điểm danh đang mở."
             print(f"[SESSION ERROR] create_session failed: {e}")
             return None, "Không thể tạo phiên điểm danh (Lỗi hệ thống)"
@@ -82,12 +97,12 @@ class AttendanceSessionService:
         if session_id:
             row = execute_one(
                 "SELECT * FROM phien_diem_danh WHERE id = %s AND trang_thai = 1 AND ISNULL(is_cancelled, 0) = 0",
-                (session_id,)
+                (session_id,),
             )
         elif lop_id:
             row = execute_one(
                 "SELECT TOP 1 * FROM phien_diem_danh WHERE lop_id = %s AND trang_thai = 1 AND ISNULL(is_cancelled, 0) = 0 ORDER BY id DESC",
-                (lop_id,)
+                (lop_id,),
             )
         else:
             return None
@@ -97,10 +112,10 @@ class AttendanceSessionService:
 
         # Kiểm tra hết hạn theo het_han hoặc dong_checkin
         now_dt = datetime.now()
-        expire_dt = row.get('het_han') or row.get('dong_checkin')
-        if expire_dt and hasattr(expire_dt, 'year') and now_dt > expire_dt:
+        expire_dt = row.get("het_han") or row.get("dong_checkin")
+        if expire_dt and hasattr(expire_dt, "year") and now_dt > expire_dt:
             # Tự động đóng nếu quá giờ và chốt dữ liệu
-            AttendanceSessionService.close_session(row['id'], admin_id=None)
+            AttendanceSessionService.close_session(row["id"], admin_id=None)
             return None
 
         return row
@@ -116,17 +131,22 @@ class AttendanceSessionService:
         5. Ghi audit log cho mỗi bản ghi tự động tạo.
         6. Tính toán và lưu Snapshot báo cáo (JSON) cùng si_so_chot.
         """
-        session_row = execute_one("SELECT * FROM phien_diem_danh WHERE id = %s", (session_id,))
+        session_row = execute_one(
+            "SELECT * FROM phien_diem_danh WHERE id = %s", (session_id,)
+        )
         if not session_row:
             return {"success": False, "message": "Phiên điểm danh không tồn tại"}
 
-        if session_row['trang_thai'] == 0:
-            return {"success": False, "message": "Phiên điểm danh đã được đóng trước đó"}
+        if session_row["trang_thai"] == 0:
+            return {
+                "success": False,
+                "message": "Phiên điểm danh đã được đóng trước đó",
+            }
 
-        if session_row.get('is_cancelled'):
+        if session_row.get("is_cancelled"):
             return {"success": False, "message": "Phiên điểm danh đã bị hủy"}
 
-        lop_id = session_row['lop_id']
+        lop_id = session_row["lop_id"]
 
         # Gộp tất cả thay đổi dữ liệu vào một transaction
         try:
@@ -141,13 +161,13 @@ class AttendanceSessionService:
                         nguoi_chot_id = %s, thoi_gian_chot = GETDATE()
                     WHERE id = %s
                     """,
-                    (admin_id, session_id)
+                    (admin_id, session_id),
                 )
 
                 # 2. Lấy danh sách toàn bộ sinh viên trong lớp
                 cursor.execute(
                     "SELECT id, mssv, ho_ten, avatar, email FROM sinh_vien WHERE lop_id = %s AND trang_thai = 1 ORDER BY mssv ASC",
-                    (lop_id,)
+                    (lop_id,),
                 )
                 students = cursor.fetchall() or []
                 total_students = len(students)
@@ -158,9 +178,9 @@ class AttendanceSessionService:
                     SELECT id, sinh_vien_id, status, trang_thai, late_minutes, thoi_gian, gio_vao_lop, do_chinh_xac, method, ghi_chu
                     FROM diem_danh WHERE phien_id = %s
                     """,
-                    (session_id,)
+                    (session_id,),
                 )
-                attended_map = {rec['sinh_vien_id']: rec for rec in cursor.fetchall()}
+                attended_map = {rec["sinh_vien_id"]: rec for rec in cursor.fetchall()}
 
                 # 4. Tìm các đơn xin phép đã được duyệt (trang_thai = 1) VÀ thuộc phiên này
                 cursor.execute(
@@ -169,13 +189,15 @@ class AttendanceSessionService:
                     FROM don_xin_phep
                     WHERE lop_id = %s AND phien_id = %s AND trang_thai = 1
                     """,
-                    (lop_id, session_id)
+                    (lop_id, session_id),
                 )
-                approved_leave_map = {req['sinh_vien_id']: req for req in cursor.fetchall()}
+                approved_leave_map = {
+                    req["sinh_vien_id"]: req for req in cursor.fetchall()
+                }
 
                 # 5. Xử lý bổ sung cho sinh viên chưa có bản ghi
                 for sv in students:
-                    sv_id = sv['id']
+                    sv_id = sv["id"]
                     if sv_id in attended_map:
                         continue
 
@@ -191,9 +213,16 @@ class AttendanceSessionService:
                             OUTPUT INSERTED.id
                             VALUES (%s, %s, %s, %s, %s, 0, 'LEAVE_REQUEST', %s)
                             """,
-                            (session_id, sv_id, lop_id,
-                             AttendanceStatus.display(AttendanceStatus.EXCUSED_ABSENCE),
-                             AttendanceStatus.EXCUSED_ABSENCE, note)
+                            (
+                                session_id,
+                                sv_id,
+                                lop_id,
+                                AttendanceStatus.display(
+                                    AttendanceStatus.EXCUSED_ABSENCE
+                                ),
+                                AttendanceStatus.EXCUSED_ABSENCE,
+                                note,
+                            ),
                         )
                         inserted_rec = cursor.fetchone()
                         if inserted_rec:
@@ -202,7 +231,13 @@ class AttendanceSessionService:
                                 INSERT INTO attendance_audit_log (attendance_id, old_status, new_status, changed_by, reason)
                                 VALUES (%s, %s, %s, %s, %s)
                                 """,
-                                (inserted_rec['id'], None, AttendanceStatus.EXCUSED_ABSENCE, admin_id, f"Tự động tạo khi đóng phiên: {note}")
+                                (
+                                    inserted_rec["id"],
+                                    None,
+                                    AttendanceStatus.EXCUSED_ABSENCE,
+                                    admin_id,
+                                    f"Tự động tạo khi đóng phiên: {note}",
+                                ),
                             )
                     else:
                         # Tạo bản ghi UNEXCUSED_ABSENCE
@@ -214,10 +249,16 @@ class AttendanceSessionService:
                             OUTPUT INSERTED.id
                             VALUES (%s, %s, %s, %s, %s, 0, 'SYSTEM_AUTO', %s)
                             """,
-                            (session_id, sv_id, lop_id,
-                             AttendanceStatus.display(AttendanceStatus.UNEXCUSED_ABSENCE),
-                             AttendanceStatus.UNEXCUSED_ABSENCE,
-                             'Vắng không phép')
+                            (
+                                session_id,
+                                sv_id,
+                                lop_id,
+                                AttendanceStatus.display(
+                                    AttendanceStatus.UNEXCUSED_ABSENCE
+                                ),
+                                AttendanceStatus.UNEXCUSED_ABSENCE,
+                                "Vắng không phép",
+                            ),
                         )
                         inserted_rec = cursor.fetchone()
                         if inserted_rec:
@@ -226,7 +267,13 @@ class AttendanceSessionService:
                                 INSERT INTO attendance_audit_log (attendance_id, old_status, new_status, changed_by, reason)
                                 VALUES (%s, %s, %s, %s, %s)
                                 """,
-                                (inserted_rec['id'], None, AttendanceStatus.UNEXCUSED_ABSENCE, admin_id, "Tự động tạo khi đóng phiên: Vắng không phép")
+                                (
+                                    inserted_rec["id"],
+                                    None,
+                                    AttendanceStatus.UNEXCUSED_ABSENCE,
+                                    admin_id,
+                                    "Tự động tạo khi đóng phiên: Vắng không phép",
+                                ),
                             )
 
                 # 6. Tự tính lại thống kê trong transaction (thay vì gọi hàm bên ngoài)
@@ -236,31 +283,33 @@ class AttendanceSessionService:
                        JOIN sinh_vien sv ON d.sinh_vien_id = sv.id
                        WHERE d.phien_id = %s
                        ORDER BY sv.mssv ASC""",
-                    (session_id,)
+                    (session_id,),
                 )
                 dd_records = cursor.fetchall() or []
-                
+
                 counts = {s: 0 for s in AttendanceStatus.ALL}
                 records = []
                 for r in dd_records:
-                    st = r.get('status') or AttendanceStatus.PRESENT
+                    st = r.get("status") or AttendanceStatus.PRESENT
                     if st in counts:
                         counts[st] += 1
                     else:
                         counts[AttendanceStatus.UNEXCUSED_ABSENCE] += 1
-                    
-                    records.append({
-                        "attendance_id": r.get("id"),
-                        "sinh_vien_id": r.get("sinh_vien_id"),
-                        "mssv": r.get("mssv", ""),
-                        "ho_ten": r.get("ho_ten", ""),
-                        "status": st,
-                        "display_status": AttendanceStatus.display(st),
-                        "late_minutes": r.get("late_minutes", 0),
-                        "method": r.get("method", ""),
-                        "ghi_chu": r.get("ghi_chu", ""),
-                        "thoi_gian": str(r.get("thoi_gian", "")),
-                    })
+
+                    records.append(
+                        {
+                            "attendance_id": r.get("id"),
+                            "sinh_vien_id": r.get("sinh_vien_id"),
+                            "mssv": r.get("mssv", ""),
+                            "ho_ten": r.get("ho_ten", ""),
+                            "status": st,
+                            "display_status": AttendanceStatus.display(st),
+                            "late_minutes": r.get("late_minutes", 0),
+                            "method": r.get("method", ""),
+                            "ghi_chu": r.get("ghi_chu", ""),
+                            "thoi_gian": str(r.get("thoi_gian", "")),
+                        }
+                    )
 
                 si_so_chot = total_students
                 present_count = counts[AttendanceStatus.PRESENT]
@@ -268,11 +317,13 @@ class AttendanceSessionService:
                 excused_count = counts[AttendanceStatus.EXCUSED_ABSENCE]
                 unexcused_count = counts[AttendanceStatus.UNEXCUSED_ABSENCE]
 
-                attendance_rate = ((present_count + late_count) / max(1, si_so_chot)) * 100
-                w_p = getattr(Config, 'WEIGHT_PRESENT', 1.0)
-                w_l = getattr(Config, 'WEIGHT_LATE', 0.75)
-                w_e = getattr(Config, 'WEIGHT_EXCUSED', 1.0)
-                weighted = (present_count * w_p + late_count * w_l + excused_count * w_e)
+                attendance_rate = (
+                    (present_count + late_count) / max(1, si_so_chot)
+                ) * 100
+                w_p = getattr(Config, "WEIGHT_PRESENT", 1.0)
+                w_l = getattr(Config, "WEIGHT_LATE", 0.75)
+                w_e = getattr(Config, "WEIGHT_EXCUSED", 1.0)
+                weighted = present_count * w_p + late_count * w_l + excused_count * w_e
                 weighted_score_rate = (weighted / max(1, si_so_chot)) * 100
 
                 snapshot_payload = {
@@ -297,7 +348,11 @@ class AttendanceSessionService:
                 # 7. Lưu báo cáo vào phien_diem_danh
                 cursor.execute(
                     "UPDATE phien_diem_danh SET si_so_chot = %s, ban_sao_bao_cao = %s WHERE id = %s",
-                    (si_so_chot, json.dumps(snapshot_payload, ensure_ascii=False), session_id)
+                    (
+                        si_so_chot,
+                        json.dumps(snapshot_payload, ensure_ascii=False),
+                        session_id,
+                    ),
                 )
 
         except Exception as e:
@@ -317,7 +372,9 @@ class AttendanceSessionService:
         Hủy phiên điểm danh (soft-cancel). Không xóa cứng.
         Dữ liệu vẫn giữ nguyên trong DB nhưng phiên được đánh dấu là đã hủy.
         """
-        session_row = execute_one("SELECT * FROM phien_diem_danh WHERE id = %s", (session_id,))
+        session_row = execute_one(
+            "SELECT * FROM phien_diem_danh WHERE id = %s", (session_id,)
+        )
         if not session_row:
             return {"success": False, "message": "Phiên điểm danh không tồn tại"}
 
@@ -328,7 +385,7 @@ class AttendanceSessionService:
                 cancelled_by = %s, cancelled_at = GETDATE(), cancel_reason = %s
             WHERE id = %s
             """,
-            (admin_id, reason, session_id)
+            (admin_id, reason, session_id),
         )
 
         return {
@@ -344,16 +401,25 @@ class AttendanceSessionService:
         Ghi audit log.
         """
         if not reason or not reason.strip():
-            return {"success": False, "message": "Bắt buộc nhập lý do khi sửa trạng thái điểm danh"}
+            return {
+                "success": False,
+                "message": "Bắt buộc nhập lý do khi sửa trạng thái điểm danh",
+            }
 
         if new_status not in AttendanceStatus.ALL:
-            return {"success": False, "message": f"Trạng thái '{new_status}' không hợp lệ"}
+            return {
+                "success": False,
+                "message": f"Trạng thái '{new_status}' không hợp lệ",
+            }
 
-        record = execute_one("SELECT id, status, phien_id, sinh_vien_id FROM diem_danh WHERE id = %s", (attendance_id,))
+        record = execute_one(
+            "SELECT id, status, phien_id, sinh_vien_id FROM diem_danh WHERE id = %s",
+            (attendance_id,),
+        )
         if not record:
             return {"success": False, "message": "Bản ghi điểm danh không tồn tại"}
 
-        old_status = record.get('status', 'UNKNOWN')
+        old_status = record.get("status", "UNKNOWN")
 
         # Cập nhật trạng thái
         execute_update(
@@ -363,7 +429,13 @@ class AttendanceSessionService:
                 verified_by = %s, updated_reason = %s
             WHERE id = %s
             """,
-            (new_status, AttendanceStatus.display(new_status), admin_id, reason, attendance_id)
+            (
+                new_status,
+                AttendanceStatus.display(new_status),
+                admin_id,
+                reason,
+                attendance_id,
+            ),
         )
 
         # Ghi audit log
@@ -372,7 +444,7 @@ class AttendanceSessionService:
             INSERT INTO attendance_audit_log (attendance_id, old_status, new_status, changed_by, reason)
             VALUES (%s, %s, %s, %s, %s)
             """,
-            (attendance_id, old_status, new_status, admin_id, reason)
+            (attendance_id, old_status, new_status, admin_id, reason),
         )
 
         return {
@@ -387,7 +459,7 @@ class AttendanceSessionService:
         """Lấy chi tiết phiên điểm danh kèm thống kê từ DB hoặc Snapshot đã chốt"""
         session_row = execute_one(
             "SELECT p.*, l.ten_lop, l.ma_lop FROM phien_diem_danh p JOIN lop_hoc l ON p.lop_id = l.id WHERE p.id = %s",
-            (session_id,)
+            (session_id,),
         )
         if not session_row:
             return None
@@ -409,7 +481,7 @@ def _log_auto_audit(session_id, sv_id, new_status, admin_id, reason):
         # Lấy ID bản ghi vừa insert
         record = execute_one(
             "SELECT TOP 1 id FROM diem_danh WHERE phien_id = %s AND sinh_vien_id = %s ORDER BY id DESC",
-            (session_id, sv_id)
+            (session_id, sv_id),
         )
         if record:
             execute_update(
@@ -417,7 +489,7 @@ def _log_auto_audit(session_id, sv_id, new_status, admin_id, reason):
                 INSERT INTO attendance_audit_log (attendance_id, old_status, new_status, changed_by, reason)
                 VALUES (%s, %s, %s, %s, %s)
                 """,
-                (record['id'], None, new_status, admin_id, reason)
+                (record["id"], None, new_status, admin_id, reason),
             )
     except Exception:
         pass  # Audit log failure không nên block luồng chính

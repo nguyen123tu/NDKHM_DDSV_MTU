@@ -10,7 +10,6 @@ from db.connection import execute_query, execute_one, execute_update
 from config import Config
 from services.attendance_policy import AttendanceStatus, compute_status
 
-
 # Bộ nhớ tạm chống ghi duplicate trong RAM (bổ sung cho DB check)
 _last_log_times = {}  # {cache_key: timestamp}
 
@@ -74,22 +73,22 @@ def record_attendance(
     if not session_row:
         return _error("SESSION_NOT_FOUND", "Phiên điểm danh không tồn tại")
 
-    if session_row.get('trang_thai') == 0:
+    if session_row.get("trang_thai") == 0:
         return _error("SESSION_CLOSED", "Phiên điểm danh đã đóng")
 
-    if session_row.get('is_cancelled'):
+    if session_row.get("is_cancelled"):
         return _error("SESSION_CANCELLED", "Phiên điểm danh đã bị hủy")
 
     # Kiểm tra hết hạn
-    expire_dt = session_row.get('het_han') or session_row.get('dong_checkin')
-    if expire_dt and hasattr(expire_dt, 'year') and now_dt > expire_dt:
+    expire_dt = session_row.get("het_han") or session_row.get("dong_checkin")
+    if expire_dt and hasattr(expire_dt, "year") and now_dt > expire_dt:
         execute_update(
             "UPDATE phien_diem_danh SET trang_thai = 0, ket_thuc = GETDATE() WHERE id = %s",
-            (session_id,)
+            (session_id,),
         )
         return _error("SESSION_EXPIRED", "Phiên điểm danh đã hết hạn")
 
-    lop_id = session_row['lop_id']
+    lop_id = session_row["lop_id"]
 
     # ── 2. Kiểm tra sinh viên ──
     if not student_id:
@@ -97,32 +96,40 @@ def record_attendance(
 
     sv = execute_one(
         "SELECT id, mssv, lop_id, ho_ten, is_locked FROM sinh_vien WHERE id = %s",
-        (student_id,)
+        (student_id,),
     )
     if not sv:
         return _error("STUDENT_NOT_FOUND", "Không tìm thấy sinh viên")
 
-    if sv.get('is_locked') == 1:
+    if sv.get("is_locked") == 1:
         return _error("STUDENT_LOCKED", "Tài khoản sinh viên đã bị khóa")
 
     # ── 3. Kiểm tra sinh viên thuộc lớp ──
-    if str(sv.get('lop_id')) != str(lop_id):
+    if str(sv.get("lop_id")) != str(lop_id):
         return _error("WRONG_CLASS", f"Sinh viên {sv.get('mssv')} không thuộc lớp này")
 
     # ── 3b. GPS enforcement ──
-    if session_row.get('require_gps'):
+    if session_row.get("require_gps"):
         from services.attendance_policy import validate_gps
-        sess_lat = session_row.get('vi_do')
-        sess_lng = session_row.get('kinh_do')
-        sess_radius = session_row.get('radius') or 100
+
+        sess_lat = session_row.get("vi_do")
+        sess_lng = session_row.get("kinh_do")
+        sess_radius = session_row.get("radius") or 100
 
         if latitude is None or longitude is None:
             # GPS thiếu → PENDING_REVIEW (cho admin duyệt sau)
-            return _error("GPS_MISSING", "Phiên yêu cầu GPS nhưng thiếu tọa độ. Hãy bật GPS.")
+            return _error(
+                "GPS_MISSING", "Phiên yêu cầu GPS nhưng thiếu tọa độ. Hãy bật GPS."
+            )
 
-        gps_valid, distance = validate_gps(latitude, longitude, sess_lat, sess_lng, sess_radius)
+        gps_valid, distance = validate_gps(
+            latitude, longitude, sess_lat, sess_lng, sess_radius
+        )
         if not gps_valid:
-            return _error("GPS_OUT_OF_RANGE", f"Bạn đang cách lớp {int(distance)}m (cho phép {int(sess_radius)}m)")
+            return _error(
+                "GPS_OUT_OF_RANGE",
+                f"Bạn đang cách lớp {int(distance)}m (cho phép {int(sess_radius)}m)",
+            )
 
     # ── 4. Cooldown ngắn 30s chống spam trong bộ nhớ ──
     SPAM_COOLDOWN = 30
@@ -134,37 +141,40 @@ def record_attendance(
         # Kiểm tra xem đã có bản ghi chưa
         existing = execute_one(
             "SELECT id, status, late_minutes FROM diem_danh WHERE phien_id = %s AND sinh_vien_id = %s",
-            (session_id, student_id)
+            (session_id, student_id),
         )
         if existing:
             return {
-                'success': True,
-                'action': 'observed',
-                'status': existing.get('status', AttendanceStatus.PRESENT),
-                'display_status': AttendanceStatus.display(existing.get('status', AttendanceStatus.PRESENT)),
-                'late_minutes': existing.get('late_minutes', 0),
+                "success": True,
+                "action": "observed",
+                "status": existing.get("status", AttendanceStatus.PRESENT),
+                "display_status": AttendanceStatus.display(
+                    existing.get("status", AttendanceStatus.PRESENT)
+                ),
+                "late_minutes": existing.get("late_minutes", 0),
             }
 
     # ── 5. Chống trùng theo phiên (DB check) ──
     existing = execute_one(
         "SELECT id, status, late_minutes FROM diem_danh WHERE phien_id = %s AND sinh_vien_id = %s",
-        (session_id, student_id)
+        (session_id, student_id),
     )
     if existing:
         _last_log_times[cache_key] = current_time
         return {
-            'success': True,
-            'action': 'observed',
-            'status': existing.get('status', AttendanceStatus.PRESENT),
-            'display_status': AttendanceStatus.display(existing.get('status', AttendanceStatus.PRESENT)),
-            'late_minutes': existing.get('late_minutes', 0),
+            "success": True,
+            "action": "observed",
+            "status": existing.get("status", AttendanceStatus.PRESENT),
+            "display_status": AttendanceStatus.display(
+                existing.get("status", AttendanceStatus.PRESENT)
+            ),
+            "late_minutes": existing.get("late_minutes", 0),
         }
 
     # Chống trùng offline bằng client_event_id
     if client_event_id:
         dup = execute_one(
-            "SELECT id FROM diem_danh WHERE client_event_id = %s",
-            (client_event_id,)
+            "SELECT id FROM diem_danh WHERE client_event_id = %s", (client_event_id,)
         )
         if dup:
             return _error("DUPLICATE_EVENT", "Bản ghi offline đã được đồng bộ trước đó")
@@ -174,17 +184,20 @@ def record_attendance(
     if face_image is not None and image_path is None:
         import cv2
         import os
+
         img_dir = "static/attendance_images"
         os.makedirs(img_dir, exist_ok=True)
-        img_filename = f"{sv.get('mssv', student_id)}_{now_dt.strftime('%Y%m%d_%H%M%S')}.jpg"
+        img_filename = (
+            f"{sv.get('mssv', student_id)}_{now_dt.strftime('%Y%m%d_%H%M%S')}.jpg"
+        )
         img_filepath = os.path.join(img_dir, img_filename)
         cv2.imwrite(img_filepath, face_image)
         image_path = f"attendance_images/{img_filename}"
 
     # ── 7 & 9. Ghi event quan sát và bản ghi điểm danh (Atomic) ──
-    
+
     # Tính trạng thái
-    scheduled_start = session_row.get('gio_hoc_du_kien') or session_row.get('bat_dau')
+    scheduled_start = session_row.get("gio_hoc_du_kien") or session_row.get("bat_dau")
     status, late_minutes = compute_status(now_dt, scheduled_start)
     display_status = AttendanceStatus.display(status)
 
@@ -194,19 +207,20 @@ def record_attendance(
     if latitude is not None and longitude is not None:
         gps_note = f"GPS:{latitude},{longitude}"
         ghi_chu = f"{ghi_chu} | {gps_note}" if ghi_chu else gps_note
-        
+
     try:
         from db.connection import transaction
+
         with transaction() as conn:
             cursor = conn.cursor()
-            
+
             if confidence and confidence > 0:
                 cursor.execute(
                     """
                     INSERT INTO attendance_events (phien_id, sinh_vien_id, event_type, observed_at, camera_id, confidence, evidence_path)
                     VALUES (%s, %s, 'FACE_OBSERVED', GETDATE(), %s, %s, %s)
                     """,
-                    (session_id, student_id, camera_id, confidence, image_path)
+                    (session_id, student_id, camera_id, confidence, image_path),
                 )
 
             sql = """
@@ -217,42 +231,62 @@ def record_attendance(
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(sql, (
-                session_id, student_id, lop_id,
-                display_status, status, late_minutes,
-                method, confidence or 0, camera_id,
-                ghi_chu, now_dt.strftime("%H:%M:%S"),
-                image_path, client_event_id,
-            ))
-            
+            cursor.execute(
+                sql,
+                (
+                    session_id,
+                    student_id,
+                    lop_id,
+                    display_status,
+                    status,
+                    late_minutes,
+                    method,
+                    confidence or 0,
+                    camera_id,
+                    ghi_chu,
+                    now_dt.strftime("%H:%M:%S"),
+                    image_path,
+                    client_event_id,
+                ),
+            )
+
         _last_log_times[cache_key] = current_time
 
         # Gửi Push Notification (FCM)
-        _send_checkin_notification(sv.get('mssv', ''), now_dt, camera_id, image_path, display_status, late_minutes)
+        _send_checkin_notification(
+            sv.get("mssv", ""),
+            now_dt,
+            camera_id,
+            image_path,
+            display_status,
+            late_minutes,
+        )
 
         return {
-            'success': True,
-            'action': 'checkin',
-            'status': status,
-            'display_status': display_status,
-            'late_minutes': late_minutes,
+            "success": True,
+            "action": "checkin",
+            "status": status,
+            "display_status": display_status,
+            "late_minutes": late_minutes,
         }
     except Exception as e:
         error_str = str(e)
-        if 'uq_phien_sinh_vien' in error_str or 'UNIQUE KEY' in error_str:
+        if "uq_phien_sinh_vien" in error_str or "UNIQUE KEY" in error_str:
             _last_log_times[cache_key] = current_time
             return {
-                'success': True,
-                'action': 'observed',
-                'status': status,
-                'display_status': display_status,
-                'late_minutes': late_minutes,
+                "success": True,
+                "action": "observed",
+                "status": status,
+                "display_status": display_status,
+                "late_minutes": late_minutes,
             }
         print(f"[ATTENDANCE ERROR] {e}")
         return _error("INSERT_FAILED", "Không thể ghi nhận điểm danh do lỗi hệ thống")
 
 
-def _send_checkin_notification(mssv, now_dt, camera_id, image_path, display_status, late_minutes):
+def _send_checkin_notification(
+    mssv, now_dt, camera_id, image_path, display_status, late_minutes
+):
     """Gửi FCM push notification sau khi ghi nhận điểm danh."""
     try:
         from services.fcm_service import notify_student_attendance
@@ -262,7 +296,7 @@ def _send_checkin_notification(mssv, now_dt, camera_id, image_path, display_stat
         image_url = None
         try:
             if image_path:
-                base_url = request.host_url.rstrip('/')
+                base_url = request.host_url.rstrip("/")
                 image_url = f"{base_url}/{image_path}"
         except Exception:
             pass
@@ -273,7 +307,7 @@ def _send_checkin_notification(mssv, now_dt, camera_id, image_path, display_stat
             camera_name=f"Camera {camera_id}",
             image_url=image_url,
             trang_thai=display_status,
-            di_tre_phut=late_minutes
+            di_tre_phut=late_minutes,
         )
     except Exception:
         pass  # Notification thất bại không ảnh hưởng điểm danh
@@ -282,10 +316,10 @@ def _send_checkin_notification(mssv, now_dt, camera_id, image_path, display_stat
 def _error(code, message):
     """Trả về dict lỗi chuẩn."""
     return {
-        'success': False,
-        'action': 'rejected',
-        'error_code': code,
-        'message': message,
+        "success": False,
+        "action": "rejected",
+        "error_code": code,
+        "message": message,
     }
 
 
@@ -369,16 +403,17 @@ def get_history(lop_id=None, date=None, mssv=None, page=1, per_page=50):
 
     for item in items:
         # Chuẩn hóa hiển thị trạng thái
-        status = item.get('status')
+        status = item.get("status")
         if status:
-            item['display_status'] = AttendanceStatus.display(status)
+            item["display_status"] = AttendanceStatus.display(status)
         else:
-            item['display_status'] = item.get('trang_thai', 'Không rõ')
+            item["display_status"] = item.get("trang_thai", "Không rõ")
 
         # Xử lý gio_vao_lop
-        gio_vao_lop_td = item.get('gio_vao_lop')
+        gio_vao_lop_td = item.get("gio_vao_lop")
         if gio_vao_lop_td is not None:
             from datetime import timedelta, time as datetime_time_cls
+
             if isinstance(gio_vao_lop_td, timedelta):
                 total_secs = int(gio_vao_lop_td.total_seconds())
                 hours = total_secs // 3600
@@ -389,22 +424,17 @@ def get_history(lop_id=None, date=None, mssv=None, page=1, per_page=50):
                 minutes = gio_vao_lop_td.minute
                 seconds = gio_vao_lop_td.second
             else:
-                parts = str(gio_vao_lop_td).split(':')
+                parts = str(gio_vao_lop_td).split(":")
                 hours, minutes = int(parts[0]), int(parts[1])
-                seconds = int(parts[2].split('.')[0]) if len(parts) > 2 else 0
-            item['gio_vao_lop'] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                seconds = int(parts[2].split(".")[0]) if len(parts) > 2 else 0
+            item["gio_vao_lop"] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         else:
-            item['gio_vao_lop'] = "07:00:00"
+            item["gio_vao_lop"] = "07:00:00"
 
         # Dùng late_minutes từ DB thay vì tự tính lại
-        item['di_tre_phut'] = int(item.get('late_minutes') or 0)
+        item["di_tre_phut"] = int(item.get("late_minutes") or 0)
 
-    return {
-        "items": items,
-        "total": total,
-        "pages": pages,
-        "current": page
-    }
+    return {"items": items, "total": total, "pages": pages, "current": page}
 
 
 def get_today_summary(lop_id=None):
@@ -473,9 +503,9 @@ def get_student_history(mssv, limit=30):
     """
     results = execute_query(sql, (mssv, limit))
     for r in results:
-        status = r.get('status')
+        status = r.get("status")
         if status:
-            r['display_status'] = AttendanceStatus.display(status)
+            r["display_status"] = AttendanceStatus.display(status)
     return results
 
 
@@ -561,9 +591,20 @@ def get_top_absent_students(limit=5):
 
 # ─── Backward compatibility: giữ hàm log() gọi vào record_attendance() ──────
 
-def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai=None,
-        ghi_chu=None, session_start_time=None, class_start_time="07:00:00",
-        face_image=None, phien_id=None, method="FACE_CAMERA"):
+
+def log(
+    mssv,
+    lop_id=None,
+    do_chinh_xac=0.0,
+    camera_id=0,
+    trang_thai=None,
+    ghi_chu=None,
+    session_start_time=None,
+    class_start_time="07:00:00",
+    face_image=None,
+    phien_id=None,
+    method="FACE_CAMERA",
+):
     """
     [DEPRECATED] Wrapper backward-compatible. Gọi record_attendance() bên trong.
     Các caller cũ vẫn dùng được, nhưng caller mới nên gọi record_attendance() trực tiếp.
@@ -580,6 +621,7 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai=None,
     # Nếu chưa truyền phien_id, thử tìm phiên đang mở
     if not phien_id and lop_id:
         from services.attendance_session_service import AttendanceSessionService
+
         active_sess = AttendanceSessionService.get_active_session(lop_id=lop_id)
         if active_sess:
             phien_id = active_sess["id"]
@@ -596,14 +638,14 @@ def log(mssv, lop_id=None, do_chinh_xac=0.0, camera_id=0, trang_thai=None,
         face_image=face_image,
     )
 
-    if not result or not result.get('success'):
+    if not result or not result.get("success"):
         return False
 
     # Chuyển đổi format cho caller cũ
     return {
-        'action': result.get('action', 'checkin'),
-        'success': True,
-        'trang_thai': result.get('display_status', 'Có mặt'),
-        'status': result.get('status', AttendanceStatus.PRESENT),
-        'late_minutes': result.get('late_minutes', 0),
+        "action": result.get("action", "checkin"),
+        "success": True,
+        "trang_thai": result.get("display_status", "Có mặt"),
+        "status": result.get("status", AttendanceStatus.PRESENT),
+        "late_minutes": result.get("late_minutes", 0),
     }

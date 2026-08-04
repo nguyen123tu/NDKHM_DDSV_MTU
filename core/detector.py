@@ -14,7 +14,7 @@ _instance = None
 class FaceDetector:
     """
     Phát hiện khuôn mặt trong frame ảnh bằng InsightFace SCRFD.
-    
+
     Sử dụng CPUExecutionProvider để chạy trên mọi máy tính.
     Singleton pattern để không load model lặp lại nhiều lần.
     """
@@ -22,15 +22,12 @@ class FaceDetector:
     def __init__(self, det_size=(640, 640)):
         """
         Khởi tạo InsightFace FaceAnalysis.
-        
+
         Args:
             det_size: Kích thước ảnh đầu vào cho detector (width, height)
         """
         print("[AI] Đang tải InsightFace SCRFD model...")
-        self._app = FaceAnalysis(
-            name='buffalo_l',
-            providers=['CPUExecutionProvider']
-        )
+        self._app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
         self._app.prepare(ctx_id=0, det_size=det_size)
         self._det_size = det_size
         print(f"[AI] InsightFace đã sẵn sàng (det_size={det_size})")
@@ -38,10 +35,10 @@ class FaceDetector:
     def detect(self, frame):
         """
         Phát hiện tất cả khuôn mặt trong frame.
-        
+
         Args:
             frame: numpy array BGR từ OpenCV
-            
+
         Returns:
             list: Danh sách các face objects, mỗi face có:
                   - .bbox: [x1, y1, x2, y2]
@@ -57,13 +54,13 @@ class FaceDetector:
     def draw_boxes(self, frame, faces, names=None, similarities=None):
         """
         Vẽ bounding box và tên lên frame.
-        
+
         Args:
             frame: numpy array BGR
             faces: list face objects từ detect()
             names: list tên tương ứng (optional)
             similarities: list điểm similarity (optional)
-            
+
         Returns:
             numpy array: Frame đã được vẽ box
         """
@@ -77,24 +74,34 @@ class FaceDetector:
             sim = similarities[i] if similarities and i < len(similarities) else 0.0
 
             if name == "UNKNOWN":
-                color = (0, 0, 255)      # Đỏ — Kẻ lạ
+                color = (0, 0, 255)  # Đỏ — Kẻ lạ
                 label = "Ke La (Canh Bao)"
             else:
-                color = (0, 255, 0)      # Xanh lá — Đã nhận diện
+                color = (0, 255, 0)  # Xanh lá — Đã nhận diện
                 label = f"{name} ({sim:.0%})"
 
             # Vẽ box và label
             cv2.rectangle(result, (x1, y1), (x2, y2), color, 2)
-            
+
             # Tính kích thước text để vẽ nền
             font = cv2.FONT_HERSHEY_SIMPLEX
             font_scale = 0.6
             thickness = 2
             (text_w, text_h), _ = cv2.getTextSize(label, font, font_scale, thickness)
-            
+
             # Vẽ nền cho text
-            cv2.rectangle(result, (x1, y1 - text_h - 10), (x1 + text_w + 5, y1), color, -1)
-            cv2.putText(result, label, (x1 + 2, y1 - 5), font, font_scale, (255, 255, 255), thickness)
+            cv2.rectangle(
+                result, (x1, y1 - text_h - 10), (x1 + text_w + 5, y1), color, -1
+            )
+            cv2.putText(
+                result,
+                label,
+                (x1 + 2, y1 - 5),
+                font,
+                font_scale,
+                (255, 255, 255),
+                thickness,
+            )
 
         return result
 
@@ -110,7 +117,7 @@ def get_detector(det_size=(640, 640)):
     return _instance
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test: Mở webcam và phát hiện khuôn mặt
     print("=== TEST FACE DETECTOR ===")
     detector = get_detector()
@@ -124,11 +131,18 @@ if __name__ == '__main__':
         faces = detector.detect(frame)
         frame = detector.draw_boxes(frame, faces)
 
-        cv2.putText(frame, f"Faces: {len(faces)}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+        cv2.putText(
+            frame,
+            f"Faces: {len(faces)}",
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (0, 255, 255),
+            2,
+        )
         cv2.imshow("Face Detector Test", frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
     cap.release()

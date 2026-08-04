@@ -64,8 +64,7 @@ NDKHM_DDSV_MTU/
 ├── mobile_flutter/         # Mã nguồn ứng dụng di động (Flutter/Dart)
 ├── static/ & templates/    # Frontend UI (HTML/CSS/JS - Glassmorphism style)
 ├── docker-compose.yml      # Cấu hình triển khai containerization (App, MySQL)
-├── scripts/                # Tiện ích tự động hóa (e.g., auto_swagger.py)
-└── train_*.py              # Mã nguồn huấn luyện mô hình (ResNet, YOLO11)
+└── scripts/                # Tiện ích tự động hóa, bash script & lưu trữ
 ```
 
 ---

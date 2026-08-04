@@ -42,6 +42,7 @@ SYSTEM_PROMPT = """Bạn là **MTU AI Assistant** — trợ lý AI thông minh c
 - Alerts: Telegram Bot
 """
 
+
 class AIChatbot:
     """
     AI Chatbot sử dụng RAG pipeline
@@ -50,14 +51,18 @@ class AIChatbot:
     def __init__(self):
         self._history = {}
         self._lock = threading.Lock()
-        
-        # Mặc định dùng NVIDIA API theo yêu cầu
-        self._nvidia_key = "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"
 
-    def chat(self, question: str, session_id: str = "default", user_context: dict = None) -> dict:
+        # Mặc định dùng NVIDIA API theo yêu cầu
+        self._nvidia_key = (
+            "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"
+        )
+
+    def chat(
+        self, question: str, session_id: str = "default", user_context: dict = None
+    ) -> dict:
         start_time = time.time()
-        
-        if question.strip().startswith('/search '):
+
+        if question.strip().startswith("/search "):
             question = question.strip()[8:].strip()
 
         try:
@@ -65,20 +70,34 @@ class AIChatbot:
             context = ""
             if user_context:
                 from db.connection import execute_one
-                role = user_context.get('role')
-                username = user_context.get('username')
-                
-                if role == 'student':
-                    sv = execute_one("SELECT * FROM sinh_vien WHERE mssv = %s", (username,))
+
+                role = user_context.get("role")
+                username = user_context.get("username")
+
+                if role == "student":
+                    sv = execute_one(
+                        "SELECT * FROM sinh_vien WHERE mssv = %s", (username,)
+                    )
                     if sv:
-                        lop = execute_one("SELECT ten_lop FROM lop_hoc WHERE id = %s", (sv['lop_id'],))
-                        ten_lop = lop['ten_lop'] if lop else "Không rõ"
-                        
-                        total_sessions = execute_one("SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s", (sv['lop_id'],))
-                        present = execute_one("SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND status IN ('PRESENT', 'LATE')", (sv['id'],))
-                        vang = (total_sessions['count'] if total_sessions else 0) - (present['count'] if present else 0)
-                        if vang < 0: vang = 0
-                        
+                        lop = execute_one(
+                            "SELECT ten_lop FROM lop_hoc WHERE id = %s", (sv["lop_id"],)
+                        )
+                        ten_lop = lop["ten_lop"] if lop else "Không rõ"
+
+                        total_sessions = execute_one(
+                            "SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s",
+                            (sv["lop_id"],),
+                        )
+                        present = execute_one(
+                            "SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND status IN ('PRESENT', 'LATE')",
+                            (sv["id"],),
+                        )
+                        vang = (total_sessions["count"] if total_sessions else 0) - (
+                            present["count"] if present else 0
+                        )
+                        if vang < 0:
+                            vang = 0
+
                         realtime_info = (
                             f"\n\n--- THÔNG TIN SINH VIÊN ĐANG CHAT (REALTIME) ---\n"
                             f"- Vai trò: Sinh viên\n"
@@ -90,9 +109,15 @@ class AIChatbot:
                         )
                         context += realtime_info
                 else:
-                    admin = execute_one("SELECT * FROM admin WHERE username = %s", (username,))
+                    admin = execute_one(
+                        "SELECT * FROM admin WHERE username = %s", (username,)
+                    )
                     if admin:
-                        admin_role_name = "Giảng viên" if admin['role'] == 'lecturer' else "Quản trị viên"
+                        admin_role_name = (
+                            "Giảng viên"
+                            if admin["role"] == "lecturer"
+                            else "Quản trị viên"
+                        )
                         realtime_info = (
                             f"\n\n--- THÔNG TIN NGƯỜI DÙNG ĐANG CHAT (REALTIME) ---\n"
                             f"- Vai trò: {admin_role_name}\n"
@@ -103,7 +128,7 @@ class AIChatbot:
                         context += realtime_info
 
             history = self._get_history(session_id)
-            
+
             # Gọi NVIDIA API (Sync) với Tool Calling
             answer = self._call_nvidia(question, context, history, session_id)
 
@@ -111,7 +136,7 @@ class AIChatbot:
 
             return {
                 "answer": answer,
-                "sources": [], # Bỏ sources cố định, Tool search_knowledge sẽ lo việc này
+                "sources": [],  # Bỏ sources cố định, Tool search_knowledge sẽ lo việc này
                 "duration_ms": duration_ms,
                 "backend": "nvidia",
             }
@@ -126,30 +151,46 @@ class AIChatbot:
                 "error": True,
             }
 
-    def chat_stream(self, question: str, session_id: str = "default", user_context: dict = None):
+    def chat_stream(
+        self, question: str, session_id: str = "default", user_context: dict = None
+    ):
         start_time = time.time()
-        
-        if question.strip().startswith('/search '):
+
+        if question.strip().startswith("/search "):
             question = question.strip()[8:].strip()
 
         try:
             context = ""
             if user_context:
                 from db.connection import execute_one
-                role = user_context.get('role')
-                username = user_context.get('username')
-                
-                if role == 'student':
-                    sv = execute_one("SELECT * FROM sinh_vien WHERE mssv = %s", (username,))
+
+                role = user_context.get("role")
+                username = user_context.get("username")
+
+                if role == "student":
+                    sv = execute_one(
+                        "SELECT * FROM sinh_vien WHERE mssv = %s", (username,)
+                    )
                     if sv:
-                        lop = execute_one("SELECT ten_lop FROM lop_hoc WHERE id = %s", (sv['lop_id'],))
-                        ten_lop = lop['ten_lop'] if lop else "Không rõ"
-                        
-                        total_sessions = execute_one("SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s", (sv['lop_id'],))
-                        present = execute_one("SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND status IN ('PRESENT', 'LATE')", (sv['id'],))
-                        vang = (total_sessions['count'] if total_sessions else 0) - (present['count'] if present else 0)
-                        if vang < 0: vang = 0
-                        
+                        lop = execute_one(
+                            "SELECT ten_lop FROM lop_hoc WHERE id = %s", (sv["lop_id"],)
+                        )
+                        ten_lop = lop["ten_lop"] if lop else "Không rõ"
+
+                        total_sessions = execute_one(
+                            "SELECT COUNT(*) as count FROM phien_diem_danh WHERE lop_id = %s",
+                            (sv["lop_id"],),
+                        )
+                        present = execute_one(
+                            "SELECT COUNT(*) as count FROM diem_danh WHERE sinh_vien_id = %s AND status IN ('PRESENT', 'LATE')",
+                            (sv["id"],),
+                        )
+                        vang = (total_sessions["count"] if total_sessions else 0) - (
+                            present["count"] if present else 0
+                        )
+                        if vang < 0:
+                            vang = 0
+
                         realtime_info = (
                             f"\n\n--- THÔNG TIN SINH VIÊN ĐANG CHAT (REALTIME) ---\n"
                             f"- Vai trò: Sinh viên\n"
@@ -161,9 +202,15 @@ class AIChatbot:
                         )
                         context += realtime_info
                 else:
-                    admin = execute_one("SELECT * FROM admin WHERE username = %s", (username,))
+                    admin = execute_one(
+                        "SELECT * FROM admin WHERE username = %s", (username,)
+                    )
                     if admin:
-                        admin_role_name = "Giảng viên" if admin['role'] == 'lecturer' else "Quản trị viên"
+                        admin_role_name = (
+                            "Giảng viên"
+                            if admin["role"] == "lecturer"
+                            else "Quản trị viên"
+                        )
                         realtime_info = (
                             f"\n\n--- THÔNG TIN NGƯỜI DÙNG ĐANG CHAT (REALTIME) ---\n"
                             f"- Vai trò: {admin_role_name}\n"
@@ -174,14 +221,16 @@ class AIChatbot:
                         context += realtime_info
 
             history = self._get_history(session_id)
-            
+
             # Khởi tạo stream không sources trước
             yield f"data: {json.dumps({'type': 'sources', 'sources': []})}\n\n"
 
             # Gọi NVIDIA API Stream
-            for chunk in self._call_nvidia_stream(question, context, history, session_id):
+            for chunk in self._call_nvidia_stream(
+                question, context, history, session_id
+            ):
                 yield chunk
-                
+
             duration_ms = int((time.time() - start_time) * 1000)
             yield f"data: {json.dumps({'type': 'done', 'duration_ms': duration_ms})}\n\n"
 
@@ -213,14 +262,16 @@ class AIChatbot:
             )
         return "\n".join(parts)
 
-    def _call_nvidia(self, question: str, context: str, history: list, session_id: str) -> str:
+    def _call_nvidia(
+        self, question: str, context: str, history: list, session_id: str
+    ) -> str:
         url = "https://integrate.api.nvidia.com/v1/chat/completions"
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for msg in history[-6:]:
             # Filter out tool role messages from simple history just in case, or adapt it.
             # LLaMA 3.1 supports tool and function roles.
             messages.append(msg)
-        
+
         user_prompt = f"{context}\n\n## Câu hỏi:\n{question}" if context else question
         self._add_to_history(session_id, {"role": "user", "content": user_prompt})
         messages.append({"role": "user", "content": user_prompt})
@@ -233,51 +284,57 @@ class AIChatbot:
             "top_p": 0.95,
             "stream": False,
             "tools": TOOLS_SCHEMA,
-            "tool_choice": "auto"
+            "tool_choice": "auto",
         }
-        
+
         headers = {
             "Authorization": f"Bearer {self._nvidia_key}",
             "Accept": "application/json",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
 
         response = requests.post(url, json=payload, headers=headers, timeout=60)
         if response.status_code != 200:
-            raise ValueError(f"NVIDIA API Error ({response.status_code}): {response.text[:200]}")
-            
+            raise ValueError(
+                f"NVIDIA API Error ({response.status_code}): {response.text[:200]}"
+            )
+
         data = response.json()
         message_obj = data["choices"][0]["message"]
-        
+
         # Kiểm tra xem LLM có muốn gọi Tool không
         if message_obj.get("tool_calls"):
             self._add_to_history(session_id, message_obj)
             messages.append(message_obj)
-            
+
             # Thực thi tất cả các tools được yêu cầu
             for tool_call in message_obj["tool_calls"]:
                 tool_response = execute_tool(tool_call["function"])
                 tool_msg = {
                     "role": "tool",
                     "tool_call_id": tool_call["id"],
-                    "content": tool_response
+                    "content": tool_response,
                 }
                 self._add_to_history(session_id, tool_msg)
                 messages.append(tool_msg)
-            
+
             # Gọi API lần 2 sau khi có kết quả từ Tool
             payload["messages"] = messages
             # Bỏ tools ở lần gọi thứ 2 để nó trả lời luôn
             del payload["tools"]
             del payload["tool_choice"]
-            
+
             response2 = requests.post(url, json=payload, headers=headers, timeout=60)
             if response2.status_code != 200:
-                raise ValueError(f"NVIDIA API Tool Res Error ({response2.status_code}): {response2.text[:200]}")
-            
+                raise ValueError(
+                    f"NVIDIA API Tool Res Error ({response2.status_code}): {response2.text[:200]}"
+                )
+
             data2 = response2.json()
             final_content = data2["choices"][0]["message"]["content"]
-            self._add_to_history(session_id, {"role": "assistant", "content": final_content})
+            self._add_to_history(
+                session_id, {"role": "assistant", "content": final_content}
+            )
             return final_content
         else:
             # Không gọi tool, trả lời trực tiếp
@@ -285,7 +342,9 @@ class AIChatbot:
             self._add_to_history(session_id, {"role": "assistant", "content": content})
             return content
 
-    def _call_nvidia_stream(self, question: str, context: str, history: list, session_id: str):
+    def _call_nvidia_stream(
+        self, question: str, context: str, history: list, session_id: str
+    ):
         # Vì streaming tool_calls cần tích lũy chuỗi JSON khá phức tạp,
         # Cách tốt nhất là tái sử dụng logic _call_nvidia() sync bên trên, nhưng trả về stream fake ở đoạn cuối.
         # Hoặc, để đơn giản, ta fallback stream về _call_nvidia() (bất đồng bộ nội bộ) và stream chunk ra.
@@ -293,7 +352,7 @@ class AIChatbot:
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for msg in history[-6:]:
             messages.append(msg)
-            
+
         user_prompt = f"{context}\n\n## Câu hỏi:\n{question}" if context else question
         self._add_to_history(session_id, {"role": "user", "content": user_prompt})
         messages.append({"role": "user", "content": user_prompt})
@@ -304,15 +363,15 @@ class AIChatbot:
             "max_tokens": 4096,
             "temperature": 0.5,
             "top_p": 0.95,
-            "stream": False, # Tạm tắt stream để xử lý tool gọi nội bộ trước
+            "stream": False,  # Tạm tắt stream để xử lý tool gọi nội bộ trước
             "tools": TOOLS_SCHEMA,
-            "tool_choice": "auto"
+            "tool_choice": "auto",
         }
-        
+
         headers = {
             "Authorization": f"Bearer {self._nvidia_key}",
             "Accept": "application/json",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
 
         try:
@@ -321,46 +380,51 @@ class AIChatbot:
             if response.status_code != 200:
                 yield f"data: {json.dumps({'type': 'error', 'text': f'Lỗi NVIDIA API: {response.text[:200]}' })}\n\n"
                 return
-            
+
             data = response.json()
             message_obj = data["choices"][0]["message"]
-            
+
             # 2. Nếu có Tool Call -> Thực thi -> Gọi API lần 2 với stream = True
             if message_obj.get("tool_calls"):
                 tool_name = message_obj["tool_calls"][0]["function"]["name"]
                 yield f"data: {json.dumps({'type': 'tool_call', 'tool_name': tool_name})}\n\n"
-                
+
                 self._add_to_history(session_id, message_obj)
                 messages.append(message_obj)
-                
+
                 for tool_call in message_obj["tool_calls"]:
                     tool_response = execute_tool(tool_call["function"])
                     tool_msg = {
                         "role": "tool",
                         "tool_call_id": tool_call["id"],
-                        "content": tool_response
+                        "content": tool_response,
                     }
                     self._add_to_history(session_id, tool_msg)
                     messages.append(tool_msg)
-                
+
                 payload["messages"] = messages
                 payload["stream"] = True
                 del payload["tools"]
                 del payload["tool_choice"]
-                
+
                 # Gọi API Stream thực sự sau khi có tool result
-                response_stream = requests.post(url, json=payload, headers=headers, stream=True, timeout=120)
+                response_stream = requests.post(
+                    url, json=payload, headers=headers, stream=True, timeout=120
+                )
                 full_answer = ""
                 for line in response_stream.iter_lines():
                     if line:
-                        decoded_line = line.decode('utf-8')
+                        decoded_line = line.decode("utf-8")
                         if decoded_line.startswith("data: "):
                             data_str = decoded_line[6:].strip()
                             if data_str == "[DONE]":
                                 break
                             try:
                                 stream_data = json.loads(data_str)
-                                if "choices" in stream_data and len(stream_data["choices"]) > 0:
+                                if (
+                                    "choices" in stream_data
+                                    and len(stream_data["choices"]) > 0
+                                ):
                                     delta = stream_data["choices"][0].get("delta", {})
                                     chunk_text = delta.get("content", "")
                                     if chunk_text:
@@ -368,17 +432,21 @@ class AIChatbot:
                                         yield f"data: {json.dumps({'type': 'chunk', 'text': chunk_text})}\n\n"
                             except Exception:
                                 pass
-                self._add_to_history(session_id, {"role": "assistant", "content": full_answer})
-            
+                self._add_to_history(
+                    session_id, {"role": "assistant", "content": full_answer}
+                )
+
             else:
                 # Không gọi tool, giả lập stream lại từ nội dung đã lấy (vì ta đã lỡ request sync ở trên)
                 content = message_obj.get("content", "")
-                self._add_to_history(session_id, {"role": "assistant", "content": content})
-                
+                self._add_to_history(
+                    session_id, {"role": "assistant", "content": content}
+                )
+
                 # Cắt chuỗi để giả lập stream nhanh
                 chunk_size = 20
                 for i in range(0, len(content), chunk_size):
-                    chunk = content[i:i+chunk_size]
+                    chunk = content[i : i + chunk_size]
                     yield f"data: {json.dumps({'type': 'chunk', 'text': chunk})}\n\n"
                     time.sleep(0.01)
 
@@ -393,15 +461,18 @@ class AIChatbot:
         with self._lock:
             if session_id not in self._history:
                 self._history[session_id] = []
-            
+
             # OpenAI format dict instead of unpacking strings
             self._history[session_id].append(message)
-            
+
             if len(self._history[session_id]) > 30:
                 self._history[session_id] = self._history[session_id][-30:]
 
+
 # ─── SINGLETON ───────────────────────────────────────────────────────────
 _chatbot_instance = None
+
+
 def get_chatbot() -> AIChatbot:
     global _chatbot_instance
     if _chatbot_instance is None:

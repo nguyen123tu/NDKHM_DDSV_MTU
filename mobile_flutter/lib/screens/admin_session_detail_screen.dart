@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../services/api_service.dart';
 import '../services/export_service.dart';
 import '../theme/app_theme.dart';
@@ -18,7 +19,8 @@ class AdminSessionDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<AdminSessionDetailScreen> createState() => _AdminSessionDetailScreenState();
+  State<AdminSessionDetailScreen> createState() =>
+      _AdminSessionDetailScreenState();
 }
 
 class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
@@ -34,7 +36,8 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
     super.initState();
     _loadDetails();
     // Auto-refresh mỗi 10 giây để cập nhật khi SV điểm danh trên Kiosk
-    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) => _silentRefresh());
+    _refreshTimer =
+        Timer.periodic(const Duration(seconds: 10), (_) => _silentRefresh());
   }
 
   @override
@@ -88,11 +91,16 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Chi tiết: ${widget.tenLop}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text('Chi tiết: ${widget.tenLop}',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: Colors.transparent,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_2, color: AppTheme.primary),
+            onPressed: _showQRCodeDialog,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: AppTheme.secondary),
             onPressed: _loadDetails,
@@ -102,13 +110,82 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
       body: Stack(
         children: [
           Container(color: Theme.of(context).scaffoldBackgroundColor),
-
           _isLoading
-              ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppTheme.primary))
               : _error != null
-                  ? Center(child: Text(_error!, style: const TextStyle(color: Colors.redAccent)))
+                  ? Center(
+                      child: Text(_error!,
+                          style: const TextStyle(color: Colors.redAccent)))
                   : _buildContent(),
         ],
+      ),
+    );
+  }
+
+  void _showQRCodeDialog() {
+    final qrData = 'MTUFACE_SESSION_${widget.sessionId}';
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Mã QR Điểm Danh',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Cho sinh viên quét mã này để điểm danh',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: QrImageView(
+                  data: qrData,
+                  version: QrVersions.auto,
+                  size: 200.0,
+                  backgroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Đóng',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -127,11 +204,14 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildStatInfo('Tổng SV', _students.length.toString(), AppTheme.primary, Icons.groups),
+              _buildStatInfo('Tổng SV', _students.length.toString(),
+                  AppTheme.primary, Icons.groups),
               Container(width: 1, height: 40, color: Colors.white10),
-              _buildStatInfo('Có mặt', present.toString(), Colors.greenAccent, Icons.how_to_reg),
+              _buildStatInfo('Có mặt', present.toString(), Colors.greenAccent,
+                  Icons.how_to_reg),
               Container(width: 1, height: 40, color: Colors.white10),
-              _buildStatInfo('Vắng', absent.toString(), Colors.redAccent, Icons.person_off),
+              _buildStatInfo('Vắng', absent.toString(), Colors.redAccent,
+                  Icons.person_off),
             ],
           ),
         ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, end: 0),
@@ -144,34 +224,43 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
             itemBuilder: (context, index) {
               final student = _students[index];
               bool isPresent = student['trang_thai'] == 'Co mat';
-              
+
               return NeuContainer(
                 margin: const EdgeInsets.only(bottom: 12),
                 borderRadius: 16,
                 isPressed: isPresent,
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: isPresent ? Colors.greenAccent.withValues(alpha: 0.1) : Colors.redAccent.withValues(alpha: 0.1),
+                      color: isPresent
+                          ? Colors.greenAccent.withValues(alpha: 0.1)
+                          : Colors.redAccent.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      isPresent ? Icons.check_circle_outline : Icons.cancel_outlined,
+                      isPresent
+                          ? Icons.check_circle_outline
+                          : Icons.cancel_outlined,
                       color: isPresent ? Colors.greenAccent : Colors.redAccent,
                       size: 24,
                     ),
                   ),
                   title: Text(
-                    student['ho_ten'] ?? 'Chưa cập nhật', 
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary, fontSize: 16),
+                    student['ho_ten'] ?? 'Chưa cập nhật',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                        fontSize: 16),
                   ),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      student['mssv'] ?? '', 
-                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                      student['mssv'] ?? '',
+                      style: const TextStyle(
+                          color: AppTheme.textMuted, fontSize: 13),
                     ),
                   ),
                   trailing: Column(
@@ -179,15 +268,20 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isPresent ? Colors.greenAccent.withValues(alpha: 0.1) : Colors.redAccent.withValues(alpha: 0.1),
+                          color: isPresent
+                              ? Colors.greenAccent.withValues(alpha: 0.1)
+                              : Colors.redAccent.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           isPresent ? 'CÓ MẶT' : 'VẮNG',
                           style: TextStyle(
-                            color: isPresent ? Colors.greenAccent : Colors.redAccent,
+                            color: isPresent
+                                ? Colors.greenAccent
+                                : Colors.redAccent,
                             fontWeight: FontWeight.bold,
                             fontSize: 11,
                           ),
@@ -197,12 +291,18 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
                       if (student['thoi_gian'] != null)
                         Text(
                           student['thoi_gian'].toString(),
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontFamily: 'monospace'),
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary,
+                              fontFamily: 'monospace'),
                         ),
                     ],
                   ),
                 ),
-              ).animate().fadeIn(delay: Duration(milliseconds: 50 * index)).slideX(begin: 0.1, end: 0);
+              )
+                  .animate()
+                  .fadeIn(delay: Duration(milliseconds: 50 * index))
+                  .slideX(begin: 0.1, end: 0);
             },
           ),
         ),
@@ -210,15 +310,22 @@ class _AdminSessionDetailScreenState extends State<AdminSessionDetailScreen> {
     );
   }
 
-  Widget _buildStatInfo(String label, String value, Color color, IconData icon) {
+  Widget _buildStatInfo(
+      String label, String value, Color color, IconData icon) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, color: color, size: 24),
         const SizedBox(height: 8),
-        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+        Text(value,
+            style: TextStyle(
+                fontSize: 22, fontWeight: FontWeight.bold, color: color)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w500)),
       ],
     );
   }

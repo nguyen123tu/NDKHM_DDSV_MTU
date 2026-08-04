@@ -41,7 +41,8 @@ class ConnectivityProvider with ChangeNotifier {
 
   /// Lắng nghe thay đổi kết nối liên tục
   void _startListening() {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen((result) {
       final wasOffline = !_isOnline;
       _updateConnectionStatus(result);
 

@@ -4,16 +4,19 @@ import numpy as np
 import onnxruntime as ort
 from config import Config
 
+
 class AntiSpoofingModel:
     def __init__(self, model_path="models/MiniFASNetV2.onnx"):
         self.model_path = os.path.join(Config.BASE_DIR, model_path)
         self.session = None
         self.scale = 2.7
         self.input_size = (80, 80)
-        
+
         if os.path.exists(self.model_path):
             try:
-                self.session = ort.InferenceSession(self.model_path, providers=['CPUExecutionProvider'])
+                self.session = ort.InferenceSession(
+                    self.model_path, providers=["CPUExecutionProvider"]
+                )
                 self.input_name = self.session.get_inputs()[0].name
             except Exception as e:
                 print(f"[AntiSpoofing] Lỗi load mô hình: {e}")
@@ -54,19 +57,19 @@ class AntiSpoofingModel:
     def predict(self, image, bbox_xyxy):
         if self.session is None:
             return True, 1.0, "Không có mô hình"
-            
+
         bbox_xywh = self._xyxy2xywh(bbox_xyxy)
         input_tensor = self._preprocess(image, bbox_xywh)
-        
+
         outputs = self.session.run(None, {self.input_name: input_tensor})
         logits = outputs[0]
-        
+
         e_x = np.exp(logits - np.max(logits, axis=1, keepdims=True))
         probs = e_x / e_x.sum(axis=1, keepdims=True)
-        
+
         label_idx = int(np.argmax(probs))
         score = float(probs[0, label_idx])
-        
+
         # label_idx: 1 là Real, 0/2 là Fake
         if label_idx == 1 and score > 0.6:
             return True, score, "Người thật"
@@ -74,7 +77,10 @@ class AntiSpoofingModel:
             reason = "Màn hình/Điện thoại" if label_idx == 2 else "Ảnh in/Giấy"
             return False, score, f"Phát hiện giả mạo ({reason})"
 
+
 _anti_spoofing_instance = None
+
+
 def get_anti_spoofing():
     global _anti_spoofing_instance
     if _anti_spoofing_instance is None:

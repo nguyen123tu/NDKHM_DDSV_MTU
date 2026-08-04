@@ -68,3 +68,6 @@ _backup/
 SO TAY SV 2020v4.pdf
 _fix_db.py
 migrate_old_database.py
+
+# Archived scripts
+scripts/archive/

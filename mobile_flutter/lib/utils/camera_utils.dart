@@ -10,7 +10,6 @@ class CameraUtils {
   /// Chuyển đổi CameraImage (từ ImageStream) sang InputImage cho ML Kit
   static InputImage? convertCameraImageToInputImage(
       CameraImage image, CameraDescription camera) {
-    
     final orientations = {
       DeviceOrientation.portraitUp: 0,
       DeviceOrientation.landscapeLeft: 90,
@@ -20,7 +19,7 @@ class CameraUtils {
 
     final sensorOrientation = camera.sensorOrientation;
     InputImageRotation? rotation;
-    
+
     if (Platform.isIOS) {
       rotation = InputImageRotationValue.fromRawValue(sensorOrientation);
     } else if (Platform.isAndroid) {
@@ -34,14 +33,14 @@ class CameraUtils {
       }
       rotation = InputImageRotationValue.fromRawValue(rotationCompensation);
     }
-    
+
     if (rotation == null) return null;
 
     final format = InputImageFormatValue.fromRawValue(image.format.raw);
     if (format == null ||
         (Platform.isAndroid && format != InputImageFormat.nv21) ||
         (Platform.isIOS && format != InputImageFormat.bgra8888)) {
-      // Android requires nv21 format for ML Kit InputImage from bytes, 
+      // Android requires nv21 format for ML Kit InputImage from bytes,
       // but camera plugin returns yuv420 by default on android.
       // Google ML Kit flutter package handles yuv420 to nv21 automatically if format is specified correctly,
       // actually we can use yuv420 directly if we provide all planes.
@@ -51,14 +50,16 @@ class CameraUtils {
 
     // Đối với iOS, image.planes chỉ có 1 phần tử (bgra8888)
     // Đối với Android, image.planes có 3 phần tử (Y, U, V)
-    final bytes = Platform.isAndroid 
-        ? _concatenatePlanes(image.planes) 
+    final bytes = Platform.isAndroid
+        ? _concatenatePlanes(image.planes)
         : image.planes[0].bytes;
 
     final inputImageData = InputImageMetadata(
       size: Size(image.width.toDouble(), image.height.toDouble()),
       rotation: rotation,
-      format: Platform.isAndroid ? InputImageFormat.nv21 : InputImageFormat.bgra8888,
+      format: Platform.isAndroid
+          ? InputImageFormat.nv21
+          : InputImageFormat.bgra8888,
       bytesPerRow: image.planes[0].bytesPerRow,
     );
 
@@ -82,21 +83,22 @@ class CameraUtils {
   /// Dựa vào kênh Y (Luminance) của ảnh YUV420 (Android) hoặc RGB (iOS)
   static bool isImageTooDark(CameraImage image, {int threshold = 50}) {
     if (image.planes.isEmpty) return false;
-    
+
     try {
-      final bytes = image.planes[0].bytes; // Kênh độ sáng Y hoặc kênh R trong BGRA
+      final bytes =
+          image.planes[0].bytes; // Kênh độ sáng Y hoặc kênh R trong BGRA
       int totalLuminance = 0;
-      
+
       // Lấy mẫu (sample) để tránh tốn CPU: tính trung bình 1000 pixels ngẫu nhiên hoặc cách đều
       int step = (bytes.length / 1000).ceil();
       if (step == 0) step = 1;
-      
+
       int sampleCount = 0;
       for (int i = 0; i < bytes.length; i += step) {
         totalLuminance += bytes[i];
         sampleCount++;
       }
-      
+
       double avgLuminance = totalLuminance / sampleCount;
       return avgLuminance < threshold;
     } catch (e) {
@@ -105,15 +107,16 @@ class CameraUtils {
   }
 
   /// Crop khuôn mặt từ ảnh Camera (File) dựa vào boundingBox của ML Kit
-  static Future<File?> cropFaceFromImage(File originalFile, Rect boundingBox) async {
+  static Future<File?> cropFaceFromImage(
+      File originalFile, Rect boundingBox) async {
     try {
       final bytes = await originalFile.readAsBytes();
       final decodedImage = img.decodeImage(bytes);
       if (decodedImage == null) return null;
 
       // Tính toán vùng crop, thêm padding (mở rộng bounding box) để không bị mất góc mặt
-      final int padding = 30; 
-      
+      final int padding = 30;
+
       int x = (boundingBox.left - padding).toInt();
       int y = (boundingBox.top - padding).toInt();
       int w = (boundingBox.width + padding * 2).toInt();
@@ -125,15 +128,17 @@ class CameraUtils {
       if (x + w > decodedImage.width) w = decodedImage.width - x;
       if (y + h > decodedImage.height) h = decodedImage.height - y;
 
-      final croppedImage = img.copyCrop(decodedImage, x: x, y: y, width: w, height: h);
-      
+      final croppedImage =
+          img.copyCrop(decodedImage, x: x, y: y, width: w, height: h);
+
       // Nén ảnh đã crop (giảm quality để tiết kiệm dung lượng)
       final compressedBytes = img.encodeJpg(croppedImage, quality: 80);
-      
+
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/cropped_face_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final tempFile = File(
+          '${tempDir.path}/cropped_face_${DateTime.now().millisecondsSinceEpoch}.jpg');
       await tempFile.writeAsBytes(compressedBytes);
-      
+
       return tempFile;
     } catch (e) {
       debugPrint('Lỗi crop ảnh: $e');
