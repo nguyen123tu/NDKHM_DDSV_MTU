@@ -1,0 +1,15 @@
+# Bỏ qua các file tĩnh và giao diện web (HTML, CSS, JS)
+static/** linguist-vendored
+templates/** linguist-vendored
+
+# Bỏ qua code C++, C, CMake, Swift, Kotlin... sinh ra tự động từ các nền tảng của Flutter
+mobile_flutter/windows/** linguist-vendored
+mobile_flutter/linux/** linguist-vendored
+mobile_flutter/macos/** linguist-vendored
+mobile_flutter/ios/** linguist-vendored
+mobile_flutter/android/** linguist-vendored
+mobile_flutter/web/** linguist-vendored
+
+# Đánh dấu các file docs/README không tính vào thống kê code
+docs/** linguist-documentation
+README.md linguist-documentation
