@@ -30,7 +30,7 @@ def _get_pool():
                         ),
                         mincached=2,
                         maxcached=10,
-                        blocking=True,
+                        blocking=Config.DB_POOL_BLOCKING,
                         server=Config.DB_HOST,
                         port=Config.DB_PORT,
                         user=Config.DB_USER,
@@ -38,6 +38,8 @@ def _get_pool():
                         database=Config.DB_NAME,
                         as_dict=True,
                         autocommit=False,
+                        login_timeout=Config.DB_LOGIN_TIMEOUT_SEC,
+                        timeout=Config.DB_QUERY_TIMEOUT_SEC,
                     )
                     print("[DB POOL] Đã khởi tạo kết nối Pool (DBUtils.PooledDB)")
                 except ImportError:
@@ -67,6 +69,8 @@ def get_db():
                 database=Config.DB_NAME,
                 as_dict=True,
                 autocommit=False,
+                login_timeout=Config.DB_LOGIN_TIMEOUT_SEC,
+                timeout=Config.DB_QUERY_TIMEOUT_SEC,
             )
             return conn
     except Exception as e:

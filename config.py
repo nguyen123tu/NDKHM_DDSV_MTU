@@ -32,6 +32,9 @@ class Config:
     DB_USER = os.getenv("DB_USER", "sa")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "")
     DB_MAX_CONNECTIONS = int(os.getenv("DB_MAX_CONNECTIONS", 20))
+    DB_LOGIN_TIMEOUT_SEC = int(os.getenv("DB_LOGIN_TIMEOUT_SEC", 5))
+    DB_QUERY_TIMEOUT_SEC = int(os.getenv("DB_QUERY_TIMEOUT_SEC", 15))
+    DB_POOL_BLOCKING = os.getenv("DB_POOL_BLOCKING", "false").lower() == "true"
 
     # Đường dẫn thư mục
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -61,6 +64,7 @@ class Config:
     DEEPFACE_ANTI_SPOOFING = (
         os.getenv("DEEPFACE_ANTI_SPOOFING", "false").lower() == "true"
     )
+    ANTI_SPOOF_FAIL_OPEN = os.getenv("ANTI_SPOOF_FAIL_OPEN", "false").lower() == "true"
 
     # Face Analysis: Phân tích thuộc tính khuôn mặt khi điểm danh
     # Options: age, gender, emotion, race (phân tách bằng dấu phẩy)
@@ -84,7 +88,10 @@ class Config:
 
     # Camera
     DET_SIZE = (640, 640)
-    MAX_FPS = 30
+    MAX_FPS = max(1, int(os.getenv("MAX_FPS", 12)))
+    AI_FRAME_SKIP = max(1, int(os.getenv("AI_FRAME_SKIP", 2)))
+    WORKER_STOP_TIMEOUT_SEC = max(0.1, float(os.getenv("WORKER_STOP_TIMEOUT_SEC", 3)))
+    CAMERA_RECONNECT_MAX_SEC = max(1.0, float(os.getenv("CAMERA_RECONNECT_MAX_SEC", 10)))
 
     # Telegram
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")

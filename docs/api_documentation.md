@@ -27,23 +27,24 @@ Dự án MTUFace cung cấp một hệ thống API mạnh mẽ, cho phép giao t
   - `location`: Vị trí gắn thiết bị (VD: Phòng máy tính).
 
 ## 3. API Tích hợp AI Chatbot (RAG)
-Backend cung cấp 2 Endpoint để tương tác với AI:
+Backend cung cấp các Endpoint để tương tác với AI:
 
 ### A. Non-Streaming Chatbot (Đợi trả lời 1 lần)
-- **URL**: `/api/chatbot/ask`
+- **URL**: `/chatbot/ask` (Đã chuyển thành route chung trên Flask thay vì mobile riêng biệt)
 - **Method**: `POST`
-- **Payload (JSON)**: `{"question": "Bạn tên gì?", "session_id": "123"}`
+- **Payload (JSON)**: `{"question": "Bạn tên gì?"}`
 - **Kết quả trả về (JSON)**: `{"answer": "...", "sources": [...]}`
+- **Lưu ý**: Endpoint này ít được khuyên dùng do thời gian chờ đợi phản hồi từ LLM lâu.
 
-### B. Streaming Chatbot (Trả chữ chạy mượt mà - Đề xuất)
-- **URL**: `/api/chatbot/ask_stream`
+### B. Streaming Chatbot (Trả chữ chạy mượt mà - Mặc định cho Mobile & Web)
+- **URL**: `/chatbot/ask_stream`
 - **Method**: `POST`
-- **Mô tả**: Trả về dữ liệu kiểu `text/event-stream` (Server-Sent Events - SSE). Giải pháp này giúp hiển thị câu trả lời ngay lập tức từng chữ một như ChatGPT.
-- **Tính năng đặc biệt (`/search`)**:
-  - Nếu người dùng nhập câu hỏi có tiền tố `/search` (Ví dụ: `/search Thời tiết Vĩnh Long`), AI sẽ tự động bỏ qua dữ liệu cục bộ, gọi thư viện **DuckDuckGo** đi quét dữ liệu mạng Internet, rồi trả lời cho người dùng bằng kiến thức mới nhất.
-- **Hỗ trợ Backend LLM**:
-  - `gemini`: Sử dụng API của Google (Nhanh, thông minh).
-  - `lmstudio`: Chạy Local AI hoàn toàn miễn phí trên cổng `127.0.0.1:1234`.
+- **Mô tả**: Trả về dữ liệu kiểu `text/event-stream` (Server-Sent Events - SSE). Giải pháp này giúp hiển thị câu trả lời ngay lập tức từng chữ một như ChatGPT, hỗ trợ tốt cho giao diện Mobile Flutter và Web.
+
+### C. Lịch sử Chat
+- **URL**: `/chatbot/history`
+- **Method**: `GET`
+- **Mô tả**: Lấy danh sách tối đa 30 tin nhắn gần nhất từ Database (bảng `chat_message` và `chat_session`). Lịch sử được lưu vĩnh viễn theo người dùng.
 
 ## 4. WebSockets (Socket.IO) Real-time
 - Dự án sử dụng Socket.IO để phát tín hiệu realtime từ Server xuống các trang Web.

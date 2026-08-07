@@ -5,10 +5,14 @@
 {% block page_title %}Danh sách Tài khoản{% endblock %}
 
 {% block content %}
+<!-- Tài khoản Hệ thống -->
 <div class="bg-surface border border-outline-variant rounded-2xl overflow-hidden mb-lg shadow-sm hover-card">
-    <div class="p-lg border-b border-outline-variant flex flex-col sm:flex-row justify-between items-start sm:items-center gap-md">
-        <h2 class="text-lg font-bold text-on-surface">Tài khoản Hệ thống</h2>
-        <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+    <div class="p-lg border-b border-outline-variant flex flex-col sm:flex-row justify-between items-start sm:items-center gap-md bg-surface-container-low/30">
+        <h2 class="text-lg font-bold text-on-surface flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">admin_panel_settings</span>
+            Tài khoản Hệ thống (Admin / Giảng viên)
+        </h2>
+        <button onclick="openAddModal('giang_vien')"
             class="btn-gradient flex items-center gap-sm px-lg py-sm font-semibold rounded-full shadow-sm transition-transform active:scale-95">
             <span class="material-symbols-outlined text-[20px]">person_add</span>
             <span>Thêm Giảng viên</span>
@@ -23,35 +27,42 @@
                     <th class="py-md px-lg font-semibold">Tên đăng nhập</th>
                     <th class="py-md px-lg font-semibold">Họ tên</th>
                     <th class="py-md px-lg font-semibold">Vai trò</th>
-                    <th class="py-md px-lg font-semibold text-center w-32">Thao tác</th>
+                    <th class="py-md px-lg font-semibold text-center w-40">Thao tác</th>
                 </tr>
             </thead>
             <tbody class="text-on-surface">
-                {% for user in users %}
+                {% for user in admin_users %}
                 <tr class="border-b border-outline-variant/50 hover:bg-surface-container-lowest transition-colors group">
                     <td class="py-md px-lg text-on-surface-variant">#{{ user.id }}</td>
                     <td class="py-md px-lg font-medium">{{ user.username }}</td>
                     <td class="py-md px-lg">{{ user.ho_ten }}</td>
                     <td class="py-md px-lg">
                         {% if user.role == 'admin' %}
-                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-error/10 text-error text-xs font-bold uppercase tracking-wider">
+                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-error/10 text-error text-xs font-bold uppercase tracking-wider border border-error/20">
                             Admin
                         </span>
                         {% else %}
-                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
+                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider border border-primary/20">
                             Giảng viên
                         </span>
                         {% endif %}
                     </td>
                     <td class="py-md px-lg text-center">
                         {% if user.id != session.get('admin_id') %}
-                        <form action="{{ url_for('users.delete', id=user.id) }}" method="POST" class="inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tài khoản này không?');">
-                            <button type="submit"
-                                class="p-xs text-error/70 hover:text-error hover:bg-error/10 rounded-full transition-colors tooltip"
-                                data-tip="Xóa">
-                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                        <div class="flex items-center justify-center gap-2">
+                            <button type="button" onclick="openResetPasswordModal('{{ user.role }}', {{ user.id }}, '{{ user.username }}')"
+                                class="p-2 bg-surface-container-high hover:bg-secondary/10 text-on-surface-variant hover:text-secondary rounded-full transition-colors tooltip"
+                                data-tip="Đổi mật khẩu">
+                                <span class="material-symbols-outlined text-[18px]">key</span>
                             </button>
-                        </form>
+                            <form action="{{ url_for('users.delete', role=user.role, id=user.id) }}" method="POST" class="inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tài khoản này không?');">
+                                <button type="submit"
+                                    class="p-2 bg-surface-container-high hover:bg-error/10 text-error/70 hover:text-error rounded-full transition-colors tooltip"
+                                    data-tip="Xóa">
+                                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                            </form>
+                        </div>
                         {% endif %}
                     </td>
                 </tr>
@@ -70,13 +81,81 @@
     </div>
 </div>
 
-<!-- Modal Thêm Giảng viên -->
-<div id="addModal" class="fixed inset-0 bg-scrim/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-md">
+<!-- Tài khoản Sinh viên -->
+<div class="bg-surface border border-outline-variant rounded-2xl overflow-hidden shadow-sm hover-card">
+    <div class="p-lg border-b border-outline-variant flex flex-col sm:flex-row justify-between items-start sm:items-center gap-md bg-surface-container-low/30">
+        <h2 class="text-lg font-bold text-on-surface flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">school</span>
+            Tài khoản Sinh viên (Mobile App)
+        </h2>
+        <button onclick="openAddModal('sinh_vien')"
+            class="bg-secondary text-on-secondary flex items-center gap-sm px-lg py-sm font-semibold rounded-full shadow-sm transition-transform active:scale-95 hover:bg-secondary/90">
+            <span class="material-symbols-outlined text-[20px]">person_add</span>
+            <span>Thêm Sinh viên</span>
+        </button>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-surface-container-low text-on-surface-variant text-sm border-b border-outline-variant">
+                    <th class="py-md px-lg font-semibold w-16">ID</th>
+                    <th class="py-md px-lg font-semibold">Tên đăng nhập (MSSV)</th>
+                    <th class="py-md px-lg font-semibold">Họ tên</th>
+                    <th class="py-md px-lg font-semibold">Lớp học</th>
+                    <th class="py-md px-lg font-semibold text-center w-40">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody class="text-on-surface">
+                {% for user in student_users %}
+                <tr class="border-b border-outline-variant/50 hover:bg-surface-container-lowest transition-colors group">
+                    <td class="py-md px-lg text-on-surface-variant">#{{ user.id }}</td>
+                    <td class="py-md px-lg font-mono font-medium">{{ user.username }}</td>
+                    <td class="py-md px-lg">{{ user.ho_ten }}</td>
+                    <td class="py-md px-lg">
+                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-surface-container-highest text-on-surface text-xs font-bold border border-outline-variant/50">
+                            {{ user.ten_lop or 'Chưa phân lớp' }}
+                        </span>
+                    </td>
+                    <td class="py-md px-lg text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button type="button" onclick="openResetPasswordModal('sinh_vien', {{ user.id }}, '{{ user.username }}')"
+                                class="p-2 bg-surface-container-high hover:bg-secondary/10 text-on-surface-variant hover:text-secondary rounded-full transition-colors tooltip"
+                                data-tip="Đổi mật khẩu">
+                                <span class="material-symbols-outlined text-[18px]">key</span>
+                            </button>
+                            <form action="{{ url_for('users.delete', role='sinh_vien', id=user.id) }}" method="POST" class="inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tài khoản sinh viên này không?');">
+                                <button type="submit"
+                                    class="p-2 bg-surface-container-high hover:bg-error/10 text-error/70 hover:text-error rounded-full transition-colors tooltip"
+                                    data-tip="Xóa">
+                                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="py-xl text-center text-on-surface-variant">
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="material-symbols-outlined text-4xl mb-sm opacity-50">school</span>
+                            <p>Chưa có tài khoản sinh viên nào.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Thêm Tài khoản -->
+<div id="addModal" class="fixed inset-0 bg-scrim/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-md transition-opacity">
     <div class="bg-surface w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         <div class="px-lg py-md border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
             <h3 class="text-xl font-bold text-on-surface flex items-center gap-sm">
                 <span class="material-symbols-outlined text-primary">person_add</span>
-                Thêm Giảng viên mới
+                <span id="modalAddTitle">Thêm Tài khoản mới</span>
             </h3>
             <button onclick="document.getElementById('addModal').classList.add('hidden')" class="p-xs hover:bg-surface-container-high rounded-full text-on-surface-variant transition-colors">
                 <span class="material-symbols-outlined">close</span>
@@ -87,24 +166,46 @@
             <form action="{{ url_for('users.add') }}" method="POST" id="addUserForm" class="flex flex-col gap-md">
                 
                 <div class="flex flex-col gap-xs">
-                    <label for="username" class="text-sm font-semibold text-on-surface">Tên đăng nhập <span class="text-error">*</span></label>
-                    <input type="text" id="username" name="username" required
-                        class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-shadow">
+                    <label class="text-sm font-semibold text-on-surface">Loại tài khoản</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="role" value="giang_vien" class="text-primary focus:ring-primary" checked onchange="toggleAccountFields()">
+                            <span class="text-sm">Giảng viên</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="role" value="sinh_vien" class="text-primary focus:ring-primary" onchange="toggleAccountFields()">
+                            <span class="text-sm">Sinh viên</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-xs">
-                    <label for="password" class="text-sm font-semibold text-on-surface">Mật khẩu <span class="text-error">*</span></label>
-                    <input type="password" id="password" name="password" required
-                        class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-shadow">
+                    <label id="labelUsername" for="username" class="text-sm font-semibold text-on-surface">Tên đăng nhập <span class="text-error">*</span></label>
+                    <input type="text" id="username" name="username" required placeholder="Nhập tên đăng nhập"
+                        class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-shadow font-mono">
                 </div>
 
                 <div class="flex flex-col gap-xs">
                     <label for="ho_ten" class="text-sm font-semibold text-on-surface">Họ và tên <span class="text-error">*</span></label>
-                    <input type="text" id="ho_ten" name="ho_ten" required
+                    <input type="text" id="ho_ten" name="ho_ten" required placeholder="Nguyễn Văn A"
                         class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-shadow">
                 </div>
+
+                <div class="flex flex-col gap-xs hidden" id="classSelectorDiv">
+                    <label for="lop_id" class="text-sm font-semibold text-on-surface">Lớp học <span class="text-error">*</span></label>
+                    <select id="lop_id" name="lop_id"
+                        class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-shadow cursor-pointer">
+                        {% for lop in classes %}
+                        <option value="{{ lop.id }}">{{ lop.ma_lop }} - {{ lop.ten_lop }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 
-                <input type="hidden" name="role" value="giang_vien">
+                <div class="flex flex-col gap-xs">
+                    <label for="password" class="text-sm font-semibold text-on-surface">Mật khẩu <span class="text-error">*</span></label>
+                    <input type="password" id="password" name="password" required placeholder="••••••••"
+                        class="w-full px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-shadow">
+                </div>
 
                 <div class="mt-md flex justify-end gap-sm">
                     <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')"
@@ -120,4 +221,86 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Đổi mật khẩu -->
+<div id="resetPasswordModal" class="fixed inset-0 bg-scrim/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-md transition-opacity">
+    <div class="bg-surface w-full max-w-sm rounded-2xl shadow-xl overflow-hidden flex flex-col">
+        <div class="px-lg py-md border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+            <h3 class="text-lg font-bold text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary">key</span>
+                Đổi Mật khẩu
+            </h3>
+            <button onclick="document.getElementById('resetPasswordModal').classList.add('hidden')" class="p-xs hover:bg-surface-container-high rounded-full text-on-surface-variant transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <div class="p-lg">
+            <p class="text-sm text-on-surface-variant mb-4">Đổi mật khẩu cho tài khoản: <strong id="resetTargetUsername" class="text-on-surface font-mono"></strong></p>
+            <form id="resetPasswordForm" method="POST" class="flex flex-col gap-4">
+                <div class="flex flex-col gap-1">
+                    <label for="new_password" class="text-sm font-semibold text-on-surface">Mật khẩu mới <span class="text-error">*</span></label>
+                    <input type="password" id="new_password" name="new_password" required placeholder="Nhập mật khẩu mới"
+                        class="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg focus:ring-2 focus:ring-secondary focus:outline-none transition-shadow">
+                </div>
+                
+                <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('resetPasswordModal').classList.add('hidden')"
+                        class="px-4 py-2 border border-outline-variant text-on-surface text-sm font-semibold rounded-lg hover:bg-surface-container-high transition-colors">
+                        Hủy
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-secondary text-on-secondary text-sm font-semibold rounded-lg shadow-sm hover:bg-secondary/90 transition-colors">
+                        Xác nhận
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleAccountFields() {
+        const role = document.querySelector('input[name="role"]:checked').value;
+        const labelUsername = document.getElementById('labelUsername');
+        const inputUsername = document.getElementById('username');
+        const classSelectorDiv = document.getElementById('classSelectorDiv');
+        const selectLop = document.getElementById('lop_id');
+        
+        if (role === 'sinh_vien') {
+            labelUsername.innerHTML = 'Mã số sinh viên (MSSV) <span class="text-error">*</span>';
+            inputUsername.placeholder = 'Ví dụ: 2021XXXX';
+            classSelectorDiv.classList.remove('hidden');
+            selectLop.setAttribute('required', 'required');
+        } else {
+            labelUsername.innerHTML = 'Tên đăng nhập <span class="text-error">*</span>';
+            inputUsername.placeholder = 'Nhập tên đăng nhập';
+            classSelectorDiv.classList.add('hidden');
+            selectLop.removeAttribute('required');
+        }
+    }
+
+    function openAddModal(defaultRole) {
+        document.getElementById('addModal').classList.remove('hidden');
+        if (defaultRole) {
+            const radio = document.querySelector(`input[name="role"][value="${defaultRole}"]`);
+            if (radio) {
+                radio.checked = true;
+                toggleAccountFields();
+            }
+        }
+    }
+
+    function openResetPasswordModal(role, id, username) {
+        document.getElementById('resetTargetUsername').innerText = username;
+        // Dynamically build the action URL
+        const form = document.getElementById('resetPasswordForm');
+        form.action = `/users/${role}/${id}/reset_password`;
+        document.getElementById('new_password').value = '';
+        document.getElementById('resetPasswordModal').classList.remove('hidden');
+    }
+</script>
 {% endblock %}

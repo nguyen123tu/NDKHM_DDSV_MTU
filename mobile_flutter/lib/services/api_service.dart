@@ -628,24 +628,45 @@ class ApiService {
   // AI CHATBOT (Hỏi đáp AI)
   // ================================================================
 
-  /// Gửi câu hỏi cho AI Chatbot
-  Future<Map<String, dynamic>> askChatbot(String question) async {
+  /// Gửi câu hỏi cho AI Chatbot (Streaming)
+  Stream<Map<String, dynamic>> askChatbotStream(String question) async* {
+    final headers = await _getHeaders();
+    final request = http.Request('POST', Uri.parse('$baseUrl/chatbot/ask_stream'));
+    request.headers.addAll(headers);
+    request.body = jsonEncode({'question': question});
+
+    try {
+      final response = await http.Client().send(request);
+      if (response.statusCode != 200) {
+        yield {'type': 'error', 'text': 'Lỗi server: ${response.statusCode}'};
+        return;
+      }
+      
+      await for (var chunk in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+        if (chunk.startsWith('data: ')) {
+          final dataStr = chunk.replaceFirst('data: ', '').trim();
+          if (dataStr == '[DONE]') break;
+          try {
+            yield jsonDecode(dataStr);
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      yield {'type': 'error', 'text': 'Lỗi kết nối: $e'};
+    }
+  }
+
+  /// Lấy lịch sử chat
+  Future<List<Map<String, dynamic>>> getChatHistory() async {
     final headers = await _getHeaders();
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/api/mobile/chatbot/ask'),
-            headers: headers,
-            body: jsonEncode({'question': question}),
-          )
-          .timeout(const Duration(seconds: 120));
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Lỗi kết nối hoặc quá thời gian: $e'
-      };
-    }
+      final response = await http.get(Uri.parse('$baseUrl/chatbot/history'), headers: headers);
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['history'] ?? []);
+      }
+    } catch (_) {}
+    return [];
   }
 
   /// Lấy danh sách câu hỏi gợi ý
@@ -663,9 +684,8 @@ class ApiService {
     } catch (_) {}
     return [
       'Hệ thống điểm danh hoạt động như thế nào?',
-      'Làm sao để train AI cho sinh viên mới?',
-      'Cấu trúc database gồm những bảng nào?',
-      'API mobile hỗ trợ những endpoint nào?',
+      'Làm sao để điểm danh bù?',
+      'Tôi bị lỗi khuôn mặt thì phải làm sao?',
     ];
   }
 

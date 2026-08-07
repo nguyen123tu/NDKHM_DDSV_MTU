@@ -1,0 +1,57 @@
+<!-- templates/components/ai_widget.html -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/ai_widget.css') }}">
+
+<!-- Floating Action Button -->
+<button class="ai-widget-fab" id="aiWidgetFab" title="Chat với AI">
+    <img src="{{ url_for('static', filename='img/ai_avatar.jpg') }}" alt="AI Avatar" class="ai-fab-img" onerror="this.src='https://ui-avatars.com/api/?name=AI&background=0D8ABC&color=fff'">
+</button>
+
+<!-- AI Widget Chat Box -->
+<div class="ai-widget-container" id="aiWidgetContainer">
+    <!-- Header -->
+    <div class="ai-widget-header">
+        <div class="ai-widget-header-left">
+            <div class="ai-avatar-glow"><i class="material-symbols-outlined">auto_awesome</i></div>
+            <div class="ai-widget-title">
+                <h4>MTUFace AI</h4>
+                <span>Trợ lý thông minh</span>
+            </div>
+        </div>
+        <div class="ai-widget-header-right">
+            <button class="ai-icon-btn" id="aiWidgetClear" title="Xóa lịch sử chat"><i class="material-symbols-outlined">delete_sweep</i></button>
+            <button class="ai-icon-btn" id="aiWidgetClose" title="Đóng"><i class="material-symbols-outlined">close</i></button>
+        </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div class="ai-widget-messages" id="aiWidgetMessages">
+        <!-- Welcome State -->
+        <div class="ai-welcome-state" id="aiWelcomeState">
+            <div class="ai-welcome-icon"><i class="material-symbols-outlined">face</i></div>
+            <h3>Xin chào! 👋</h3>
+            <p>Bạn cần hỗ trợ gì về hệ thống hôm nay?</p>
+            <div class="ai-suggestions" id="aiWidgetSuggestions">
+                <div class="ai-chip" onclick="askAiWidget('Hệ thống hoạt động thế nào?')">Hệ thống hoạt động thế nào?</div>
+                <div class="ai-chip" onclick="askAiWidget('Cách training AI cho sinh viên?')">Cách training AI?</div>
+            </div>
+        </div>
+        
+        <!-- Typing indicator -->
+        <div class="ai-msg bot ai-typing" id="aiWidgetTyping">
+            <div class="ai-msg-avatar"><i class="material-symbols-outlined">auto_awesome</i></div>
+            <div class="ai-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="ai-widget-input-area">
+        <div class="ai-input-wrapper">
+            <textarea id="aiWidgetInput" rows="1" placeholder="Nhập câu hỏi..."></textarea>
+            <button class="ai-btn-send" id="aiWidgetSend" title="Gửi"><i class="material-symbols-outlined">arrow_upward</i></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+<script src="{{ url_for('static', filename='js/components/ai_widget.js') }}"></script>

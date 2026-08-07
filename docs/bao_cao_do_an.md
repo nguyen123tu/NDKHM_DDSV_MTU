@@ -19,10 +19,10 @@ Thư mục `core/` chứa bộ máy AI mạnh mẽ nhất của hệ thống:
 Đây là một tính năng đột phá của MTUFace.
 - Hệ thống nhúng một chatbot AI có thể trả lời mọi thắc mắc của giảng viên và sinh viên về điểm danh.
 - **RAG (Retrieval-Augmented Generation)**: Chatbot không chém gió! Khi có câu hỏi, hệ thống dùng `knowledge_builder.py` để tra cứu trong kho tài liệu ChromaDB, lấy ra các quy chế, hướng dẫn, sau đó nhồi vào Context cho AI đọc.
-- **Hỗ trợ 3 nền tảng LLM**: 
-  - `gemini` (Google)
-  - `nvidia`
-  - `lmstudio` (Dành cho việc chạy Model nội bộ không cần mạng).
+- **Hỗ trợ Backend LLM**:
+  - `nvidia`: Sử dụng API của NVIDIA Llama-3.1-8b (Mặc định).
+  - `gemini`: Sử dụng API của Google (Nhanh, thông minh).
+  - `lmstudio`: Chạy Local AI hoàn toàn miễn phí.
 - **Tính năng lướt mạng (`/search`)**: Dù là mô hình Local AI (LM Studio), hệ thống vẫn có khả năng tự động cào tin tức từ DuckDuckGo để trả lời các câu hỏi về thời tiết, tin tức mới nhất nếu câu hỏi bắt đầu bằng chữ `/search`.
 
 ## 5. Kết luận

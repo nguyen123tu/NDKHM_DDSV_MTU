@@ -158,6 +158,66 @@ class TestRecordAttendance(unittest.TestCase):
         self.assertEqual(result["error_code"], "WRONG_CLASS")
 
 
+class TestLegacyAttendanceLog(unittest.TestCase):
+    """Kiosk/webcam phải luôn có phiên hợp lệ để lịch sử tiếp tục tăng."""
+
+    @patch("services.attendance_service.record_attendance")
+    @patch("services.attendance_session_service.AttendanceSessionService.create_session")
+    @patch("services.attendance_session_service.AttendanceSessionService.get_active_session")
+    @patch("services.attendance_service.execute_one")
+    def test_creates_session_when_kiosk_has_none(
+        self, mock_student, mock_get_active, mock_create, mock_record
+    ):
+        mock_student.return_value = {"id": 7, "lop_id": 3}
+        mock_get_active.return_value = None
+        mock_create.return_value = ({"id": 42}, None)
+        mock_record.return_value = {
+            "success": True,
+            "action": "checkin",
+            "status": "PRESENT",
+            "display_status": "Có mặt",
+            "late_minutes": 0,
+        }
+
+        from services.attendance_service import log
+
+        result = log("SV007", lop_id=3, class_start_time="07:00")
+
+        self.assertTrue(result["success"])
+        mock_create.assert_called_once()
+        self.assertEqual(mock_record.call_args.kwargs["session_id"], 42)
+
+    @patch("services.attendance_service.record_attendance")
+    @patch("services.attendance_session_service.AttendanceSessionService.create_session")
+    @patch("services.attendance_session_service.AttendanceSessionService.close_session")
+    @patch("services.attendance_session_service.AttendanceSessionService.get_active_session")
+    @patch("services.attendance_service.execute_one")
+    def test_rotates_stale_session_from_previous_day(
+        self, mock_student, mock_get_active, mock_close, mock_create, mock_record
+    ):
+        mock_student.return_value = {"id": 8, "lop_id": 3}
+        mock_get_active.return_value = {
+            "id": 11,
+            "bat_dau": datetime.now() - timedelta(days=1),
+        }
+        mock_create.return_value = ({"id": 43}, None)
+        mock_record.return_value = {
+            "success": True,
+            "action": "checkin",
+            "status": "PRESENT",
+            "display_status": "Có mặt",
+            "late_minutes": 0,
+        }
+
+        from services.attendance_service import log
+
+        result = log("SV008", lop_id=3)
+
+        self.assertTrue(result["success"])
+        mock_close.assert_called_once_with(11, admin_id=None)
+        self.assertEqual(mock_record.call_args.kwargs["session_id"], 43)
+
+
 class TestAttendanceSessionService(unittest.TestCase):
     """Kiểm thử service vòng đời phiên."""
 

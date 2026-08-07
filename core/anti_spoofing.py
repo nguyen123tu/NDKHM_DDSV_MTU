@@ -32,6 +32,9 @@ class AntiSpoofingModel:
         src_h, src_w = image.shape[:2]
         x, y, box_w, box_h = bbox
 
+        if box_w <= 0 or box_h <= 0:
+            raise ValueError("Vùng khuôn mặt không hợp lệ")
+
         scale = min((src_h - 1) / box_h, (src_w - 1) / box_w, self.scale)
         new_w = box_w * scale
         new_h = box_h * scale
@@ -56,19 +59,27 @@ class AntiSpoofingModel:
 
     def predict(self, image, bbox_xyxy):
         if self.session is None:
-            return True, 1.0, "Không có mô hình"
+            if Config.ANTI_SPOOF_FAIL_OPEN:
+                return True, 0.0, "Bỏ qua chống giả mạo theo cấu hình"
+            return False, 0.0, "Mô hình chống giả mạo chưa sẵn sàng"
 
-        bbox_xywh = self._xyxy2xywh(bbox_xyxy)
-        input_tensor = self._preprocess(image, bbox_xywh)
+        try:
+            bbox_xywh = self._xyxy2xywh(bbox_xyxy)
+            input_tensor = self._preprocess(image, bbox_xywh)
 
-        outputs = self.session.run(None, {self.input_name: input_tensor})
-        logits = outputs[0]
+            outputs = self.session.run(None, {self.input_name: input_tensor})
+            logits = outputs[0]
 
-        e_x = np.exp(logits - np.max(logits, axis=1, keepdims=True))
-        probs = e_x / e_x.sum(axis=1, keepdims=True)
+            e_x = np.exp(logits - np.max(logits, axis=1, keepdims=True))
+            probs = e_x / e_x.sum(axis=1, keepdims=True)
 
-        label_idx = int(np.argmax(probs))
-        score = float(probs[0, label_idx])
+            label_idx = int(np.argmax(probs))
+            score = float(probs[0, label_idx])
+        except Exception as exc:
+            print(f"[AntiSpoofing] Lỗi suy luận: {exc}")
+            if Config.ANTI_SPOOF_FAIL_OPEN:
+                return True, 0.0, "Bỏ qua chống giả mạo theo cấu hình"
+            return False, 0.0, "Không thể kiểm tra chống giả mạo"
 
         # label_idx: 1 là Real, 0/2 là Fake
         if label_idx == 1 and score > 0.6:

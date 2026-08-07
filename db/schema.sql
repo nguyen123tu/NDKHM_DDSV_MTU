@@ -247,3 +247,25 @@ CREATE TABLE lich_hoc (
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_lich_lop_id' AND object_id = OBJECT_ID('lich_hoc'))
 CREATE INDEX idx_lich_lop_id ON lich_hoc(lop_id);
+
+IF OBJECT_ID('chat_session', 'U') IS NULL
+CREATE TABLE chat_session (
+    id          VARCHAR(50) PRIMARY KEY,
+    user_id     NVARCHAR(100) NOT NULL,
+    role        NVARCHAR(20) DEFAULT 'student',
+    title       NVARCHAR(255) NULL,
+    created_at  DATETIME DEFAULT GETDATE(),
+    updated_at  DATETIME DEFAULT GETDATE()
+);
+
+IF OBJECT_ID('chat_message', 'U') IS NULL
+CREATE TABLE chat_message (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
+    session_id      VARCHAR(50) NOT NULL,
+    role            NVARCHAR(20) NOT NULL,
+    content         NVARCHAR(MAX) NULL,
+    tool_calls      NVARCHAR(MAX) NULL,
+    tool_call_id    VARCHAR(100) NULL,
+    created_at      DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (session_id) REFERENCES chat_session(id) ON DELETE CASCADE
+);

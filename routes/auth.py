@@ -18,8 +18,8 @@ def is_safe_url(target):
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
-@limiter.limit("20 per hour")
-@limiter.limit("5 per minute")
+@limiter.limit("100 per hour")
+@limiter.limit("30 per minute")
 def login():
     """
     /login

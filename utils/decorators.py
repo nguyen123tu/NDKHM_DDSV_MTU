@@ -20,7 +20,10 @@ def login_required(f):
                 request.is_json
                 or request.headers.get("X-Requested-With") == "XMLHttpRequest"
                 or request.path.startswith("/api/")
-                or request.path.startswith("/chatbot/")
+                or (
+                    request.path.startswith("/chatbot/")
+                    and request.endpoint != "chatbot.chat_page"
+                )
             ):
                 return {
                     "success": False,

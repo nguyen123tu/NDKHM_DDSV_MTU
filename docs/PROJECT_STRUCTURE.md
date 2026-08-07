@@ -23,7 +23,7 @@ Dự án **MTUFace** (Điểm danh khuôn mặt thông minh) được tổ chứ
   - `engine.py`, `detector.py`, `embedder.py`, `matcher.py`: Xử lý ảnh, trích xuất đặc trưng khuôn mặt (InsightFace/ArcFace) và tính toán khoảng cách vector để xác định danh tính.
 - `db/`: 
   - `connection.py`: Quản lý Pool kết nối đến MS SQL Server, cung cấp các hàm `execute_query` và `execute_one`.
-  - `schema.sql` / `seed.sql`: Các file thiết kế CSDL và dữ liệu mẫu.
+  - `schema.sql` / `seed.sql`: Các file thiết kế CSDL và dữ liệu mẫu. (Bao gồm các bảng mới như `chat_session` và `chat_message` để lưu lịch sử Chatbot).
 
 ## 3. Client & Giao diện
 

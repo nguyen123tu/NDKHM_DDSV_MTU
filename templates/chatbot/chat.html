@@ -4,166 +4,152 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/chatbot_chat.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/components/voice_chat.css') }}">
 {% endblock %}
 
 {% block content %}
-<!-- Animated Background -->
-<div class="holo-bg">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-</div>
+<div class="flex flex-1 min-h-0 bg-surface-container border border-outline-variant rounded-3xl overflow-hidden shadow-sm" id="chatApp">
+    
+    <!-- ===== SIDEBAR (History & Tools) ===== -->
+    <div class="w-72 bg-surface-container-low border-r border-outline-variant flex flex-col hidden md:flex transition-all duration-300" id="chatSidebar">
+        <!-- New Chat -->
+        <div class="p-4 border-b border-outline-variant">
+            <button class="w-full flex items-center justify-center gap-2 bg-primary text-on-primary py-2.5 rounded-xl font-medium hover:opacity-90 transition-opacity shadow-sm" id="btnNewChat" onclick="newChat()">
+                <i class="material-symbols-outlined">add</i> Chat mới
+            </button>
+        </div>
+        
+        <!-- History List -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-2 sidebar-history" id="sidebarHistory">
+            <div class="chat-history-list" id="chatHistoryList">
+                <!-- JS renders history here -->
+            </div>
+        </div>
+        
+        <!-- Bottom Settings / Nav -->
+        <div class="p-3 border-t border-outline-variant flex flex-col gap-1">
+            <button class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-lg transition-colors w-full" id="btnVoiceMode">
+                <i class="material-symbols-outlined text-[20px]">mic</i> Chế độ Giọng nói
+            </button>
+            <button class="flex items-center justify-between px-3 py-2.5 text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-lg transition-colors w-full" onclick="openSettings()">
+                <div class="flex items-center gap-3">
+                    <i class="material-symbols-outlined text-[20px]">database</i> Cài đặt AI
+                </div>
+                {% if kb_status.ready %}
+                <span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container text-xs rounded-full font-mono">{{ kb_status.total_chunks }}</span>
+                {% else %}
+                <span class="px-2 py-0.5 bg-error-container text-on-error-container text-xs rounded-full font-mono">!</span>
+                {% endif %}
+            </button>
+        </div>
+    </div>
 
-<div class="chat-app" id="chatApp">
-    <!-- ===== TOP HEADER (full-width) ===== -->
-    <header class="app-header">
-        <div class="header-left">
-            <button class="btn-icon" id="btnSidebarToggle" title="Mở/đóng sidebar">
+    <!-- ===== MAIN CHAT AREA ===== -->
+    <div class="flex-1 flex flex-col relative bg-surface-container-lowest min-w-0 chat-main">
+        
+        <!-- Mobile Sidebar Toggle -->
+        <div class="md:hidden flex items-center p-3 border-b border-outline-variant bg-surface">
+            <button class="p-2 rounded-lg hover:bg-surface-container text-on-surface-variant" id="btnSidebarToggle">
                 <i class="material-symbols-outlined">menu</i>
             </button>
-            <div class="header-brand">
-                <div class="brand-dot"></div>
-                <span class="brand-name">MTUFace AI</span>
+            <span class="font-semibold text-on-surface ml-2">Lịch sử chat</span>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="chat-messages flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 flex flex-col gap-6" id="chatMessages">
+            
+            <!-- Welcome State -->
+            <div class="welcome-state m-auto flex flex-col items-center justify-center gap-4 text-center p-6 md:p-8" id="welcomeState">
+                <div class="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center text-primary mb-2 shadow-sm border border-primary/20">
+                    <i class="material-symbols-outlined text-4xl">auto_awesome</i>
+                </div>
+                <h2 class="text-2xl font-bold text-on-surface">Xin chào {{ session.get('admin_name', 'Admin') }} 👋</h2>
+                <p class="text-on-surface-variant text-sm">Hệ thống phân tích điểm danh AI đã sẵn sàng hỗ trợ bạn.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-6 welcome-cards" id="welcomeCards">
+                    {% for q in suggested_questions[:4] %}
+                    <div class="p-4 bg-surface-container-low border border-outline-variant rounded-xl cursor-pointer hover:bg-surface-container hover:border-primary/30 hover:shadow-sm transition-all text-left flex items-start gap-3 text-sm text-on-surface group" onclick="askSuggested(this)">
+                        <i class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform text-[20px] shrink-0 mt-0.5">lightbulb</i>
+                        <span class="leading-relaxed">{{ q }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Typing Indicator (Managed by JS) -->
+            <div class="msg bot typing-indicator hidden" id="typingIndicator">
+                <div class="msg-avatar w-9 h-9 rounded-full bg-primary-container text-primary flex items-center justify-center shrink-0 border border-outline-variant/30 mt-1"><i class="material-symbols-outlined text-lg">auto_awesome</i></div>
+                <div class="bubble bg-surface-container border border-outline-variant rounded-2xl rounded-tl-sm px-4 py-3.5 ml-3 flex gap-1.5 items-center h-[46px]">
+                    <div class="dot w-1.5 h-1.5 rounded-full bg-on-surface-variant/60 animate-bounce"></div>
+                    <div class="dot w-1.5 h-1.5 rounded-full bg-on-surface-variant/60 animate-bounce" style="animation-delay: 0.15s"></div>
+                    <div class="dot w-1.5 h-1.5 rounded-full bg-on-surface-variant/60 animate-bounce" style="animation-delay: 0.3s"></div>
+                </div>
             </div>
         </div>
-        <div class="header-right">
-            <button class="btn-voice-mode" id="btnVoiceMode" title="Chế độ Voice Chat">
-                <i class="material-symbols-outlined">mic</i>
-            </button>
-            <button class="btn-icon" id="btnThemeToggle" title="Sáng / Tối">
-                <i class="material-symbols-outlined">dark_mode</i>
-            </button>
-            <div class="header-user" id="headerUser">
-                <div class="user-avatar"><i class="material-symbols-outlined">person</i></div>
-                <span>Admin</span>
-                <i class="material-symbols-outlined" style="font-size:10px;opacity:.5">expand_more</i>
-            </div>
+
+        <!-- Scroll Bottom Button -->
+        <button id="btnScrollBottom" class="btn-scroll-bottom absolute bottom-24 right-6 w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container border border-outline-variant shadow-md flex items-center justify-center hover:opacity-90 transition-all opacity-0 pointer-events-none translate-y-2 z-10" title="Cuộn xuống">
+            <i class="material-symbols-outlined">arrow_downward</i>
+        </button>
+
+        <!-- Inline Suggestions -->
+        <div class="suggestions-bar hidden flex-wrap gap-2 px-6 py-2 pb-0 overflow-x-auto custom-scrollbar" id="suggestionsBar">
+            {% for q in suggested_questions %}
+            <div class="chip px-4 py-1.5 bg-surface-container border border-outline-variant rounded-full text-xs cursor-pointer hover:bg-surface-container-high transition-colors text-on-surface-variant whitespace-nowrap flex items-center gap-1.5" onclick="askSuggested(this)"><span>{{ q }}</span></div>
+            {% endfor %}
         </div>
-    </header>
 
-    <div class="app-body">
-        <!-- ===== SIDEBAR ===== -->
-        <aside class="chat-sidebar" id="chatSidebar">
-            <!-- New Chat -->
-            <button class="btn-new-chat" id="btnNewChat" onclick="newChat()">
-                <i class="material-symbols-outlined">add</i>
-                <span>Chat mới</span>
-            </button>
-
-            <!-- History -->
-            <div class="sidebar-history" id="sidebarHistory">
-                <div class="chat-history-list" id="chatHistoryList">
-                    <!-- JS renders here -->
-                </div>
+        <!-- Chat Input Area -->
+        <div class="chat-input-area p-4 bg-surface-container-lowest">
+            <div class="input-wrapper flex items-end gap-2 bg-surface border border-outline-variant rounded-3xl p-2 px-3 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all max-w-4xl mx-auto">
+                <textarea id="chatInput" rows="1" class="flex-1 bg-transparent border-none text-on-surface text-sm py-2.5 focus:ring-0 resize-none max-h-32 custom-scrollbar placeholder-on-surface-variant/60 outline-none" placeholder="Nhắn tin với AI..." onkeydown="handleKey(event)"></textarea>
+                
+                <button class="btn-mic w-9 h-9 rounded-full text-on-surface-variant hover:bg-surface-container flex items-center justify-center shrink-0 transition-colors mb-0.5" id="btnMic" title="Nhấn để nói">
+                    <i class="material-symbols-outlined text-[20px]">mic</i>
+                </button>
+                <button class="btn-send w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0 shadow-sm hover:scale-105 transition-transform mb-px" onclick="sendMessage()" id="btnSend" title="Gửi tin nhắn">
+                    <i class="material-symbols-outlined text-[20px]">arrow_upward</i>
+                </button>
             </div>
-
-            <!-- Bottom Nav -->
-            <nav class="sidebar-nav">
-                <div class="nav-divider"></div>
-                <a class="sidebar-nav-item {{ 'active' if request.endpoint == 'chatbot.chat_page' }}" href="{{ url_for('chatbot.chat_page') }}">
-                    <i class="material-symbols-outlined">database</i><span>Kho tri thức</span>
-                    {% if kb_status.ready %}
-                    <span class="nav-badge green">{{ kb_status.total_chunks }}</span>
-                    {% else %}
-                    <span class="nav-badge amber">!</span>
-                    {% endif %}
-                </a>
-                <a class="sidebar-nav-item" href="{{ url_for('attendance.live') }}">
-                    <i class="material-symbols-outlined">videocam</i><span>Camera</span>
-                </a>
-                <a class="sidebar-nav-item" href="/apidocs" target="_blank">
-                    <i class="material-symbols-outlined">code</i><span>API</span>
-                </a>
-                <a class="sidebar-nav-item" href="#" onclick="openSettings(); return false;">
-                    <i class="material-symbols-outlined">settings</i><span>Cài đặt</span>
-                </a>
-            </nav>
-        </aside>
-
-        <!-- ===== MAIN CHAT ===== -->
-        <div class="chat-main">
-            <!-- Messages -->
-            <div class="chat-messages" id="chatMessages">
-                <!-- Empty State -->
-                <div class="welcome-state" id="welcomeState">
-                    <div class="welcome-icon">
-                        <i class="material-symbols-outlined">smart_toy</i>
-                    </div>
-                    <h2 class="welcome-title">Xin chào Admin 👋</h2>
-                    <p class="welcome-sub">Tôi có thể giúp gì hôm nay?</p>
-
-                    <!-- Suggestion Cards -->
-                    <div class="welcome-cards" id="welcomeCards">
-                        {% for q in suggested_questions[:4] %}
-                        <div class="welcome-card" onclick="askSuggested(this)">
-                            <i class="material-symbols-outlined">temp_preferences_custom</i>
-                            <span>{{ q }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Typing Indicator -->
-                <div class="msg bot typing-indicator" id="typingIndicator">
-                    <div class="msg-avatar"><i class="material-symbols-outlined">smart_toy</i></div>
-                    <div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                </div>
-            </div>
-
-            <!-- Inline Suggestions (shown after first message) -->
-            <div class="suggestions-bar" id="suggestionsBar" style="display:none">
-                {% for q in suggested_questions %}
-                <div class="chip" onclick="askSuggested(this)"><span>{{ q }}</span></div>
-                {% endfor %}
-            </div>
-
-            <!-- Scroll to Bottom Button -->
-            <button id="btnScrollBottom" class="btn-scroll-bottom" title="Cuộn xuống dưới cùng">
-                <i class="material-symbols-outlined">arrow_downward</i>
-            </button>
-
-            <!-- Input Area (full-width bottom) -->
-            <div class="chat-input-area">
-                <div class="input-wrapper">
-                    <button class="btn-attach" title="Đính kèm file">
-                        <i class="material-symbols-outlined">attach_file</i>
-                    </button>
-                    <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."
-                              onkeydown="handleKey(event)"></textarea>
-                    <button class="btn-mic" id="btnMic" title="Nhấn để nói">
-                        <i class="material-symbols-outlined">mic</i>
-                        <span class="mic-wave"></span>
-                    </button>
-                    <button class="btn-send" onclick="sendMessage()" id="btnSend" title="Gửi tin nhắn">
-                        <i class="material-symbols-outlined">send</i>
-                    </button>
-                </div>
+            <div class="text-center mt-2">
+                <span class="text-[10px] text-on-surface-variant font-medium">AI có thể mắc lỗi. Vui lòng kiểm tra lại thông tin quan trọng.</span>
             </div>
         </div>
     </div>
 
-    <!-- Settings Modal -->
-    <div class="settings-modal" id="settingsModal">
-        <div class="settings-panel">
-            <div class="settings-header">
-                <h3>Cài đặt</h3>
-                <button class="btn-icon" onclick="closeSettings()"><i class="material-symbols-outlined">close</i></button>
+    <!-- ===== SETTINGS MODAL ===== -->
+    <div class="settings-modal fixed inset-0 bg-background/60 backdrop-blur-sm z-50 hidden items-center justify-center" id="settingsModal">
+        <div class="settings-panel bg-surface border border-outline-variant rounded-2xl w-full max-w-md shadow-xl overflow-hidden scale-95 opacity-0 transition-all duration-200" id="settingsPanel">
+            <div class="flex items-center justify-between p-4 border-b border-outline-variant bg-surface-container-low">
+                <h3 class="font-bold text-on-surface">Cài đặt Trợ lý AI</h3>
+                <button class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors" onclick="closeSettings()"><i class="material-symbols-outlined text-[20px]">close</i></button>
             </div>
-            <div class="settings-body">
-                <div class="setting-row">
-                    <label>Kho tri thức</label>
-                    <button class="btn-setting" onclick="buildKnowledge()" id="btnBuild">
-                        <i class="material-symbols-outlined">sync</i> Cập nhật KB
-                    </button>
+            <div class="p-6 space-y-6">
+                <!-- Knowledge Base -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <p class="font-medium text-sm text-on-surface">Kho tri thức (Knowledge Base)</p>
+                            <p class="text-[11px] text-on-surface-variant mt-0.5">Xây dựng lại chỉ mục tài liệu vào vector DB</p>
+                        </div>
+                        <button class="flex items-center gap-2 px-3 py-1.5 bg-secondary-container text-on-secondary-container rounded-lg text-sm font-medium hover:bg-secondary-container-high transition-colors disabled:opacity-50" onclick="buildKnowledge()" id="btnBuild">
+                            <i class="material-symbols-outlined text-[18px]">sync</i> Cập nhật KB
+                        </button>
+                    </div>
+                    <div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden hidden mt-3" id="kbProgress">
+                        <div class="h-full bg-primary w-0 transition-all duration-300" id="kbProgressBar"></div>
+                    </div>
                 </div>
-                <div class="kb-progress" id="kbProgress" style="display:none">
-                    <div class="bar" id="kbProgressBar"></div>
-                </div>
-                <div class="setting-row">
-                    <label>Xóa dữ liệu</label>
-                    <button class="btn-setting danger" onclick="clearAllHistory()">
-                        <i class="material-symbols-outlined">delete</i> Xóa tất cả lịch sử
+                
+                <div class="h-px w-full bg-outline-variant/50"></div>
+                
+                <!-- History -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="font-medium text-sm text-on-surface">Dữ liệu cá nhân</p>
+                        <p class="text-[11px] text-on-surface-variant mt-0.5">Xóa lịch sử chat trong trình duyệt</p>
+                    </div>
+                    <button class="flex items-center gap-2 px-3 py-1.5 bg-error-container text-on-error-container rounded-lg text-sm font-medium hover:opacity-90 transition-colors" onclick="clearAllHistory()">
+                        <i class="material-symbols-outlined text-[18px]">delete</i> Xóa lịch sử
                     </button>
                 </div>
             </div>
@@ -172,36 +158,37 @@
 </div>
 
 <!-- ===== FULLSCREEN VOICE OVERLAY ===== -->
-<div class="voice-overlay" id="voiceOverlay">
+<div class="voice-overlay fixed inset-0 bg-background/95 backdrop-blur-xl z-[100] hidden flex-col items-center justify-center transition-all duration-300 opacity-0" id="voiceOverlay">
     <!-- Orb -->
-    <div class="voice-orb-container">
-        <div class="voice-orb" id="voiceOrb"></div>
-        <div class="voice-ripple"></div>
-        <div class="voice-ripple"></div>
-        <div class="voice-ripple"></div>
+    <div class="voice-orb-container relative w-40 h-40 flex items-center justify-center mb-12">
+        <div class="voice-ripple absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-75" style="animation-duration: 2s"></div>
+        <div class="voice-ripple absolute inset-0 bg-primary/30 rounded-full animate-ping opacity-50" style="animation-duration: 2.5s; animation-delay: 0.5s"></div>
+        <div class="voice-orb w-32 h-32 bg-primary rounded-full shadow-[0_0_50px_rgba(var(--color-primary),0.6)] flex items-center justify-center text-white transition-transform duration-200" id="voiceOrb">
+            <i class="material-symbols-outlined text-6xl">graphic_eq</i>
+        </div>
     </div>
 
     <!-- Status -->
-    <div class="voice-status" id="voiceStatus">
-        <span class="voice-status-dot"></span>
+    <div class="voice-status flex items-center gap-2 text-primary font-medium bg-primary/10 px-4 py-1.5 rounded-full mb-8 border border-primary/20" id="voiceStatus">
+        <span class="voice-status-dot w-2 h-2 rounded-full bg-primary animate-pulse"></span>
         <span id="voiceStatusText">Sẵn sàng</span>
     </div>
 
     <!-- Transcript -->
-    <div class="voice-transcript">
-        <div class="voice-transcript-text" id="voiceTranscript"></div>
+    <div class="voice-transcript max-w-3xl text-center min-h-[100px] mb-12 px-6">
+        <div class="voice-transcript-text text-2xl md:text-3xl font-medium text-on-surface leading-snug transition-opacity" id="voiceTranscript"></div>
     </div>
 
     <!-- Controls -->
-    <div class="voice-controls">
-        <button class="voice-btn voice-btn-stop" id="voiceBtnStop" title="Dừng AI nói">
-            <i class="material-symbols-outlined">stop</i>
+    <div class="voice-controls flex items-center gap-6">
+        <button class="voice-btn voice-btn-stop w-14 h-14 rounded-full bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-highest transition-colors flex items-center justify-center group" id="voiceBtnStop" title="Dừng AI nói">
+            <i class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">stop</i>
         </button>
-        <button class="voice-btn voice-btn-mic" id="voiceBtnMic" title="Bấm để nói">
-            <i class="material-symbols-outlined">mic</i>
+        <button class="voice-btn voice-btn-mic w-20 h-20 rounded-full bg-primary text-on-primary shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 transition-all" id="voiceBtnMic" title="Bấm để nói">
+            <i class="material-symbols-outlined text-4xl">mic</i>
         </button>
-        <button class="voice-btn voice-btn-close" id="voiceBtnClose" title="Đóng Voice Mode">
-            <i class="material-symbols-outlined">close</i>
+        <button class="voice-btn voice-btn-close w-14 h-14 rounded-full bg-error-container text-on-error-container hover:opacity-90 transition-colors flex items-center justify-center group" id="voiceBtnClose" title="Đóng Voice Mode">
+            <i class="material-symbols-outlined text-2xl group-hover:rotate-90 transition-transform">close</i>
         </button>
     </div>
 </div>
@@ -209,6 +196,7 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 <script src="{{ url_for('static', filename='js/components/voice_engine.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pages/chatbot_chat.js') }}"></script>
 {% endblock %}

@@ -29,7 +29,7 @@ def send_telegram_message(message):
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         data = {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "HTML"}
-        response = requests.post(url, data=data)
+        response = requests.post(url, data=data, timeout=(3, 10))
         return response.status_code == 200
     except Exception as e:
         print(f"[TELEGRAM LỖI] {e}")
@@ -62,7 +62,7 @@ def send_telegram_photo(frame, message="Phát hiện đối tượng!"):
         data = {"chat_id": TELEGRAM_CHAT_ID, "caption": message}
         files = {"photo": io_buf}
 
-        response = requests.post(url, data=data, files=files)
+        response = requests.post(url, data=data, files=files, timeout=(3, 10))
 
         if response.status_code == 200:
             print("[TELEGRAM] Đã gửi thông báo thành công!")

@@ -491,5 +491,23 @@ def _log_auto_audit(session_id, sv_id, new_status, admin_id, reason):
                 """,
                 (record["id"], None, new_status, admin_id, reason),
             )
-    except Exception:
-        pass  # Audit log failure không nên block luồng chính
+    except Exception as e:
+        # Fallback lưu log ra file nếu DB lỗi
+        import os, json, datetime
+        try:
+            log_dir = "logs"
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+            with open(os.path.join(log_dir, "audit_fallback.log"), "a", encoding="utf-8") as f:
+                log_entry = {
+                    "time": datetime.datetime.now().isoformat(),
+                    "session_id": session_id,
+                    "sv_id": sv_id,
+                    "new_status": new_status,
+                    "admin_id": admin_id,
+                    "reason": reason,
+                    "error": str(e)
+                }
+                f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+        except:
+            pass

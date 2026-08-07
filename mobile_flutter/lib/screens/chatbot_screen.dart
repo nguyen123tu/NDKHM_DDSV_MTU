@@ -46,7 +46,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
   @override
   void initState() {
     super.initState();
-    _loadSuggestions();
+    _loadHistoryAndSuggestions();
   }
 
   @override
@@ -57,10 +57,24 @@ class _ChatbotScreenState extends State<ChatbotScreen>
     super.dispose();
   }
 
-  Future<void> _loadSuggestions() async {
+  Future<void> _loadHistoryAndSuggestions() async {
+    final history = await _api.getChatHistory();
     final suggestions = await _api.getChatbotSuggestions();
+    
     if (mounted) {
-      setState(() => _suggestions = suggestions);
+      setState(() {
+        _suggestions = suggestions;
+        if (history.isNotEmpty) {
+          _messages.clear();
+          for (var msg in history) {
+            _messages.add(ChatMessage(
+              text: msg['content'] ?? '',
+              isUser: msg['role'] == 'user',
+            ));
+          }
+          _scrollToBottom();
+        }
+      });
     }
   }
 
@@ -78,32 +92,51 @@ class _ChatbotScreenState extends State<ChatbotScreen>
 
     _scrollToBottom();
 
-    final result = await _api.askChatbot(question);
-
-    if (!mounted) return;
-
+    // Thêm bong bóng trả lời rỗng của Bot
+    final botMsgIndex = _messages.length;
     setState(() {
-      _isLoading = false;
-      if (result['success'] == true) {
-        final data = result['data'] ?? {};
-        _messages.add(ChatMessage(
-          text: data['answer'] ?? 'Không nhận được câu trả lời.',
-          isUser: false,
-          sources: data['sources'] != null
-              ? List<Map<String, dynamic>>.from(data['sources'])
-              : null,
-          durationMs: data['duration_ms'],
-        ));
-      } else {
-        _hasError = true;
-        _messages.add(ChatMessage(
-          text: result['message'] ?? 'Đã xảy ra lỗi khi gọi AI.',
-          isUser: false,
-        ));
-      }
+      _messages.add(ChatMessage(text: '', isUser: false));
     });
 
-    _scrollToBottom();
+    try {
+      await for (final chunk in _api.askChatbotStream(question)) {
+        if (!mounted) return;
+        
+        setState(() {
+          _isLoading = false; // Nhận chunk đầu tiên -> ẩn loading
+          if (chunk['type'] == 'error') {
+            _hasError = true;
+            _messages[botMsgIndex] = ChatMessage(
+              text: _messages[botMsgIndex].text + '\n' + (chunk['text'] ?? ''),
+              isUser: false,
+            );
+          } else if (chunk['type'] == 'chunk') {
+            _messages[botMsgIndex] = ChatMessage(
+              text: _messages[botMsgIndex].text + (chunk['text'] ?? ''),
+              isUser: false,
+            );
+          } else if (chunk['type'] == 'done') {
+            _messages[botMsgIndex] = ChatMessage(
+              text: _messages[botMsgIndex].text,
+              isUser: false,
+              durationMs: chunk['duration_ms'],
+            );
+          }
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+          _messages[botMsgIndex] = ChatMessage(
+            text: _messages[botMsgIndex].text + '\nLỗi kết nối.',
+            isUser: false,
+          );
+        });
+      }
+    }
   }
 
   void _scrollToBottom() {

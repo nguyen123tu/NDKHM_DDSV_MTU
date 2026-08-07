@@ -618,11 +618,47 @@ def log(
     if not lop_id:
         lop_id = sv["lop_id"]
 
-    # Nếu chưa truyền phien_id, thử tìm phiên đang mở
+    # Nếu chưa truyền phien_id, tìm phiên đang mở. Kiosk/webcam trình duyệt
+    # không đi qua start_session(), vì vậy service phải tự tạo phiên. Đồng
+    # thời không được tái sử dụng một phiên treo từ ngày trước: ràng buộc
+    # UNIQUE(phien_id, sinh_vien_id) sẽ khiến lịch sử trông như bị "đóng băng".
     if not phien_id and lop_id:
         from services.attendance_session_service import AttendanceSessionService
 
         active_sess = AttendanceSessionService.get_active_session(lop_id=lop_id)
+        if active_sess:
+            started_at = active_sess.get("bat_dau")
+            if (
+                started_at
+                and hasattr(started_at, "date")
+                and started_at.date() != datetime.now().date()
+            ):
+                AttendanceSessionService.close_session(active_sess["id"], admin_id=None)
+                active_sess = None
+
+        if not active_sess:
+            scheduled_start = datetime.now()
+            raw_start = session_start_time or class_start_time
+            if raw_start and str(raw_start).lower() != "auto":
+                try:
+                    parsed_time = datetime.strptime(str(raw_start)[:5], "%H:%M").time()
+                    scheduled_start = datetime.combine(datetime.now().date(), parsed_time)
+                except (TypeError, ValueError):
+                    pass
+
+            active_sess, _ = AttendanceSessionService.create_session(
+                lop_id=lop_id,
+                admin_id=None,
+                loai_phien="KIOSK",
+                gio_hoc_du_kien=scheduled_start,
+                mo_ta="Phiên tự động từ Kiosk/Webcam trình duyệt",
+            )
+
+            # Hai request nhận diện có thể cùng tạo phiên. Nếu request này
+            # thua race UNIQUE INDEX, lấy lại phiên vừa được request kia tạo.
+            if not active_sess:
+                active_sess = AttendanceSessionService.get_active_session(lop_id=lop_id)
+
         if active_sess:
             phien_id = active_sess["id"]
 
@@ -634,6 +670,11 @@ def log(
         student_id=student_id,
         method=method,
         confidence=do_chinh_xac,
+        evidence_path=(
+            ghi_chu.removeprefix("EVIDENCE:")
+            if isinstance(ghi_chu, str) and ghi_chu.startswith("EVIDENCE:")
+            else None
+        ),
         camera_id=camera_id,
         face_image=face_image,
     )

@@ -198,6 +198,11 @@
         </main>
     </div>
 
+    {% if request.endpoint != 'chatbot.chat_page' and session.get('admin_id') %}
+    <!-- AI Floating Widget: chỉ hiện trên các trang quản trị khác -->
+    {% include 'components/ai_widget.html' %}
+    {% endif %}
+
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

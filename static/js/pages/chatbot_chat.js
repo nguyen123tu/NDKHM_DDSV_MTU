@@ -6,6 +6,15 @@ const chatApp = document.getElementById('chatApp');
 const sidebar = document.getElementById('chatSidebar');
 let isLoading = false;
 
+function safeMarkdown(text) {
+    const html = marked.parse(String(text || ''));
+    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+}
+
+function chatPayload(extra = {}) {
+    return { conversation_id: curId, ...extra };
+}
+
 // --- Chat History (localStorage) ---
 const CH = {
     KEY: 'mtu_chats',
@@ -34,13 +43,11 @@ function genId() { return 'c_' + Date.now() + '_' + Math.random().toString(36).s
 (function () {
     applyTheme(localStorage.getItem('chatTheme') || 'dark');
     const h = CH.all();
-    if (h.length > 0) { curId = h[0].id; loadChat(curId); }
+    if (h.length > 0) loadChat(h[0].id);
     else newChat(true);
     renderList();
-    inputEl.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; });
-    document.getElementById('btnSidebarToggle').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
-    document.getElementById('btnThemeToggle').addEventListener('click', toggleTheme);
-    
+    // Theme handled by global base layout
+    document.getElementById('btnSidebarToggle').addEventListener('click', () => sidebar.classList.toggle('hidden'));
     // Scroll to bottom setup
     const btnScroll = document.getElementById('btnScrollBottom');
     if (btnScroll) {
@@ -60,11 +67,9 @@ function genId() { return 'c_' + Date.now() + '_' + Math.random().toString(36).s
 })();
 
 // --- Theme ---
-function applyTheme(t) {
-    chatApp.classList.toggle('light', t === 'light');
-    document.getElementById('btnThemeToggle').innerHTML = t === 'light' ? '<i class="material-symbols-outlined">light_mode</i>' : '<i class="material-symbols-outlined">dark_mode</i>';
-}
-function toggleTheme() { const n = chatApp.classList.contains('light') ? 'dark' : 'light'; localStorage.setItem('chatTheme', n); applyTheme(n); }
+// Theme is now globally inherited from the root `html` tag via base.js
+function applyTheme(t) {}
+function toggleTheme() {}
 
 // --- History List ---
 function renderList() {
@@ -99,10 +104,18 @@ function renderList() {
 
 // --- Chat Ops ---
 function newChat(silent) {
+    // Nếu cuộc trò chuyện hiện tại đang trống, không tạo thêm để tránh rác
+    if (curId) {
+        const currentChat = CH.get(curId);
+        if (currentChat && currentChat.msgs && currentChat.msgs.length === 0) {
+            if (!silent) inputEl.focus();
+            return;
+        }
+    }
+
     const id = genId();
     CH.add(id, 'Cuộc trò chuyện mới');
     curId = id;
-    fetch('/chatbot/clear', { method: 'POST' });
     clearUI();
     renderList();
     if (!silent) inputEl.focus();
@@ -111,7 +124,6 @@ function newChat(silent) {
 function switchChat(id) {
     if (id === curId) return;
     curId = id;
-    fetch('/chatbot/clear', { method: 'POST' });
     const c = CH.get(id);
     if (!c) return;
     clearUI();
@@ -126,13 +138,22 @@ function switchChat(id) {
 function loadChat(id) { switchChat(id); }
 
 function delChat(id) {
+    fetch('/chatbot/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: id })
+    }).catch(() => {});
     CH.rm(id);
     if (id === curId) { const a = CH.all(); a.length ? switchChat(a[0].id) : newChat(true); }
     renderList();
 }
 
 function clearChat() {
-    fetch('/chatbot/clear', { method: 'POST' }).then(() => {
+    fetch('/chatbot/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(chatPayload())
+    }).then(() => {
         const c = CH.get(curId);
         if (c) { c.msgs = []; CH.save(); }
         clearUI(); renderList();
@@ -141,8 +162,14 @@ function clearChat() {
 
 function clearAllHistory() {
     if (!confirm('Xóa tất cả lịch sử trò chuyện?')) return;
+    CH.all().forEach(c => {
+        fetch('/chatbot/clear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversation_id: c.id })
+        }).catch(() => {});
+    });
     CH.clear();
-    fetch('/chatbot/clear', { method: 'POST' });
     newChat(true);
 }
 
@@ -151,7 +178,7 @@ function clearUI() {
     const ws = document.getElementById('welcomeState');
     if (!ws) {
         const d = document.createElement('div'); d.className = 'welcome-state'; d.id = 'welcomeState';
-        d.innerHTML = '<div class="welcome-icon"><i class="material-symbols-outlined">smart_toy</i></div><h2 class="welcome-title">Xin chào Admin 👋</h2><p class="welcome-sub">Tôi có thể giúp gì hôm nay?</p>';
+        d.innerHTML = '<div class="welcome-icon"><i class="material-symbols-outlined">face</i></div><h2 class="welcome-title">Xin chào Admin 👋</h2><p class="welcome-sub">Hệ thống phân tích điểm danh AI đã sẵn sàng.</p>';
         messagesEl.insertBefore(d, typingEl);
     }
     const sb = document.getElementById('suggestionsBar');
@@ -176,14 +203,19 @@ async function sendMessage() {
         const response = await fetch('/chatbot/ask_stream', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: text })
+            body: JSON.stringify(chatPayload({ question: text }))
         });
+
+        if (!response.ok || !response.body) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`);
+        }
         
         setLoading(false);
 
         const div = document.createElement('div');
         div.className = 'msg bot';
-        div.innerHTML = `<div class="msg-avatar"><i class="material-symbols-outlined">smart_toy</i></div><div class="msg-body"><div class="bubble"></div></div>`;
+        div.innerHTML = `<div class="msg-avatar"><i class="material-symbols-outlined">auto_awesome</i></div><div class="msg-body"><div class="bubble"></div></div>`;
         messagesEl.insertBefore(div, typingEl);
         
         const bodyEl = div.querySelector('.msg-body');
@@ -222,13 +254,13 @@ async function sendMessage() {
                             if (ind) ind.remove();
                             
                             fullAnswer += parsed.text;
-                            bubble.innerHTML = marked.parse(fullAnswer);
+                            bubble.innerHTML = safeMarkdown(fullAnswer);
                             messagesEl.scrollTop = messagesEl.scrollHeight;
                         } else if (parsed.type === 'done') {
                             durationMs = parsed.duration_ms;
                         } else if (parsed.type === 'error') {
                             fullAnswer += "\n\n" + parsed.text;
-                            bubble.innerHTML = marked.parse(fullAnswer);
+                            bubble.innerHTML = safeMarkdown(fullAnswer);
                             messagesEl.scrollTop = messagesEl.scrollHeight;
                         }
                     } catch (e) {}
@@ -264,9 +296,9 @@ function addMsgDOM(text, role, sources, dur, animate = true) {
     const div = document.createElement('div');
     div.className = 'msg ' + role;
     if (!animate) div.style.animation = 'none';
-    const icon = role === 'bot' ? 'fa-robot' : 'fa-user';
-    let h = `<div class="msg-avatar"><i class="material-symbols-outlined ${icon}">help</i></div><div class="msg-body">`;
-    h += '<div class="bubble">' + (role === 'bot' ? marked.parse(text) : esc(text)) + '</div>';
+    const icon = role === 'bot' ? 'auto_awesome' : 'person';
+    let h = `<div class="msg-avatar"><i class="material-symbols-outlined">${icon}</i></div><div class="msg-body">`;
+    h += '<div class="bubble">' + (role === 'bot' ? safeMarkdown(text) : esc(text)) + '</div>';
     
     if (role === 'bot') {
         h += `<div class="msg-actions">
@@ -529,9 +561,13 @@ function esc(t) { const d = document.createElement('div'); d.textContent = t; re
         fetch('/chatbot/ask', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: text })
+            body: JSON.stringify(chatPayload({ question: text }))
         })
-        .then(r => r.json())
+        .then(async r => {
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.message || data.error || `HTTP ${r.status}`);
+            return data;
+        })
         .then(data => {
             // Add response to chat UI
             addMsgDOM(data.answer, 'bot', data.sources, data.duration_ms);

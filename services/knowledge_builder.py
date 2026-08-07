@@ -159,8 +159,8 @@ class KnowledgeBuilder:
             # Xóa collection cũ và tạo mới
             try:
                 self._client.delete_collection(self.COLLECTION_NAME)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[KnowledgeBuilder] Không thể xóa collection cũ (có thể chưa tồn tại): {e}")
 
             collection = self._client.get_or_create_collection(
                 name=self.COLLECTION_NAME, metadata={"hnsw:space": "cosine"}
@@ -490,8 +490,8 @@ class KnowledgeBuilder:
         try:
             with open(self._status_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[KnowledgeBuilder] Lỗi lưu trạng thái: {e}")
 
     def _load_status(self) -> dict:
         try:

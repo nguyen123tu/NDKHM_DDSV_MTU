@@ -71,6 +71,18 @@ class IPCamera:
     def release(self):
         self.running = False
         self.is_opened = False
+        stream = getattr(self, "stream", None)
+        if stream is not None:
+            try:
+                stream.close()
+            except Exception:
+                pass
+        if (
+            self.thread
+            and self.thread.is_alive()
+            and self.thread is not threading.current_thread()
+        ):
+            self.thread.join(timeout=1.0)
 
 
 class ThreadedCamera:
@@ -111,8 +123,11 @@ class ThreadedCamera:
                     import time
 
                     time.sleep(0.1)
-            except:
+            except Exception as exc:
+                print(f"[CAMERA] Luồng đọc camera dừng do lỗi: {exc}")
                 break
+        self.running = False
+        self.is_opened = False
 
     def isOpened(self):
         return self.is_opened
@@ -127,6 +142,12 @@ class ThreadedCamera:
         self.running = False
         if self.cap:
             self.cap.release()
+        if (
+            self.thread
+            and self.thread.is_alive()
+            and self.thread is not threading.current_thread()
+        ):
+            self.thread.join(timeout=1.0)
         self.is_opened = False
 
 
@@ -179,6 +200,15 @@ class CameraManager:
                     cap = ThreadedCamera(source)
 
                 if cap.isOpened():
+                    import time
+                    wait_time = 0
+                    while wait_time < 5.0:
+                        ret, frame = cap.read()
+                        if ret and frame is not None:
+                            break
+                        time.sleep(0.1)
+                        wait_time += 0.1
+
                     self._cameras[camera_id] = cap
                     print(
                         f"[CAMERA] Kết nối thành công camera {camera_id} (source={source})"

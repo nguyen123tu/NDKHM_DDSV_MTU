@@ -230,7 +230,7 @@ def update_avatar():
     username = payload.get("username")  # MSSV
 
     # Tạo thư mục nếu chưa có
-    avatar_dir = os.path.join("static", "uploads", "avatars")
+    avatar_dir = os.path.join(Config.DATABASE_DIR, "uploads", "avatars")
     os.makedirs(avatar_dir, exist_ok=True)
 
     # Dùng timestamp để tránh cache ảnh cũ

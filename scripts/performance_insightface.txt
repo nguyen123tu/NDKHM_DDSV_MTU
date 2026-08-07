@@ -1,0 +1,8 @@
+
+2026-08-05 08:21:53 - INSIGHTFACE
+Camera: Webcam mặc định
+Thời gian test: 55 giây
+Avg FPS: 10.02
+Min FPS: 3
+Max FPS: 12
+----------------------------------------

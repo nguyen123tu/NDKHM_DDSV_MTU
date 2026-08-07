@@ -4,7 +4,7 @@ Sử dụng RAG (Retrieval-Augmented Generation) để trả lời câu hỏi
 dựa trên kiến thức toàn bộ dự án.
 
 Hỗ trợ LLM Backend:
-- NVIDIA NIM API (meta/llama-3.1-8b-instruct)
+- NVIDIA NIM API (cấu hình qua biến môi trường)
 """
 
 import os
@@ -36,8 +36,8 @@ SYSTEM_PROMPT = """Bạn là **MTU AI Assistant** — trợ lý AI thông minh c
 - Tên: Hệ thống Điểm danh Thông minh MTUFace
 - Backend: Python Flask + SocketIO + Eventlet
 - AI: InsightFace (SCRFD + ArcFace 512-d) / DeepFace / YOLO+ResNet
-- Database: MySQL 8.0
-- Frontend: Bootstrap 5 + Chart.js + Jinja2
+- Database: Microsoft SQL Server (pymssql)
+- Frontend: Jinja2 + Tailwind CSS + JavaScript
 - Mobile: Flutter (REST API + JWT Auth)
 - Alerts: Telegram Bot
 """
@@ -49,13 +49,16 @@ class AIChatbot:
     """
 
     def __init__(self):
-        self._history = {}
         self._lock = threading.Lock()
 
-        # Mặc định dùng NVIDIA API theo yêu cầu
-        self._nvidia_key = (
-            "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"
-        )
+        # Khóa bí mật chỉ được lấy từ môi trường, tuyệt đối không ghi trong source.
+        self._nvidia_key = Config.NVIDIA_API_KEY
+
+    def _require_nvidia_key(self):
+        if not self._nvidia_key:
+            raise RuntimeError(
+                "Thiếu NVIDIA_API_KEY. Hãy cấu hình khóa trong file .env rồi khởi động lại server."
+            )
 
     def chat(
         self, question: str, session_id: str = "default", user_context: dict = None
@@ -130,7 +133,9 @@ class AIChatbot:
             history = self._get_history(session_id)
 
             # Gọi NVIDIA API (Sync) với Tool Calling
-            answer = self._call_nvidia(question, context, history, session_id)
+            answer = self._call_nvidia(
+                question, context, history, session_id, user_context=user_context
+            )
 
             duration_ms = int((time.time() - start_time) * 1000)
 
@@ -227,7 +232,11 @@ class AIChatbot:
 
             # Gọi NVIDIA API Stream
             for chunk in self._call_nvidia_stream(
-                question, context, history, session_id
+                question,
+                context,
+                history,
+                session_id,
+                user_context=user_context,
             ):
                 yield chunk
 
@@ -240,8 +249,11 @@ class AIChatbot:
             yield f"data: {json.dumps({'type': 'done', 'duration_ms': 0})}\n\n"
 
     def clear_history(self, session_id: str = "default"):
-        with self._lock:
-            self._history.pop(session_id, None)
+        from db.connection import execute_update
+        try:
+            execute_update("DELETE FROM chat_session WHERE id = %s", (session_id,))
+        except:
+            pass
 
     def get_suggested_questions(self) -> list:
         return [
@@ -263,8 +275,14 @@ class AIChatbot:
         return "\n".join(parts)
 
     def _call_nvidia(
-        self, question: str, context: str, history: list, session_id: str
+        self,
+        question: str,
+        context: str,
+        history: list,
+        session_id: str,
+        user_context: dict = None,
     ) -> str:
+        self._require_nvidia_key()
         url = "https://integrate.api.nvidia.com/v1/chat/completions"
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for msg in history[-6:]:
@@ -309,7 +327,9 @@ class AIChatbot:
 
             # Thực thi tất cả các tools được yêu cầu
             for tool_call in message_obj["tool_calls"]:
-                tool_response = execute_tool(tool_call["function"])
+                tool_response = execute_tool(
+                    tool_call["function"], user_context=user_context
+                )
                 tool_msg = {
                     "role": "tool",
                     "tool_call_id": tool_call["id"],
@@ -343,11 +363,17 @@ class AIChatbot:
             return content
 
     def _call_nvidia_stream(
-        self, question: str, context: str, history: list, session_id: str
+        self,
+        question: str,
+        context: str,
+        history: list,
+        session_id: str,
+        user_context: dict = None,
     ):
         # Vì streaming tool_calls cần tích lũy chuỗi JSON khá phức tạp,
         # Cách tốt nhất là tái sử dụng logic _call_nvidia() sync bên trên, nhưng trả về stream fake ở đoạn cuối.
         # Hoặc, để đơn giản, ta fallback stream về _call_nvidia() (bất đồng bộ nội bộ) và stream chunk ra.
+        self._require_nvidia_key()
         url = "https://integrate.api.nvidia.com/v1/chat/completions"
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for msg in history[-6:]:
@@ -393,7 +419,9 @@ class AIChatbot:
                 messages.append(message_obj)
 
                 for tool_call in message_obj["tool_calls"]:
-                    tool_response = execute_tool(tool_call["function"])
+                    tool_response = execute_tool(
+                        tool_call["function"], user_context=user_context
+                    )
                     tool_msg = {
                         "role": "tool",
                         "tool_call_id": tool_call["id"],
@@ -454,19 +482,66 @@ class AIChatbot:
             raise ValueError(f"Không thể kết nối đến NVIDIA API. Chi tiết: {str(e)}")
 
     def _get_history(self, session_id: str) -> list:
-        with self._lock:
-            return list(self._history.get(session_id, []))
+        from db.connection import execute_query
+        import json
+
+        try:
+            records = execute_query(
+                "SELECT role, content, tool_calls, tool_call_id "
+                "FROM chat_message WHERE session_id = %s ORDER BY created_at ASC",
+                (session_id,),
+            )
+            if not records:
+                return []
+
+            history = []
+            for r in records[-30:]:
+                msg = {"role": r["role"]}
+                if r.get("content"):
+                    msg["content"] = r["content"]
+                if r.get("tool_calls"):
+                    try:
+                        msg["tool_calls"] = json.loads(r["tool_calls"])
+                    except (TypeError, ValueError, json.JSONDecodeError):
+                        pass
+                if r.get("tool_call_id"):
+                    msg["tool_call_id"] = r["tool_call_id"]
+                history.append(msg)
+            return history
+        except Exception:
+            return []
 
     def _add_to_history(self, session_id: str, message: dict):
-        with self._lock:
-            if session_id not in self._history:
-                self._history[session_id] = []
+        from db.connection import execute_query, execute_update
+        import json
 
-            # OpenAI format dict instead of unpacking strings
-            self._history[session_id].append(message)
+        try:
+            # Kiểm tra xem session đã tồn tại chưa
+            exists = execute_query(
+                "SELECT id FROM chat_session WHERE id = %s", (session_id,)
+            )
+            if not exists:
+                execute_update(
+                    "INSERT INTO chat_session (id, user_id, role, title) VALUES (%s, %s, %s, %s)",
+                    (session_id, session_id, "user", "Trò chuyện"),
+                )
 
-            if len(self._history[session_id]) > 30:
-                self._history[session_id] = self._history[session_id][-30:]
+            role = message.get("role", "assistant")
+            content = message.get("content")
+            tool_calls_str = (
+                json.dumps(message.get("tool_calls"))
+                if message.get("tool_calls")
+                else None
+            )
+            tool_call_id = message.get("tool_call_id")
+
+            execute_update(
+                "INSERT INTO chat_message (session_id, role, content, tool_calls, tool_call_id) VALUES (%s, %s, %s, %s, %s)",
+                (session_id, role, content, tool_calls_str, tool_call_id),
+            )
+        except Exception as e:
+            print(f"[AIChatbot] Lỗi lưu lịch sử: {e}")
+            pass
 
 
 # ─── SINGLETON ───────────────────────────────────────────────────────────

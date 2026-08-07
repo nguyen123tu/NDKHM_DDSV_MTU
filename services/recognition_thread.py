@@ -89,8 +89,8 @@ class RecognitionSession:
             font_path = "C:/Windows/Fonts/arial.ttf"
             if os.path.exists(font_path):
                 self._font = ImageFont.truetype(font_path, 20)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[SESSION] Lỗi load font tiếng Việt: {e}")
 
     def _draw_vn_text(self, frame, text, position, color_bgr):
         """
@@ -139,7 +139,12 @@ class RecognitionSession:
             return False
 
         self._running = True
-        self._thread = self.socketio.start_background_task(target=self._run)
+        self._thread = threading.Thread(
+            target=self._run_guarded,
+            name=f"recognition-{self.lop_id}-{self.camera_id}",
+            daemon=True,
+        )
+        self._thread.start()
         print(f"[SESSION] Bắt đầu điểm danh lớp {self.lop_id}, camera {self.camera_id}")
         return True
 
@@ -147,12 +152,29 @@ class RecognitionSession:
         """Dừng thread nhận diện."""
         self._running = False
         if self._thread and hasattr(self._thread, "join"):
-            self._thread.join(timeout=3)
+            self._thread.join(timeout=Config.WORKER_STOP_TIMEOUT_SEC)
+            if self._thread.is_alive():
+                get_camera_manager().disconnect(self.camera_id)
+                self._thread.join(timeout=1.0)
         print(f"[SESSION] Dừng điểm danh lớp {self.lop_id}")
 
     @property
     def is_running(self):
         return self._running
+
+    def _run_guarded(self):
+        """Không để lỗi AI/camera làm worker chết âm thầm."""
+        try:
+            self._run()
+        except Exception as exc:
+            print(f"[SESSION ERROR] Worker nhận diện dừng: {exc}")
+            self.socketio.emit(
+                "recognition_status",
+                {"status": "ERROR", "message": str(exc)},
+            )
+        finally:
+            self._running = False
+            get_camera_manager().disconnect(self.camera_id)
 
     def _run(self):
         """Main loop nhận diện (chạy trong thread riêng)."""
@@ -174,6 +196,7 @@ class RecognitionSession:
         # Cooldown tracking
         last_brain_check = time.time()
         frame_interval = 1.0 / Config.MAX_FPS  # Giới hạn FPS
+        reconnect_delay = 1.0
 
         while self._running:
             loop_start = time.time()
@@ -200,14 +223,18 @@ class RecognitionSession:
                     print(
                         f"[SESSION] ⚠️ Camera {self.camera_id} mất kết nối. Phiên {self.phien_id} vẫn mở."
                     )
-                time.sleep(1)  # Thử lại sau 1 giây
+                time.sleep(reconnect_delay)
                 # Thử kết nối lại camera
                 try:
                     cam_manager.connect(self.camera_id, self.camera_id)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[SESSION] Lỗi reconnect camera {self.camera_id}: {e}")
+                reconnect_delay = min(
+                    reconnect_delay * 2, Config.CAMERA_RECONNECT_MAX_SEC
+                )
                 continue
             else:
+                reconnect_delay = 1.0
                 if not self._camera_connected:
                     self._camera_connected = True
                     self.socketio.emit(
@@ -237,10 +264,10 @@ class RecognitionSession:
                 self._frame_count = 0
                 self._last_ai_results = []
             self._frame_count += 1
-
+            
             if motion_area > Config.MOTION_AREA_THRESHOLD:
-                # TỐI ƯU HIỆU NĂNG: Với YOLO11 và MAX_FPS=30, có thể xử lý AI trên mỗi 2 frame (đạt ~15 FPS thực tế cho AI)
-                if self._frame_count % 2 == 0:
+                # Chỉ chạy AI mỗi N frame; N cấu hình bằng AI_FRAME_SKIP.
+                if self._frame_count % Config.AI_FRAME_SKIP == 0:
                     face_results = detect_and_embed(frame)
                     self._last_ai_results = []
 
@@ -269,36 +296,30 @@ class RecognitionSession:
                             max(0, int(y1)) : int(y2), max(0, int(x1)) : int(x2)
                         ]
                         if face_roi.size > 0:
-                            gray_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
-                            blur_score = cv2.Laplacian(gray_roi, cv2.CV_64F).var()
-
-                            hsv_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2HSV)
-                            v_channel = hsv_roi[:, :, 2]
-                            glare_ratio = np.sum(v_channel > 240) / (
-                                v_channel.size + 1e-6
-                            )
-
-                            if (x2 - x1) < 90 or (y2 - y1) < 90:
+                            # Chỉ giữ lại check khuôn mặt quá nhỏ. 
+                            # Bỏ check độ mờ/chói sáng vì đã có AI xịn (tránh lỗi môi trường chói sáng)
+                            if (x2 - x1) < 80 or (y2 - y1) < 80:
                                 is_spoof = True
                                 spoof_reason = f"Khuôn mặt quá nhỏ, cần tiến lại gần"
-                            elif blur_score < 10.0:
-                                is_spoof = True
-                                spoof_reason = f"Ảnh quá mờ ({blur_score:.1f})"
-                            elif glare_ratio > 0.40:
-                                is_spoof = True
-                                spoof_reason = f"Phát sáng màn hình ({glare_ratio:.2%})"
 
-                        # ─── DeepFace Anti-Spoofing: Lọc khuôn mặt giả ───
-                        if (
-                            face.get("is_real") is not None
-                            and not face.get("is_real", True)
-                        ) or is_spoof:
-                            final_reason = (
-                                spoof_reason
-                                if is_spoof
-                                else f"score={face.get('antispoof_score', 0):.2f}"
-                            )
+                        # ─── AI Anti-Spoofing (Lọc ảnh điện thoại/giấy in) ───
+                        # Nếu qua được bộ lọc Heuristic, chạy tiếp mô hình chuyên dụng
+                        if not is_spoof and face_roi.size > 0:
+                            from core.anti_spoofing import get_anti_spoofing
+                            anti_spoof_model = get_anti_spoofing()
+                            is_real, score, as_reason = anti_spoof_model.predict(frame, [x1, y1, x2, y2])
+                            if not is_real:
+                                is_spoof = True
+                                spoof_reason = f"{as_reason} (AI Score: {score:.2f})"
 
+                        # Hỗ trợ DeepFace fallback (nếu dùng Engine DeepFace thay vì InsightFace)
+                        if face.get("is_real") is not None and not face.get("is_real", True):
+                            is_spoof = True
+                            if not spoof_reason:
+                                spoof_reason = f"DeepFace Anti-Spoof (score={face.get('antispoof_score', 0):.2f})"
+
+                        if is_spoof:
+                            final_reason = spoof_reason
                             now = time.time()
 
                             # Log gian lận nếu nhận diện được sinh viên (Cooldown 10s cho mỗi MSSV)
@@ -355,10 +376,14 @@ class RecognitionSession:
                             self._match_history[original_mssv] = (
                                 self._match_history.get(original_mssv, 0) + 1
                             )
-                            # Cần ít nhất 4 frame liên tiếp nhận diện cùng 1 người (khoảng 0.5s) mới xác nhận
-                            if self._match_history[original_mssv] < 4:
+                            
+                            # Động thái: Nếu giống rất nhiều (>75%) -> chỉ cần 2 frame là đủ tự tin. 
+                            # Nếu bình thường -> cần 4 frame để tránh False Positive.
+                            required_frames = 2 if sim > 0.75 else 4
+                            
+                            if self._match_history[original_mssv] < required_frames:
                                 mssv = "UNKNOWN"
-                                ho_ten = f"Đang xác thực ({self._match_history[original_mssv]}/4)..."
+                                ho_ten = f"Đang xác thực ({self._match_history[original_mssv]}/{required_frames})..."
                                 # Không lưu điểm danh nếu chưa xác thực xong
 
                         result_item = {
@@ -399,7 +424,7 @@ class RecognitionSession:
                                                 "dominant_emotion"
                                             )
                             except Exception as e:
-                                pass  # Không crash nếu phân tích lỗi
+                                print(f"[SESSION] Lỗi phân tích DeepFace: {e}")
 
                         self._last_ai_results.append(result_item)
 
@@ -430,6 +455,8 @@ class RecognitionSession:
                                 log_result = {
                                     "success": False,
                                     "action": "wrong_class",
+                                    "status": "INVALID",
+                                    "display_status": "Khác lớp",
                                     "error_code": "WRONG_CLASS",
                                 }
 
@@ -472,6 +499,7 @@ class RecognitionSession:
                                             "avatar": avatar_path,
                                         },
                                     )
+                                    
                         else:
                             # Cảnh báo người lạ (người chưa đăng ký) trên Dashboard
                             now = time.time()
@@ -563,9 +591,9 @@ class RecognitionSession:
             # Giới hạn FPS
             elapsed = time.time() - loop_start
             if elapsed < frame_interval:
-                self.socketio.sleep(frame_interval - elapsed)
+                time.sleep(frame_interval - elapsed)
             else:
-                self.socketio.sleep(0)  # Đảm bảo luôn nhường CPU cho event loop
+                time.sleep(0.001)
 
         # Cleanup
         cam_manager.disconnect(self.camera_id)
@@ -606,7 +634,29 @@ def start_session(lop_id, camera_id, socketio, start_time="07:00", admin_id=None
         loai_phien="WEB_CAMERA",
         gio_hoc_du_kien=gio_du_kien,
     )
-    phien_id = sess_row["id"] if sess_row else None
+    
+    # Nếu bị lỗi do có phiên cũ treo (server restart), tự động đóng phiên cũ và thử lại
+    if err and "đã có phiên điểm danh đang mở" in err:
+        from db.connection import execute_query
+        old_sessions = execute_query(
+            "SELECT id FROM phien_diem_danh WHERE lop_id = %s AND trang_thai = 1", (lop_id,)
+        )
+        for old in old_sessions:
+            AttendanceSessionService.close_session(old["id"], admin_id=admin_id)
+            
+        # Thử tạo lại lần 2
+        sess_row, err = AttendanceSessionService.create_session(
+            lop_id=lop_id,
+            admin_id=admin_id,
+            loai_phien="WEB_CAMERA",
+            gio_hoc_du_kien=gio_du_kien,
+        )
+
+    if not sess_row:
+        print(f"[SESSION ERROR] Không thể tạo phiên điểm danh: {err}")
+        return None
+
+    phien_id = sess_row["id"]
 
     # Lấy metadata phiên để truyền cho recognition thread
     scheduled_start = gio_du_kien

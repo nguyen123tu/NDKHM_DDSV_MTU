@@ -1,6 +1,6 @@
 {
-  "last_built": "2026-07-30 11:37:32",
-  "total_chunks": 1219,
+  "last_built": "2026-08-07 12:00:52",
+  "total_chunks": 1307,
   "sources": [
     {
       "file": "README.md",
@@ -8,7 +8,7 @@
     },
     {
       "file": "docs/bao_cao_do_an.md",
-      "chunks": 6
+      "chunks": 7
     },
     {
       "file": "docs/ccc.md",
@@ -24,11 +24,11 @@
     },
     {
       "file": "docs/api_documentation.md",
-      "chunks": 8
+      "chunks": 9
     },
     {
       "file": "docs/PROJECT_STRUCTURE.md",
-      "chunks": 7
+      "chunks": 8
     },
     {
       "file": "docs/HUONG_DAN_CAI_DAT.md",
@@ -44,11 +44,11 @@
     },
     {
       "file": "db/schema.sql",
-      "chunks": 26
+      "chunks": 29
     },
     {
       "file": "config.py",
-      "chunks": 19
+      "chunks": 20
     },
     {
       "file": ".env.example",
@@ -64,11 +64,11 @@
     },
     {
       "file": "routes\\camera_mgmt.py",
-      "chunks": 8
+      "chunks": 14
     },
     {
       "file": "routes\\chatbot.py",
-      "chunks": 33
+      "chunks": 37
     },
     {
       "file": "routes\\classes.py",
@@ -76,23 +76,23 @@
     },
     {
       "file": "routes\\dashboard.py",
-      "chunks": 10
+      "chunks": 9
     },
     {
       "file": "routes\\export.py",
-      "chunks": 21
+      "chunks": 23
     },
     {
       "file": "routes\\fraud.py",
-      "chunks": 16
+      "chunks": 20
     },
     {
       "file": "routes\\public.py",
-      "chunks": 43
+      "chunks": 47
     },
     {
       "file": "routes\\students.py",
-      "chunks": 42
+      "chunks": 44
     },
     {
       "file": "routes\\support.py",
@@ -104,7 +104,7 @@
     },
     {
       "file": "routes\\users.py",
-      "chunks": 9
+      "chunks": 16
     },
     {
       "file": "routes\\__init__.py",
@@ -112,11 +112,11 @@
     },
     {
       "file": "services\\ai_chatbot.py",
-      "chunks": 43
+      "chunks": 50
     },
     {
       "file": "services\\ai_tools.py",
-      "chunks": 14
+      "chunks": 13
     },
     {
       "file": "services\\attendance_policy.py",
@@ -124,19 +124,19 @@
     },
     {
       "file": "services\\attendance_service.py",
-      "chunks": 57
+      "chunks": 59
     },
     {
       "file": "services\\attendance_session_service.py",
-      "chunks": 44
+      "chunks": 52
     },
     {
       "file": "services\\class_service.py",
-      "chunks": 33
+      "chunks": 34
     },
     {
       "file": "services\\export_service.py",
-      "chunks": 92
+      "chunks": 94
     },
     {
       "file": "services\\fcm_service.py",
@@ -144,19 +144,19 @@
     },
     {
       "file": "services\\knowledge_builder.py",
-      "chunks": 48
+      "chunks": 49
     },
     {
       "file": "services\\leave_service.py",
-      "chunks": 9
+      "chunks": 10
     },
     {
       "file": "services\\recognition_thread.py",
-      "chunks": 59
+      "chunks": 66
     },
     {
       "file": "services\\student_service.py",
-      "chunks": 24
+      "chunks": 25
     },
     {
       "file": "services\\telegram_alert.py",
@@ -172,7 +172,7 @@
     },
     {
       "file": "core\\camera.py",
-      "chunks": 43
+      "chunks": 45
     },
     {
       "file": "core\\csrf.py",
@@ -180,7 +180,7 @@
     },
     {
       "file": "core\\detector.py",
-      "chunks": 14
+      "chunks": 15
     },
     {
       "file": "core\\detector_yolo.py",
@@ -188,7 +188,7 @@
     },
     {
       "file": "core\\embedder.py",
-      "chunks": 16
+      "chunks": 14
     },
     {
       "file": "core\\embedder_resnet.py",
@@ -196,11 +196,11 @@
     },
     {
       "file": "core\\engine.py",
-      "chunks": 18
+      "chunks": 19
     },
     {
       "file": "core\\error_handler.py",
-      "chunks": 23
+      "chunks": 26
     },
     {
       "file": "core\\image_validator.py",
@@ -208,7 +208,7 @@
     },
     {
       "file": "core\\limiter.py",
-      "chunks": 15
+      "chunks": 16
     },
     {
       "file": "core\\matcher.py",
@@ -220,7 +220,7 @@
     },
     {
       "file": "core\\trainer.py",
-      "chunks": 36
+      "chunks": 34
     },
     {
       "file": "core\\__init__.py",
@@ -228,7 +228,7 @@
     },
     {
       "file": "utils\\decorators.py",
-      "chunks": 11
+      "chunks": 12
     },
     {
       "file": "utils\\helpers.py",
@@ -237,6 +237,14 @@
     {
       "file": "utils\\__init__.py",
       "chunks": 1
+    },
+    {
+      "file": "scripts\\evaluate_performance.py",
+      "chunks": 10
+    },
+    {
+      "file": "scripts\\generate_missing_snapshots.py",
+      "chunks": 9
     }
   ]
 }

@@ -1,0 +1,8 @@
+
+2026-08-05 08:23:51 - YOLO_RESNET
+Camera: Webcam mặc định
+Thời gian test: 54 giây
+Avg FPS: 6.44
+Min FPS: 2
+Max FPS: 12
+----------------------------------------

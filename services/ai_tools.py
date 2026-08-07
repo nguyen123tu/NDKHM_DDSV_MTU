@@ -63,11 +63,13 @@ TOOLS_SCHEMA = [
 ]
 
 
-def execute_tool(tool_call):
+def execute_tool(tool_call, user_context=None):
     """
     Thực thi tool dựa trên thông tin tool_call từ LLM
     """
     func_name = tool_call.get("name")
+    user_context = user_context or {}
+    role = str(user_context.get("role") or "").lower()
 
     try:
         args_str = tool_call.get("arguments", "{}")
@@ -85,9 +87,18 @@ def execute_tool(tool_call):
         return _tool_search_knowledge(args.get("query", ""))
 
     elif func_name == "get_student_info":
-        return _tool_get_student_info(args.get("mssv", ""))
+        requested_mssv = str(args.get("mssv", "")).strip()
+        if role == "student" and requested_mssv.lower() != str(
+            user_context.get("username") or ""
+        ).strip().lower():
+            return "Bạn chỉ được phép tra cứu thông tin điểm danh của chính mình."
+        if role not in ("student", "admin", "lecturer", "giang_vien"):
+            return "Bạn cần đăng nhập để tra cứu thông tin sinh viên."
+        return _tool_get_student_info(requested_mssv)
 
     elif func_name == "export_attendance_report":
+        if role not in ("admin", "lecturer", "giang_vien"):
+            return "Bạn không có quyền xuất báo cáo điểm danh."
         return _tool_export_report(
             args.get("ma_lop", ""), args.get("format", "excel"), args.get("date")
         )

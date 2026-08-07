@@ -3,10 +3,17 @@ Chatbot Routes — API endpoints cho AI Chatbot MTUFace
 Cung cấp giao diện chat và API tương tác với trợ lý AI
 """
 
-import uuid
 import re
 import io
-from flask import Blueprint, render_template, request, jsonify, session, Response
+from flask import (
+    Blueprint,
+    Response,
+    jsonify,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+)
 import json
 import time
 from utils.decorators import login_required, admin_required
@@ -15,7 +22,19 @@ from core.limiter import limiter
 chatbot_bp = Blueprint("chatbot", __name__, url_prefix="/chatbot")
 
 
+def _web_conversation_id(data=None):
+    """Tạo khóa DB riêng cho từng người dùng và từng cuộc hội thoại."""
+    data = data or {}
+    conversation_id = str(
+        data.get("conversation_id") or request.args.get("conversation_id") or "main"
+    )
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", conversation_id):
+        raise ValueError("conversation_id không hợp lệ")
+    return f"web_{session['admin_id']}_{conversation_id}"
+
+
 @chatbot_bp.route("/")
+@login_required
 def chat_page():
     """
     Trang chat AI
@@ -26,10 +45,6 @@ def chat_page():
       200:
         description: Thành công
     """
-    # Tạo session_id cho cuộc trò chuyện
-    if "chat_session_id" not in session:
-        session["chat_session_id"] = str(uuid.uuid4())
-
     from services.knowledge_builder import get_knowledge_builder
     from services.ai_chatbot import get_chatbot
 
@@ -44,6 +59,7 @@ def chat_page():
 
 
 @chatbot_bp.route("/ask", methods=["POST"])
+@login_required
 @limiter.limit("20 per minute")
 def ask():
     """
@@ -55,7 +71,7 @@ def ask():
       200:
         description: Thành công
     """
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     question = data.get("question", "").strip()
 
     if not question:
@@ -64,7 +80,10 @@ def ask():
     if len(question) > 2000:
         return jsonify({"error": "Câu hỏi quá dài (tối đa 2000 ký tự)"}), 400
 
-    session_id = session.get("chat_session_id", "default")
+    try:
+        session_id = _web_conversation_id(data)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
     # --- HỖ TRỢ APP MOBILE & WEB: Lấy User Context ---
     user_context = None
@@ -77,25 +96,6 @@ def ask():
             "id": session.get("admin_id"),
             "name": session.get("admin_name"),
         }
-        session_id = f"web_{session.get('admin_username')}"
-
-    # 2. Từ Mobile Token
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header.split(" ")[1]
-        try:
-            import jwt
-            from config import Config
-
-            payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=["HS256"])
-            user_context = {
-                "role": payload.get("role", "student"),
-                "username": payload.get("username"),
-                "id": payload.get("sub"),
-            }
-            session_id = f"mobile_{payload.get('username')}"
-        except Exception:
-            pass
 
     from services.ai_chatbot import get_chatbot
 
@@ -106,12 +106,13 @@ def ask():
 
 
 @chatbot_bp.route("/ask_stream", methods=["POST"])
+@login_required
 @limiter.limit("20 per minute")
 def ask_stream():
     """
     API: Gửi câu hỏi cho AI (Streaming SSE)
     """
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     question = data.get("question", "").strip()
 
     if not question:
@@ -120,7 +121,10 @@ def ask_stream():
     if len(question) > 2000:
         return jsonify({"error": "Câu hỏi quá dài (tối đa 2000 ký tự)"}), 400
 
-    session_id = session.get("chat_session_id", "default")
+    try:
+        session_id = _web_conversation_id(data)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
     # --- HỖ TRỢ APP MOBILE & WEB: Lấy User Context ---
     user_context = None
@@ -133,25 +137,6 @@ def ask_stream():
             "id": session.get("admin_id"),
             "name": session.get("admin_name"),
         }
-        session_id = f"web_{session.get('admin_username')}"
-
-    # 2. Từ Mobile Token
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header.split(" ")[1]
-        try:
-            import jwt
-            from config import Config
-
-            payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=["HS256"])
-            user_context = {
-                "role": payload.get("role", "student"),
-                "username": payload.get("username"),
-                "id": payload.get("sub"),
-            }
-            session_id = f"mobile_{payload.get('username')}"
-        except Exception:
-            pass
 
     from services.ai_chatbot import get_chatbot
 
@@ -168,6 +153,7 @@ def ask_stream():
 
 
 @chatbot_bp.route("/suggestions", methods=["GET"])
+@login_required
 def mobile_chatbot_suggestions():
     # Helper for mobile app
     from services.ai_chatbot import get_chatbot
@@ -177,26 +163,37 @@ def mobile_chatbot_suggestions():
     return jsonify({"success": True, "data": suggestions}), 200
 
 
+@chatbot_bp.route("/history", methods=["GET"])
+@login_required
+def get_chat_history():
+    """
+    API: Lấy lịch sử chat
+    """
+    try:
+        session_id = _web_conversation_id()
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    from services.ai_chatbot import get_chatbot
+    chatbot = get_chatbot()
+    history = chatbot._get_history(session_id)
+    return jsonify({"success": True, "history": history})
+
 @chatbot_bp.route("/clear", methods=["POST"])
+@login_required
 def clear_chat():
     """
     API: Xóa lịch sử chat
-    ---
-    tags:
-      - Chatbot AI API
-    responses:
-      200:
-        description: Thành công
     """
-    session_id = session.get("chat_session_id", "default")
+    data = request.get_json(silent=True) or {}
+    try:
+        session_id = _web_conversation_id(data)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
     from services.ai_chatbot import get_chatbot
-
     chatbot = get_chatbot()
     chatbot.clear_history(session_id)
-
-    # Tạo session mới
-    session["chat_session_id"] = str(uuid.uuid4())
 
     return jsonify({"success": True, "message": "Đã xóa lịch sử trò chuyện"})
 
@@ -259,7 +256,6 @@ def knowledge_progress():
 
 @chatbot_bp.route("/download-export/<path:filename>")
 @login_required
-@admin_required
 def download_export(filename):
     """
     Tải file báo cáo do AI sinh ra
@@ -291,6 +287,7 @@ def knowledge_status():
 
 
 @chatbot_bp.route("/tts", methods=["GET", "POST"])
+@limiter.limit("30 per minute")
 def text_to_speech():
     """
     API: Chuyển text thành giọng nói tiếng Việt (gTTS)
