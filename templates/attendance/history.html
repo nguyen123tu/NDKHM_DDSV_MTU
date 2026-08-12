@@ -6,20 +6,23 @@
 {% block extra_css %}
 {% endblock %}
 
+{% block header_section %}{% endblock %}
+
 {% block content %}
 <div class="max-w-container-max mx-auto space-y-xl">
 
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-xl">
         <div>
+            <h2 class="text-3xl font-bold text-on-surface tracking-tight mb-2">Lịch sử Điểm danh</h2>
             <p class="text-sm text-on-surface-variant">Tra cứu dữ liệu điểm danh thời gian thực và lịch sử của sinh viên.</p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="{{ url_for('export.index') }}" class="bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-variant flex items-center gap-2 transition-colors border border-outline-variant shadow-sm">
+            <a href="{{ url_for('export.index') }}" class="bg-surface-container-lowest text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary hover:text-white flex items-center gap-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-outline-variant">
                 <span class="material-symbols-outlined text-[18px]">file_download</span>
                 Xuất Excel
             </a>
-            <button onclick="window.print()" class="bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-variant flex items-center gap-2 transition-colors border border-outline-variant shadow-sm">
+            <button onclick="window.print()" class="bg-surface-container-lowest text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-secondary hover:text-white flex items-center gap-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-outline-variant">
                 <span class="material-symbols-outlined text-[18px]">print</span>
                 In danh sách
             </button>

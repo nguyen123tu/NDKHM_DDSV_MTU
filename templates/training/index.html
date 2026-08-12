@@ -7,8 +7,16 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/training_index_style_1.css') }}">
 {% endblock %}
 
+{% block header_section %}{% endblock %}
+
 {% block content %}
 <div class="max-w-container-max mx-auto space-y-xl">
+
+    <!-- Page Title -->
+    <div class="mb-6">
+        <h2 class="text-3xl font-bold text-on-surface tracking-tight mb-2">Training AI</h2>
+        <p class="text-sm text-on-surface-variant">Trích xuất đặc trưng sinh trắc học và huấn luyện mô hình nhận diện khuôn mặt.</p>
+    </div>
 
     <!-- Header & Action Section -->
     <div class="flex flex-col md:flex-row gap-8">

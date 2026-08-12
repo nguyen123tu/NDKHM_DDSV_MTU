@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập — MTU Face AI</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/animated_favicon.svg') }}">
+    <title>Đăng nhập — MTU Face </title>
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/gima.jpg') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -29,52 +29,44 @@
     <!-- Main Container -->
     <div class="relative z-10 flex items-center justify-center min-h-screen p-6">
 
-        <div class="bg-white/80 backdrop-blur-xl rounded-3xl w-full max-w-md p-10 space-y-8 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-gray-100">
+        <div
+            class="login-card bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-md p-10 space-y-8 border border-white/50">
 
             <!-- Logo & Branding -->
             <div class="text-center space-y-4">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20 mx-auto">
-                    <span class="material-symbols-outlined text-primary text-[32px]">face</span>
+                <div
+                    class="brand-mark inline-flex items-center justify-center w-20 h-20 rounded-2xl mx-auto">
+                    <span class="material-symbols-outlined text-white text-[42px]">face</span>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight text-gray-900">MTU Face AI</h1>
+                    <h1 class="text-2xl font-bold tracking-tight text-gray-900">MTU Face </h1>
                     <p class="text-sm text-gray-500 mt-1">Hệ thống điểm danh khuôn mặt thông minh</p>
                 </div>
             </div>
 
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-            {% for category, message in messages %}
-            <div class="p-3.5 rounded-xl flex items-center gap-3 text-sm font-medium border
-                {% if category == 'error' %}bg-red-50 border-red-200 text-red-600
-                {% else %}bg-green-50 border-green-200 text-green-600{% endif %}">
-                <span class="material-symbols-outlined text-[18px]">
-                    {% if category == 'error' %}error{% else %}check_circle{% endif %}
-                </span>
-                {{ message }}
-            </div>
-            {% endfor %}
-            {% endif %}
-            {% endwith %}
+
 
             <!-- Login Form -->
             <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-5">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <div class="space-y-1.5">
-                    <label for="username" class="block text-xs font-bold text-gray-600 tracking-wide uppercase">Tên đăng nhập</label>
+                    <label for="username" class="block text-xs font-bold text-gray-600 tracking-wide uppercase">Tên đăng
+                        nhập</label>
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-[20px]">person</span>
+                        <span
+                            class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-[20px]">person</span>
                         <input type="text" name="username" id="username" required autofocus placeholder="admin"
                             class="input-field w-full pl-11 pr-4 py-3 rounded-xl text-sm outline-none">
                     </div>
                 </div>
 
                 <div class="space-y-1.5">
-                    <label for="passwordField" class="block text-xs font-bold text-gray-600 tracking-wide uppercase">Mật khẩu</label>
+                    <label for="passwordField" class="block text-xs font-bold text-gray-600 tracking-wide uppercase">Mật
+                        khẩu</label>
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-[20px]">lock</span>
+                        <span
+                            class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-[20px]">lock</span>
                         <input type="password" name="password" id="passwordField" required placeholder="••••••••"
                             class="input-field w-full pl-11 pr-11 py-3 rounded-xl text-sm outline-none">
                         <button type="button" onclick="togglePassword()"
@@ -88,13 +80,16 @@
                     <label class="flex items-center gap-2 cursor-pointer group">
                         <input type="checkbox" name="remember"
                             class="w-4 h-4 rounded border-gray-300 bg-white text-primary focus:ring-primary/30 focus:ring-offset-0 cursor-pointer">
-                        <span class="text-gray-500 font-medium group-hover:text-gray-700 transition-colors">Ghi nhớ</span>
+                        <span class="text-gray-500 font-medium group-hover:text-gray-700 transition-colors">Ghi
+                            nhớ</span>
                     </label>
-                    <a href="#" class="text-gray-500 font-medium hover:text-primary transition-colors">Quên mật khẩu?</a>
+                    <a href="#" class="text-gray-500 font-medium hover:text-primary transition-colors">Quên mật
+                        khẩu?</a>
                 </div>
 
                 <button type="submit"
                     class="btn-gradient w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg text-white">
+                    <span class="login-icon material-symbols-outlined text-[20px]">login</span>
                     Đăng nhập
                     <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                 </button>
@@ -116,6 +111,67 @@
 
         </div>
     </div>
+
+    <!-- Toast Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="toast-container" class="fixed top-6 right-6 z-50 flex flex-col gap-3" style="max-width: 400px;">
+        {% for category, message in messages %}
+        <div class="toast-item flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-xl
+            {% if category == 'error' %}bg-red-50/95 border-red-200/60 text-red-700
+            {% else %}bg-green-50/95 border-green-200/60 text-green-700{% endif %}"
+            style="animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;">
+            <span class="material-symbols-outlined text-[22px] flex-shrink-0
+                {% if category == 'error' %}text-red-500{% else %}text-green-500{% endif %}">
+                {% if category == 'error' %}error{% else %}check_circle{% endif %}
+            </span>
+            <span class="text-sm font-semibold flex-1">{{ message }}</span>
+            <button
+                onclick="this.parentElement.style.animation='slideOutRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards'"
+                class="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <style>
+        @keyframes slideInRight {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+        }
+    </style>
+
+    <script>
+        // Auto-dismiss toasts after 5 seconds
+        document.querySelectorAll('.toast-item').forEach((toast, index) => {
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+                setTimeout(() => toast.remove(), 400);
+            }, 5000 + index * 300);
+        });
+    </script>
 
     <script src="{{ url_for('static', filename='js/auth_login_script_2.js') }}"></script>
 </body>

@@ -6,12 +6,15 @@
 {% block extra_css %}
 {% endblock %}
 
+{% block header_section %}{% endblock %}
+
 {% block content %}
 <div class="max-w-container-max mx-auto space-y-xl">
 
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-xl">
         <div>
+            <h2 class="text-3xl font-bold text-on-surface tracking-tight mb-2">Quản lý Sinh viên</h2>
             <p class="text-sm text-on-surface-variant">Theo dõi và đăng ký dữ liệu khuôn mặt cho hệ thống điểm danh AI.</p>
         </div>
         <div class="flex items-center gap-3">
@@ -244,7 +247,7 @@
                         <li>Khuôn mặt nằm trọn trong khung màu xanh.</li>
                         <li>Tránh đeo kính râm hoặc khẩu trang.</li>
                         <li>Đảm bảo ánh sáng đồng đều trên khuôn mặt.</li>
-                        <li>Chụp đủ 3 tư thế: <strong>Thẳng, Trái, Phải</strong> để AI lập bản đồ 3D.</li>
+                        <li>Chụp nhiều ảnh (khuyến nghị 5-10 ảnh) ở các góc độ: <strong>Thẳng, Trái, Phải, Trên, Dưới</strong> để AI học khuôn mặt tốt nhất.</li>
                     </ul>
                 </div>
             </div>
@@ -289,20 +292,11 @@
                     </div>
                 </div>
                 
-                <!-- 3 Steps Capture Buttons -->
-                <div class="grid grid-cols-3 gap-3">
-                    <button class="flex flex-col items-center gap-1 p-3 border-2 border-outline-variant bg-surface rounded-xl transition-all hover:bg-surface-container-low" id="btnCap1" onclick="takeSnapshot(1)">
-                        <span class="material-symbols-outlined text-[28px] text-on-surface-variant">face</span>
-                        <span class="text-xs font-bold text-on-surface">1. Thẳng</span>
-                    </button>
-                    <button class="flex flex-col items-center gap-1 p-3 border-2 border-outline-variant bg-surface rounded-xl transition-all grayscale opacity-50 pointer-events-none" id="btnCap2" onclick="takeSnapshot(2)">
-                        <span class="material-symbols-outlined text-[28px] text-on-surface-variant">face_6</span>
-                        <span class="text-xs font-bold text-on-surface">2. Trái</span>
-                    </button>
-                    <button class="flex flex-col items-center gap-1 p-3 border-2 border-outline-variant bg-surface rounded-xl transition-all grayscale opacity-50 pointer-events-none" id="btnCap3" onclick="takeSnapshot(3)">
-                        <span class="material-symbols-outlined text-[28px] text-on-surface-variant">face_5</span>
-                        <span class="text-xs font-bold text-on-surface">3. Phải</span>
-                    </button>
+                <!-- Infinite Capture Info -->
+                <div class="flex flex-col items-center justify-center p-4 border-2 border-outline-variant bg-surface rounded-xl transition-all">
+                    <div class="text-3xl font-bold text-secondary mb-1" id="capturedCountText">0</div>
+                    <div class="text-xs font-bold text-on-surface uppercase tracking-wider">Ảnh đã chụp</div>
+                    <p class="text-[10px] text-on-surface-variant mt-2 text-center">Khuyến nghị chụp ít nhất 5 ảnh ở nhiều góc độ (thẳng, trái, phải) để AI nhận diện tốt nhất.</p>
                 </div>
             </div>
         </div>
@@ -423,8 +417,7 @@
     const regModal = document.getElementById('registrationModal');
     const regContainer = document.getElementById('modalContainer');
     let stream = null;
-    let imagesData = { 1: null, 2: null, 3: null };
-    let currentStep = 1;
+    let imagesData = [];
 
     function openRegistrationModal() {
         regModal.classList.remove('opacity-0', 'pointer-events-none');
@@ -432,17 +425,10 @@
         // Reset form
         document.getElementById('regMssv').value = '';
         document.getElementById('regHoTen').value = '';
-        imagesData = { 1: null, 2: null, 3: null };
-        currentStep = 1;
+        imagesData = [];
         document.getElementById('btnSubmitReg').disabled = true;
         document.getElementById('regStatusMsg').innerHTML = '';
-        // Reset buttons
-        for(let i=1; i<=3; i++) {
-            const btn = document.getElementById(`btnCap${i}`);
-            btn.className = 'flex flex-col items-center gap-1 p-3 border-2 border-outline-variant bg-surface rounded-xl transition-all grayscale opacity-50 pointer-events-none';
-            btn.querySelector('span').classList.replace('text-on-secondary', 'text-on-surface-variant');
-            btn.querySelector('span').classList.replace('text-secondary', 'text-on-surface-variant');
-        }
+        document.getElementById('capturedCountText').innerText = '0';
     }
 
     function closeRegistrationModal() {
@@ -482,13 +468,6 @@
                 el.classList.remove('border-secondary/50');
                 el.classList.add('border-secondary-fixed');
             });
-            
-            // Enable first capture button
-            currentStep = 1;
-            const btn1 = document.getElementById('btnCap1');
-            btn1.classList.remove('grayscale', 'opacity-50', 'pointer-events-none');
-            btn1.classList.add('border-secondary-fixed', 'bg-secondary/10');
-            btn1.querySelector('span').classList.add('text-secondary');
         } catch (err) {
             alert('Không thể truy cập camera. Vui lòng kiểm tra quyền trên trình duyệt.');
         }
@@ -505,12 +484,10 @@
     }
     
     function autoCapture() {
-        if (currentStep <= 3) {
-            takeSnapshot(currentStep);
-        }
+        takeSnapshot();
     }
 
-    function takeSnapshot(step) {
+    function takeSnapshot() {
         if (!stream) return;
         
         const video = document.getElementById('webcamVideo');
@@ -525,37 +502,21 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
         // Save base64
-        imagesData[step] = canvas.toDataURL('image/jpeg', 0.9);
+        const imgBase64 = canvas.toDataURL('image/jpeg', 0.9);
+        imagesData.push(imgBase64);
+        
+        // Update UI
+        document.getElementById('capturedCountText').innerText = imagesData.length;
         
         // UI Feedback
         const frame = document.getElementById('cameraFrame');
         frame.classList.add('face-scan-active');
         setTimeout(() => frame.classList.remove('face-scan-active'), 400);
 
-        // Update button states
-        const currentBtn = document.getElementById(`btnCap${step}`);
-        currentBtn.classList.remove('bg-secondary/10', 'border-secondary-fixed');
-        currentBtn.classList.add('bg-secondary', 'text-on-secondary');
-        currentBtn.querySelector('span').classList.remove('text-on-surface-variant', 'text-secondary');
-        currentBtn.querySelector('span').classList.add('text-on-secondary');
-
-        // Move to next step
-        if (step < 3) {
-            currentStep = step + 1;
-            const nextBtn = document.getElementById(`btnCap${currentStep}`);
-            nextBtn.classList.remove('grayscale', 'opacity-50', 'pointer-events-none');
-            nextBtn.classList.add('border-secondary-fixed', 'bg-secondary/10');
-            nextBtn.querySelector('span').classList.remove('text-on-surface-variant');
-            nextBtn.querySelector('span').classList.add('text-secondary');
-        } else {
-            currentStep = 4; // Done
-        }
-
-        // Enable submit if all done
-        if (imagesData[1] && imagesData[2] && imagesData[3]) {
+        // Enable submit if at least 1 photo is taken
+        if (imagesData.length > 0) {
             document.getElementById('btnSubmitReg').disabled = false;
-            document.getElementById('regStatusMsg').innerHTML = '<span class="material-symbols-outlined text-[18px]">verified</span> Đã quét đủ 3 góc độ.';
-            stopCamera();
+            document.getElementById('regStatusMsg').innerHTML = '<span class="material-symbols-outlined text-[18px]">verified</span> Đã chụp ' + imagesData.length + ' ảnh.';
         }
     }
     
@@ -569,8 +530,8 @@
             return;
         }
         
-        if(!imagesData[1] || !imagesData[2] || !imagesData[3]) {
-            alert('Vui lòng chụp đủ 3 góc độ khuôn mặt.');
+        if(imagesData.length === 0) {
+            alert('Vui lòng chụp ít nhất 1 ảnh khuôn mặt.');
             return;
         }
         
@@ -586,7 +547,7 @@
                     mssv: mssv,
                     ho_ten: ho_ten,
                     lop_id: lop_id,
-                    images: [imagesData[1], imagesData[2], imagesData[3]]
+                    images: imagesData
                 })
             });
             const data = await res.json();

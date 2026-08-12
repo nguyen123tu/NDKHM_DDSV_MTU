@@ -1,25 +1,137 @@
-.hover-white:hover { color: white !important; }
-    .transition { transition: all 0.3s ease; }
-    .w-20px { width: 20px; display: inline-block; }
-    .face-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
-    .face-grid img {
-        width: 100%;
-        aspect-ratio: 1;
-        object-fit: cover;
-        border-radius: 6px;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    .face-empty {
-        background: rgba(255,255,255,0.05);
-        border: 1px dashed rgba(255,255,255,0.2);
-        border-radius: 6px;
-        aspect-ratio: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: rgba(255,255,255,0.3);
-    }
+/* Polished student lookup portal */
+:root {
+    --portal-primary: #6366f1;
+    --portal-cyan: #22d3ee;
+    --portal-bg: #07111f;
+    --portal-card: rgba(15, 30, 52, .72);
+    --portal-line: rgba(148, 163, 184, .16);
+}
+
+html { min-height: 100%; }
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+        radial-gradient(circle at 16% 10%, rgba(79, 70, 229, .28), transparent 34rem),
+        radial-gradient(circle at 88% 68%, rgba(8, 145, 178, .18), transparent 36rem),
+        linear-gradient(145deg, #070b18 0%, #101b36 52%, #071a2c 100%) !important;
+}
+body::before,
+body::after { position: fixed !important; opacity: .7; }
+body::before { width: 420px !important; height: 420px !important; background: rgba(99,102,241,.12) !important; }
+body::after { width: 380px !important; height: 380px !important; background: rgba(34,211,238,.08) !important; }
+
+.container.py-5 { padding-top: 3.25rem !important; padding-bottom: 4rem !important; }
+.branding-header { margin-bottom: 2.35rem !important; }
+.portal-logo {
+    width: 76px;
+    height: 76px;
+    margin-inline: auto;
+    display: grid;
+    place-items: center;
+    border-radius: 24px;
+    color: #fff;
+    font-size: 2.15rem;
+    background: linear-gradient(145deg, #6366f1, #2563eb 55%, #0891b2);
+    border: 1px solid rgba(255,255,255,.26);
+    box-shadow: 0 18px 38px rgba(37,99,235,.28), inset 0 1px 0 rgba(255,255,255,.32);
+}
+.portal-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .4rem .8rem;
+    margin-bottom: .8rem;
+    border: 1px solid rgba(52,211,153,.18);
+    border-radius: 999px;
+    background: rgba(16,185,129,.08);
+    color: #a7f3d0;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+.portal-kicker i { color: #34d399; font-size: .43rem; filter: drop-shadow(0 0 5px #34d399); }
+.branding-header h1 {
+    margin-top: .15rem !important;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    letter-spacing: -.035em !important;
+    text-transform: none !important;
+    background: linear-gradient(110deg, #fff 25%, #c7d2fe 65%, #a5f3fc) !important;
+    -webkit-background-clip: text !important;
+}
+.branding-header p { color: #94a3b8 !important; margin-top: .55rem !important; }
+
+.glass-card {
+    border-radius: 28px !important;
+    border: 1px solid var(--portal-line) !important;
+    background: linear-gradient(145deg, rgba(22,36,63,.83), rgba(15,28,49,.7)) !important;
+    box-shadow: 0 28px 70px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05) !important;
+    backdrop-filter: blur(24px) !important;
+}
+.glass-card:hover { transform: none !important; border-color: rgba(148,163,184,.24) !important; }
+.lookup-heading { display: flex; align-items: center; justify-content: center; gap: .9rem; }
+.lookup-heading-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    color: #c7d2fe;
+    background: rgba(99,102,241,.14);
+    border: 1px solid rgba(129,140,248,.2);
+}
+.lookup-heading h5 { font-size: 1.05rem; letter-spacing: -.01em; }
+.lookup-heading p { color: #94a3b8; font-size: .8rem; }
+
+.input-group { padding: 5px; border: 1px solid rgba(148,163,184,.18); border-radius: 18px; background: rgba(2,8,23,.42); box-shadow: inset 0 1px 4px rgba(0,0,0,.18); }
+.glass-input,
+.input-group-text.glass-addon {
+    min-height: 54px;
+    background: transparent !important;
+    border: 0 !important;
+}
+.input-group-text.glass-addon { padding-left: 1rem; color: #818cf8 !important; }
+.glass-input { color: #f8fafc !important; font-size: .98rem !important; }
+.glass-input:focus { box-shadow: none !important; background: transparent !important; }
+.glass-input::placeholder { color: #64748b !important; }
+.input-group:focus-within { border-color: rgba(99,102,241,.7); box-shadow: 0 0 0 4px rgba(99,102,241,.12); }
+.btn-gradient {
+    min-width: 142px;
+    border-radius: 13px !important;
+    background: linear-gradient(115deg, #6366f1, #2563eb 56%, #0891b2) !important;
+    box-shadow: 0 9px 24px rgba(37,99,235,.24);
+}
+.btn-gradient:hover { box-shadow: 0 13px 28px rgba(37,99,235,.35) !important; }
+.btn-outline-light { border-color: rgba(148,163,184,.25) !important; color: #cbd5e1 !important; }
+.btn-outline-light:hover { background: rgba(99,102,241,.14) !important; border-color: rgba(129,140,248,.5) !important; color: #fff !important; }
+
+#resultsPanel .glass-card { border-radius: 22px !important; }
+#resultsPanel .glass-card[style] { background: rgba(15,30,52,.66) !important; }
+.glass-table td { background: rgba(15,23,42,.44) !important; }
+.glass-table tr:hover td { background: rgba(30,41,59,.7) !important; }
+.face-grid img, .face-empty { border-radius: 10px !important; }
+.modal-content.glass-card { background: rgba(8,18,34,.96) !important; }
+.modal-content .glass-input { background: rgba(15,23,42,.72) !important; border: 1px solid rgba(148,163,184,.2) !important; padding-inline: .9rem; }
+.modal-content .glass-input:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,.12) !important; }
+.modal-content select option { background: #0f1e34; }
+footer { border-color: rgba(148,163,184,.09) !important; background: rgba(2,8,23,.16); }
+footer p, footer a { color: #64748b !important; }
+
+@media (max-width: 767px) {
+    .container.py-5 { padding-top: 2rem !important; }
+    .portal-logo { width: 64px; height: 64px; border-radius: 20px; font-size: 1.8rem; }
+    .branding-header h1 { font-size: 2.25rem; }
+    .glass-card { padding: 1.4rem !important; border-radius: 23px !important; }
+    .lookup-heading { justify-content: flex-start; }
+    .lookup-heading p { display: none; }
+    .input-group { display: grid; grid-template-columns: auto 1fr; gap: 0; }
+    .input-group .btn-gradient { grid-column: 1 / -1; width: 100%; min-height: 48px; margin-top: 5px; }
+    .input-group > .form-control { width: 100%; }
+    #resultsPanel .row { --bs-gutter-y: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

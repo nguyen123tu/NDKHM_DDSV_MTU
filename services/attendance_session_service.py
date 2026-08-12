@@ -10,6 +10,18 @@ from db.connection import execute_one, execute_update, execute_query, transactio
 from config import Config
 from services.attendance_policy import AttendanceStatus, get_session_attendance_summary
 
+def _to_dict_list(cursor):
+    if not cursor.description: return []
+    cols = [col[0] for col in cursor.description]
+    return [dict(zip(cols, row)) for row in cursor.fetchall()]
+
+def _to_dict_one(cursor):
+    if not cursor.description: return None
+    row = cursor.fetchone()
+    if not row: return None
+    cols = [col[0] for col in cursor.description]
+    return dict(zip(cols, row))
+
 
 class AttendanceSessionService:
     """
@@ -70,15 +82,15 @@ class AttendanceSessionService:
         )
         try:
             with transaction() as conn:
-                cursor = conn.cursor(as_dict=True)
-                cursor.execute(sql, params)
+                cursor = conn.cursor()
+                cursor.execute(sql.replace('%s', '?'), params)
                 inserted = cursor.fetchone()
                 if not inserted:
                     return None, "Không thể lấy ID phiên điểm danh mới tạo"
-                new_id = inserted["id"]
+                new_id = inserted[0]
 
-                cursor.execute("SELECT * FROM phien_diem_danh WHERE id = %s", (new_id,))
-                session = cursor.fetchone()
+                cursor.execute("SELECT * FROM phien_diem_danh WHERE id = ?", (new_id,))
+                session = _to_dict_one(cursor)
                 return session, None
         except Exception as e:
             error_str = str(e)
@@ -151,48 +163,48 @@ class AttendanceSessionService:
         # Gộp tất cả thay đổi dữ liệu vào một transaction
         try:
             with transaction() as conn:
-                cursor = conn.cursor(as_dict=True)
+                cursor = conn.cursor()
 
                 # 1. Khóa trạng thái phiên
                 cursor.execute(
                     """
                     UPDATE phien_diem_danh
                     SET trang_thai = 0, ket_thuc = GETDATE(),
-                        nguoi_chot_id = %s, thoi_gian_chot = GETDATE()
-                    WHERE id = %s
+                        nguoi_chot_id = ?, thoi_gian_chot = GETDATE()
+                    WHERE id = ?
                     """,
                     (admin_id, session_id),
                 )
 
                 # 2. Lấy danh sách toàn bộ sinh viên trong lớp
                 cursor.execute(
-                    "SELECT id, mssv, ho_ten, avatar, email FROM sinh_vien WHERE lop_id = %s AND trang_thai = 1 ORDER BY mssv ASC",
+                    "SELECT id, mssv, ho_ten, avatar, email FROM sinh_vien WHERE lop_id = ? AND trang_thai = 1 ORDER BY mssv ASC",
                     (lop_id,),
                 )
-                students = cursor.fetchall() or []
+                students = _to_dict_list(cursor)
                 total_students = len(students)
 
                 # 3. Lấy các bản ghi đã điểm danh trong phiên này
                 cursor.execute(
                     """
                     SELECT id, sinh_vien_id, status, trang_thai, late_minutes, thoi_gian, gio_vao_lop, do_chinh_xac, method, ghi_chu
-                    FROM diem_danh WHERE phien_id = %s
+                    FROM diem_danh WHERE phien_id = ?
                     """,
                     (session_id,),
                 )
-                attended_map = {rec["sinh_vien_id"]: rec for rec in cursor.fetchall()}
+                attended_map = {rec["sinh_vien_id"]: rec for rec in _to_dict_list(cursor)}
 
                 # 4. Tìm các đơn xin phép đã được duyệt (trang_thai = 1) VÀ thuộc phiên này
                 cursor.execute(
                     """
                     SELECT id, sinh_vien_id, ly_do
                     FROM don_xin_phep
-                    WHERE lop_id = %s AND phien_id = %s AND trang_thai = 1
+                    WHERE lop_id = ? AND phien_id = ? AND trang_thai = 1
                     """,
                     (lop_id, session_id),
                 )
                 approved_leave_map = {
-                    req["sinh_vien_id"]: req for req in cursor.fetchall()
+                    req["sinh_vien_id"]: req for req in _to_dict_list(cursor)
                 }
 
                 # 5. Xử lý bổ sung cho sinh viên chưa có bản ghi
@@ -211,7 +223,7 @@ class AttendanceSessionService:
                                 phien_id, sinh_vien_id, lop_id, trang_thai, status, late_minutes, method, ghi_chu
                             )
                             OUTPUT INSERTED.id
-                            VALUES (%s, %s, %s, %s, %s, 0, 'LEAVE_REQUEST', %s)
+                            VALUES (?, ?, ?, ?, ?, 0, 'LEAVE_REQUEST', ?)
                             """,
                             (
                                 session_id,
@@ -229,10 +241,10 @@ class AttendanceSessionService:
                             cursor.execute(
                                 """
                                 INSERT INTO attendance_audit_log (attendance_id, old_status, new_status, changed_by, reason)
-                                VALUES (%s, %s, %s, %s, %s)
+                                VALUES (?, ?, ?, ?, ?)
                                 """,
                                 (
-                                    inserted_rec["id"],
+                                    inserted_rec[0],
                                     None,
                                     AttendanceStatus.EXCUSED_ABSENCE,
                                     admin_id,
@@ -247,7 +259,7 @@ class AttendanceSessionService:
                                 phien_id, sinh_vien_id, lop_id, trang_thai, status, late_minutes, method, ghi_chu
                             )
                             OUTPUT INSERTED.id
-                            VALUES (%s, %s, %s, %s, %s, 0, 'SYSTEM_AUTO', %s)
+                            VALUES (?, ?, ?, ?, ?, 0, 'SYSTEM_AUTO', ?)
                             """,
                             (
                                 session_id,
@@ -265,10 +277,10 @@ class AttendanceSessionService:
                             cursor.execute(
                                 """
                                 INSERT INTO attendance_audit_log (attendance_id, old_status, new_status, changed_by, reason)
-                                VALUES (%s, %s, %s, %s, %s)
+                                VALUES (?, ?, ?, ?, ?)
                                 """,
                                 (
-                                    inserted_rec["id"],
+                                    inserted_rec[0],
                                     None,
                                     AttendanceStatus.UNEXCUSED_ABSENCE,
                                     admin_id,
@@ -281,11 +293,11 @@ class AttendanceSessionService:
                     """SELECT d.*, sv.mssv, sv.ho_ten, sv.avatar
                        FROM diem_danh d
                        JOIN sinh_vien sv ON d.sinh_vien_id = sv.id
-                       WHERE d.phien_id = %s
+                       WHERE d.phien_id = ?
                        ORDER BY sv.mssv ASC""",
                     (session_id,),
                 )
-                dd_records = cursor.fetchall() or []
+                dd_records = _to_dict_list(cursor)
 
                 counts = {s: 0 for s in AttendanceStatus.ALL}
                 records = []
@@ -347,7 +359,7 @@ class AttendanceSessionService:
 
                 # 7. Lưu báo cáo vào phien_diem_danh
                 cursor.execute(
-                    "UPDATE phien_diem_danh SET si_so_chot = %s, ban_sao_bao_cao = %s WHERE id = %s",
+                    "UPDATE phien_diem_danh SET si_so_chot = ?, ban_sao_bao_cao = ? WHERE id = ?",
                     (
                         si_so_chot,
                         json.dumps(snapshot_payload, ensure_ascii=False),

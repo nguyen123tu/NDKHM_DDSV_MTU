@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Face Attendance System{% endblock %}</title>
 
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/animated_favicon.svg') }}">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/gima.jpg') }}">
 
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -22,7 +22,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body class="bg-background font-sans text-on-background min-h-screen flex">
+<body class="font-sans text-on-background min-h-screen flex" data-page="{{ request.endpoint or '' }}">
     <script src="{{ url_for('static', filename='js/base_script_2.js') }}"></script>
 
     {% if session.get('admin_id') %}
@@ -105,7 +105,7 @@
         <div class="px-md py-lg border-t border-outline-variant/20 space-y-3">
             <a href="{{ url_for('dashboard.kiosk') }}" target="_blank"
                 class="w-full bg-primary-container text-on-primary-container px-lg py-sm rounded-lg font-bold hover:opacity-90 flex items-center justify-center gap-xs transition-all shadow-sm border border-primary/20">
-                <span class="material-symbols-outlined text-[18px]">terminal</span>
+                <img src="{{ url_for('static', filename='img/15.jpg') }}" alt="Kiosk" class="w-5 h-5 rounded object-cover">
                 <span class="sidebar-text whitespace-nowrap">Màn hình Kiosk</span>
             </a>
             <a href="{{ url_for('attendance.live') }}"
@@ -166,11 +166,13 @@
 
         <main class="flex-1 p-xl overflow-x-hidden">
             <!-- Header Section -->
+            {% block header_section %}
             <div class="mb-xl">
                 <h2 class="text-3xl font-bold text-on-surface tracking-tight">{% block page_title %}Trang chủ{% endblock
                     %}</h2>
                 <p class="text-sm text-on-surface-variant mt-1" id="dateDisplay">Đang tải ngày...</p>
             </div>
+            {% endblock %}
 
             <!-- Flash Messages -->
             <div class="fixed top-20 right-8 z-[100] flex flex-col gap-3">

@@ -17,7 +17,61 @@
 
 body {
     background-color: var(--bg-light);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     color: var(--text-primary);
+}
+
+/* ═══ Per-page Backgrounds ═══ */
+body[data-page="dashboard.index"] {
+    background-image: linear-gradient(rgba(248, 250, 252, 0.82), rgba(248, 250, 252, 0.82)), url('/static/img/10.jpg') !important;
+    background-size: cover, cover !important;
+    background-position: center, center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-attachment: fixed, fixed !important;
+}
+body[data-page^="students."] {
+    background-image: linear-gradient(rgba(248, 250, 252, 0.82), rgba(248, 250, 252, 0.82)), url('/static/img/3.jpg') !important;
+    background-size: cover, cover !important;
+    background-position: center, center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-attachment: fixed, fixed !important;
+}
+body[data-page^="classes."] {
+    background-image: linear-gradient(rgba(248, 250, 252, 0.82), rgba(248, 250, 252, 0.82)), url('/static/img/4.jpg') !important;
+    background-size: cover, cover !important;
+    background-position: center, center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-attachment: fixed, fixed !important;
+}
+body[data-page^="attendance."] {
+    background-image: linear-gradient(rgba(248, 250, 252, 0.82), rgba(248, 250, 252, 0.82)), url('/static/img/5.jpg') !important;
+    background-size: cover, cover !important;
+    background-position: center, center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-attachment: fixed, fixed !important;
+}
+body[data-page^="fraud."] {
+    background-image: linear-gradient(rgba(248, 250, 252, 0.82), rgba(248, 250, 252, 0.82)), url('/static/img/6.jpg') !important;
+    background-size: cover, cover !important;
+    background-position: center, center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-attachment: fixed, fixed !important;
+}
+body[data-page^="training."] {
+    background-image: linear-gradient(rgba(248, 250, 252, 0.82), rgba(248, 250, 252, 0.82)), url('/static/img/7.jpg') !important;
+    background-size: cover, cover !important;
+    background-position: center, center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-attachment: fixed, fixed !important;
+}
+body[data-page^="users."] {
+    background-image: linear-gradient(rgba(248, 250, 252, 0.82), rgba(248, 250, 252, 0.82)), url('/static/img/8.jpg') !important;
+    background-size: cover, cover !important;
+    background-position: center, center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-attachment: fixed, fixed !important;
 }
 
 @keyframes pulse-glow {

@@ -4,6 +4,14 @@ Application Factory và Giao tiếp Socket.IO
 """
 
 import os
+try:
+    import scipy
+    import scipy.spatial
+    import skimage.transform
+    # Bắt buộc tải module thực sự thay vì lazy loading
+    _ = skimage.transform.SimilarityTransform
+except Exception:
+    pass
 import eventlet
 
 # Sử dụng eventlet cho WebSocket hiệu năng cao, nhưng KHÔNG patch thread để tránh deadlock với ChromaDB (native threads)

@@ -133,8 +133,7 @@ function showResult(data) {
 
     // TTS Audio
     if (ttsAudio) {
-        const text = `Xin chào ${s.ho_ten}, điểm danh thành công!`;
-        ttsAudio.src = `/chatbot/tts?text=${encodeURIComponent(text)}`;
+        ttsAudio.src = `/static/audio/success.wav`;
         ttsAudio.play().catch(e => {
             console.log('Audio autoplay bị chặn:', e);
             if (btnUnlockAudio) btnUnlockAudio.classList.add('btn-danger');
@@ -163,7 +162,7 @@ function showError(msg, isUnknown = false) {
     status.innerHTML = isUnknown ? '<i class="fas fa-user-secret"></i> Unknown User' : '<i class="fas fa-exclamation-triangle"></i> Access Denied';
 
     if (ttsAudio) {
-        ttsAudio.src = `/chatbot/tts?text=${encodeURIComponent("Nhận diện thất bại")}`;
+        ttsAudio.src = `/static/audio/fail.wav`;
         ttsAudio.play().catch(e => { });
     }
 

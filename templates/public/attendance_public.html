@@ -18,21 +18,25 @@
         <div class="col-lg-8 col-xl-7">
             
             <div class="branding-header fade-in">
-                <i class="fas fa-face-viewfinder mb-3" style="font-size: 4.5rem;"></i>
+                <div class="portal-logo mb-3"><i class="fas fa-face-viewfinder"></i></div>
+                <span class="portal-kicker"><i class="fas fa-circle"></i> Hệ thống đang hoạt động</span>
                 <h1 class="text-uppercase">Cổng Sinh Viên</h1>
                 <p class="text-white-50 fs-6 mt-2">Tra cứu lịch sử điểm danh nhận diện khuôn mặt tự động</p>
             </div>
             
             <!-- Lookup Card -->
             <div class="glass-card p-4 p-md-5 mb-5 slide-up">
-                <h5 class="fw-bold mb-4 text-center text-white"><i class="fas fa-search me-2"></i>Tra Cứu Bằng MSSV Của Bạn</h5>
+                <div class="lookup-heading mb-4">
+                    <span class="lookup-heading-icon"><i class="fas fa-search"></i></span>
+                    <div><h5 class="fw-bold text-white mb-1">Tra cứu thông tin điểm danh</h5><p class="mb-0">Nhập mã số sinh viên để xem hồ sơ và lịch sử chuyên cần</p></div>
+                </div>
                 
                 <form id="lookupForm" class="mb-4">
                     <div class="input-group input-group-lg">
                         <span class="input-group-text glass-addon border-end-0"><i class="fas fa-id-card"></i></span>
-                        <input type="text" class="form-control glass-input border-start-0 ps-0" id="mssvInput" placeholder="Ví dụ: 22D14801030074" required>
+                        <input type="text" class="form-control glass-input border-start-0 ps-0" id="mssvInput" placeholder="Nhập mã số sinh viên của bạn" autocomplete="off" inputmode="text" aria-label="Mã số sinh viên" required>
                         <button class="btn btn-gradient px-4" type="submit">
-                            Tra Cứu <i class="fas fa-arrow-right ms-2"></i>
+                            Tra cứu <i class="fas fa-arrow-right ms-2"></i>
                         </button>
                     </div>
                 </form>

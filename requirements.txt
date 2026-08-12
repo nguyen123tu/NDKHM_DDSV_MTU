@@ -20,16 +20,16 @@ requests==2.31.0
 PyJWT==2.8.0
 
 # Database & Connection Pooling
-pymssql==2.3.0
+pymssql==2.3.13
 mysql-connector-python==8.3.0
 dbutils==3.0.3
 
 # Firebase & OpenAPI Documentation
 firebase-admin==6.5.0
-flasgger==0.9.71
+flasgger==0.9.7.1
 
 # Computer Vision & Face Recognition
-numpy==1.26.4
+numpy>=1.26.4
 Pillow==10.3.0
 # opencv-python-headless==4.9.0.80
 insightface==0.7.3

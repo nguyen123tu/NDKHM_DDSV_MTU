@@ -218,7 +218,7 @@ def record_attendance(
                 cursor.execute(
                     """
                     INSERT INTO attendance_events (phien_id, sinh_vien_id, event_type, observed_at, camera_id, confidence, evidence_path)
-                    VALUES (%s, %s, 'FACE_OBSERVED', GETDATE(), %s, %s, %s)
+                    VALUES (?, ?, 'FACE_OBSERVED', GETDATE(), ?, ?, ?)
                     """,
                     (session_id, student_id, camera_id, confidence, image_path),
                 )
@@ -229,7 +229,7 @@ def record_attendance(
                     method, do_chinh_xac, camera_id, ghi_chu, gio_vao_lop,
                     anh_checkin, client_event_id
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             cursor.execute(
                 sql,

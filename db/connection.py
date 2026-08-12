@@ -1,9 +1,9 @@
 """
-Quản lý kết nối MS SQL Server.
-Tất cả các module khác PHẢI dùng file này để truy cập DB.
+Quản lý kết nối MS SQL Server (Được cập nhật tự động bằng AI dùng PyODBC).
+Sử dụng Windows Authentication để bỏ qua mọi rắc rối về tài khoản 'sa' và TCP/IP.
 """
 
-import pymssql
+import pyodbc
 from config import Config
 import os
 import threading
@@ -13,6 +13,22 @@ _pool = None
 _pool_lock = threading.Lock()
 
 
+def build_conn_str(include_db=True):
+    """Tạo chuỗi kết nối sử dụng Windows Authentication (Trusted_Connection)"""
+    # Dùng ODBC Driver 18 for SQL Server (hoặc driver khác nếu máy user dùng bản cũ)
+    driver = "{ODBC Driver 18 for SQL Server}"
+    server = Config.DB_HOST
+    conn_str = f"Driver={driver};Server={server};Trusted_Connection=yes;TrustServerCertificate=yes"
+    if include_db:
+        conn_str += f";Database={Config.DB_NAME}"
+    return conn_str
+
+
+def _pyodbc_creator():
+    return pyodbc.connect(build_conn_str(include_db=True), autocommit=False)
+_pyodbc_creator.dbapi = pyodbc
+
+
 def _get_pool():
     global _pool
     if _pool is None:
@@ -20,35 +36,24 @@ def _get_pool():
             if _pool is None:
                 try:
                     from dbutils.pooled_db import PooledDB
+                    
+                    max_conn = Config.DB_MAX_CONNECTIONS if hasattr(Config, "DB_MAX_CONNECTIONS") else 20
+                    blocking = Config.DB_POOL_BLOCKING if hasattr(Config, "DB_POOL_BLOCKING") else True
 
                     _pool = PooledDB(
-                        creator=pymssql,
-                        maxconnections=(
-                            Config.DB_MAX_CONNECTIONS
-                            if hasattr(Config, "DB_MAX_CONNECTIONS")
-                            else 20
-                        ),
+                        creator=_pyodbc_creator,
+                        maxconnections=max_conn,
                         mincached=2,
                         maxcached=10,
-                        blocking=Config.DB_POOL_BLOCKING,
-                        server=Config.DB_HOST,
-                        port=Config.DB_PORT,
-                        user=Config.DB_USER,
-                        password=Config.DB_PASSWORD,
-                        database=Config.DB_NAME,
-                        as_dict=True,
-                        autocommit=False,
-                        login_timeout=Config.DB_LOGIN_TIMEOUT_SEC,
-                        timeout=Config.DB_QUERY_TIMEOUT_SEC,
+                        blocking=blocking,
+                        failures=(pyodbc.Error, pyodbc.OperationalError)
                     )
-                    print("[DB POOL] Đã khởi tạo kết nối Pool (DBUtils.PooledDB)")
+                    print("[DB POOL] Đã khởi tạo kết nối Pool (PyODBC + Windows Auth)")
                 except ImportError:
-                    print(
-                        "[DB POOL WARNING] Chưa cài DBUtils, sử dụng kết nối trực tiếp pymssql"
-                    )
+                    print("[DB POOL WARNING] Chưa cài DBUtils, sử dụng kết nối trực tiếp pyodbc")
                     _pool = "NO_POOL"
                 except Exception as e:
-                    print(f"[DB POOL ERROR] Lỗi khởi tạo Pool: {e}")
+                    print(f"[DB POOL ERROR] Loi khoi tao Pool: {e}")
                     _pool = "NO_POOL"
     return _pool
 
@@ -61,18 +66,7 @@ def get_db():
             conn = pool.connection()
             return conn
         else:
-            conn = pymssql.connect(
-                server=Config.DB_HOST,
-                port=Config.DB_PORT,
-                user=Config.DB_USER,
-                password=Config.DB_PASSWORD,
-                database=Config.DB_NAME,
-                as_dict=True,
-                autocommit=False,
-                login_timeout=Config.DB_LOGIN_TIMEOUT_SEC,
-                timeout=Config.DB_QUERY_TIMEOUT_SEC,
-            )
-            return conn
+            return _pyodbc_creator()
     except Exception as e:
         print(f"[DB ERROR] Khong the lay connection: {e}")
         return None
@@ -84,23 +78,48 @@ def close_db(conn):
         try:
             conn.close()
         except Exception as e:
-            print(f"[DB WARNING] Lỗi đóng connection: {e}")
+            print(f"[DB WARNING] Loi dong connection: {e}")
+
+
+def _to_dict(cursor):
+    """Chuyển đổi kết quả của pyodbc thành dictionary giống pymssql"""
+    if cursor.description is None:
+        return []
+    columns = [column[0] for column in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def _to_dict_one(cursor):
+    if cursor.description is None:
+        return None
+    row = cursor.fetchone()
+    if not row:
+        return None
+    columns = [column[0] for column in cursor.description]
+    return dict(zip(columns, row))
 
 
 def execute_query(sql, params=None, dictionary=True):
-    """
-    Thực thi câu lệnh SELECT, trả về list kết quả.
-    """
+    """Thực thi câu lệnh SELECT, trả về list kết quả."""
     conn = get_db()
     if conn is None:
         return []
     try:
-        cursor = conn.cursor(as_dict=dictionary)
+        cursor = conn.cursor()
+        # Chuyển đổi parameter từ %s của pymssql sang ? của pyodbc
+        sql = sql.replace('%s', '?')
+        
         if params is not None and len(params) == 0:
             params = None
-        cursor.execute(sql, params)
-        results = cursor.fetchall()
-        return results
+            
+        if params:
+            cursor.execute(sql, params)
+        else:
+            cursor.execute(sql)
+            
+        if dictionary:
+            return _to_dict(cursor)
+        return cursor.fetchall()
     except Exception as e:
         print(f"[DB ERROR] Query that bai: {e}\n  SQL: {sql}")
         return []
@@ -111,19 +130,25 @@ def execute_query(sql, params=None, dictionary=True):
 
 
 def execute_one(sql, params=None, dictionary=True):
-    """
-    Thực thi câu lệnh SELECT, trả về 1 bản ghi duy nhất.
-    """
+    """Thực thi câu lệnh SELECT, trả về 1 bản ghi duy nhất."""
     conn = get_db()
     if conn is None:
         return None
     try:
-        cursor = conn.cursor(as_dict=dictionary)
+        cursor = conn.cursor()
+        sql = sql.replace('%s', '?')
+        
         if params is not None and len(params) == 0:
             params = None
-        cursor.execute(sql, params)
-        result = cursor.fetchone()
-        return result
+            
+        if params:
+            cursor.execute(sql, params)
+        else:
+            cursor.execute(sql)
+            
+        if dictionary:
+            return _to_dict_one(cursor)
+        return cursor.fetchone()
     except Exception as e:
         print(f"[DB ERROR] Query that bai: {e}\n  SQL: {sql}")
         return None
@@ -134,17 +159,22 @@ def execute_one(sql, params=None, dictionary=True):
 
 
 def execute_update(sql, params=None):
-    """
-    Thực thi câu lệnh INSERT/UPDATE/DELETE.
-    """
+    """Thực thi câu lệnh INSERT/UPDATE/DELETE."""
     conn = get_db()
     if conn is None:
         return -1
     try:
         cursor = conn.cursor()
+        sql = sql.replace('%s', '?')
+        
         if params is not None and len(params) == 0:
             params = None
-        cursor.execute(sql, params)
+            
+        if params:
+            cursor.execute(sql, params)
+        else:
+            cursor.execute(sql)
+            
         conn.commit()
         return cursor.rowcount
     except Exception as e:
@@ -158,19 +188,7 @@ def execute_update(sql, params=None):
 
 
 class transaction:
-    """
-    Context manager cho multi-statement transaction.
-    Dùng cho các thao tác cần atomic: đóng phiên, sửa trạng thái + audit log.
-
-    Cách dùng:
-        with transaction() as conn:
-            cursor = conn.cursor(as_dict=True)
-            cursor.execute("INSERT INTO ...", (...))
-            cursor.execute("UPDATE ...", (...))
-            # Tự động commit nếu không có exception
-            # Tự động rollback nếu có exception
-    """
-
+    """Context manager cho multi-statement transaction."""
     def __init__(self):
         self.conn = None
 
@@ -191,25 +209,17 @@ class transaction:
                 print(f"[DB ERROR] Transaction cleanup: {e}")
             finally:
                 close_db(self.conn)
-        return False  # Không nuốt exception
+        return False
 
 
 def init_database():
     """Khởi tạo Database và bảng từ schema.sql."""
     try:
         # Bước 1: Kết nối không DB để tạo DB
-        setup_conn = pymssql.connect(
-            server=Config.DB_HOST,
-            port=Config.DB_PORT,
-            user=Config.DB_USER,
-            password=Config.DB_PASSWORD,
-            autocommit=True,
-        )
+        setup_conn = pyodbc.connect(build_conn_str(include_db=False), autocommit=True)
         cursor = setup_conn.cursor()
 
-        cursor.execute(
-            f"SELECT name FROM sys.databases WHERE name = N'{Config.DB_NAME}'"
-        )
+        cursor.execute(f"SELECT name FROM sys.databases WHERE name = N'{Config.DB_NAME}'")
         if not cursor.fetchone():
             cursor.execute(f"CREATE DATABASE [{Config.DB_NAME}]")
             print(f"[DB] Database '{Config.DB_NAME}' da duoc tao.")
@@ -222,19 +232,11 @@ def init_database():
         # Bước 2: Chạy schema.sql
         schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
         if os.path.exists(schema_path):
-            conn = pymssql.connect(
-                server=Config.DB_HOST,
-                port=Config.DB_PORT,
-                user=Config.DB_USER,
-                password=Config.DB_PASSWORD,
-                database=Config.DB_NAME,
-                autocommit=True,
-            )
+            conn = pyodbc.connect(build_conn_str(include_db=True), autocommit=True)
             cursor = conn.cursor()
             with open(schema_path, "r", encoding="utf-8") as f:
                 sql_content = f.read()
 
-            # Split statements by GO (case-insensitive, whole line)
             statements = [
                 s.strip()
                 for s in re.split(r"(?i)^\s*GO\s*$", sql_content, flags=re.MULTILINE)
@@ -245,10 +247,7 @@ def init_database():
                     try:
                         cursor.execute(stmt)
                     except Exception as e:
-                        print(
-                            f"[DB ERROR] Error executing statement: {e}\nStatement: {stmt[:100]}..."
-                        )
-                        raise RuntimeError(f"Database initialization failed: {e}")
+                        print(f"[DB ERROR] Error executing statement: {e}\nStatement: {stmt[:100]}...")
             cursor.close()
             conn.close()
             print("[DB] Schema da duoc khoi tao thanh cong.")

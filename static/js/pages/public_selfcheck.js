@@ -414,11 +414,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ===== Text to Speech (Backend gTTS) =====
+    // ===== Notification Sound =====
     function speakGreeting(name) {
         if (!ttsAudio) return;
-        const text = `Xin chào ${name}, điểm danh thành công!`;
-        ttsAudio.src = `/chatbot/tts?text=${encodeURIComponent(text)}`;
+        ttsAudio.src = `/static/audio/success.wav`;
         ttsAudio.play().catch(err => {
             console.log('Auto-play bị chặn, yêu cầu người dùng click nút Bật Loa:', err);
             if (btnUnlockAudio) {

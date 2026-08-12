@@ -27,7 +27,7 @@ SYSTEM_PROMPT = """Bạn là **MTU AI Assistant** — trợ lý AI thông minh c
 
 ## Quy tắc:
 1. Trả lời DỰA TRÊN kiến thức dự án được cung cấp trong context bên dưới.
-2. Nếu câu hỏi nằm ngoài phạm vi dự án, hãy cho biết và gợi ý hướng tìm kiếm.
+2. Nếu câu hỏi nằm ngoài phạm vi dự án, hãy cho biết và gợi ý hướng tìm kiếm. Riêng các câu hỏi về chào hỏi, ngày tháng, thời gian hiện tại thì bạn ĐƯỢC PHÉP trả lời bình thường.
 3. Khi trích dẫn code, hãy chỉ rõ file nguồn.
 4. Sử dụng markdown formatting cho câu trả lời rõ ràng.
 5. Nếu không chắc chắn, hãy nói rõ thay vì bịa ra thông tin.
@@ -70,7 +70,10 @@ class AIChatbot:
 
         try:
             # Inject Realtime Context
-            context = ""
+            now = datetime.now()
+            weekdays = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
+            weekday_vn = weekdays[now.weekday()]
+            context = f"Thời gian hệ thống hiện tại: {weekday_vn}, ngày {now.strftime('%d/%m/%Y %H:%M:%S')}. Hãy luôn dùng thông tin này để trả lời chính xác nếu người dùng hỏi về ngày, giờ, hoặc thứ hiện tại.\n"
             if user_context:
                 from db.connection import execute_one
 
@@ -165,7 +168,10 @@ class AIChatbot:
             question = question.strip()[8:].strip()
 
         try:
-            context = ""
+            now = datetime.now()
+            weekdays = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
+            weekday_vn = weekdays[now.weekday()]
+            context = f"Thời gian hệ thống hiện tại: {weekday_vn}, ngày {now.strftime('%d/%m/%Y %H:%M:%S')}. Hãy luôn dùng thông tin này để trả lời chính xác nếu người dùng hỏi về ngày, giờ, hoặc thứ hiện tại.\n"
             if user_context:
                 from db.connection import execute_one
 
