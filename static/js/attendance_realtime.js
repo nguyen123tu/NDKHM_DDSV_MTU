@@ -236,8 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dừng điểm danh
     stopBtn.addEventListener('click', async () => {
         try {
-            if (window.waitStartInterval) clearInterval(window.waitStartInterval);
-
             stopBtn.disabled = true;
             statusText.innerText = "Đang dừng Camera...";
 
@@ -246,32 +244,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (localStream) {
                     localStream.getTracks().forEach(t => t.stop());
                 }
-                const localVideo = document.getElementById('localVideo');
-                localVideo.classList.add('hidden');
-                document.getElementById('videoFeed').classList.remove('hidden');
-
-                const canvas = document.getElementById('overlayCanvas');
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
             } else {
                 await fetch('/attendance/stop', { method: 'POST' });
             }
-
-            isRunning = false;
-            stopBtn.classList.add('hidden');
-            startBtn.classList.remove('hidden');
-            startBtn.disabled = false;
-
-            statusText.innerText = "Hệ thống đã dừng";
-            const indicatorBadge = document.getElementById('statusIndicatorBadge');
-            if (indicatorBadge) {
-                indicatorBadge.classList.remove('bg-success');
-                indicatorBadge.classList.add('bg-secondary');
-            }
-
-            showToast('Đã dừng hệ thống', 'Camera và nhận diện đã tắt.', 'warning');
-
-            videoFeed.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%23000'/%3E%3Ctext x='320' y='240' font-family='Arial' font-size='24' fill='%23fff' text-anchor='middle'%3ECamera %C4%91%C3%A3 t%E1%BA%AFt%3C/text%3E%3C/svg%3E";
+            
+            // Clean state hoàn toàn bằng cách reload trang để ngắt stream và model AI.
+            window.location.reload();
 
         } catch (err) {
             console.error(err);
@@ -520,24 +498,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const fallbackWord = name.charAt(0).toUpperCase();
 
         tr.innerHTML = `
-            <td class="text-start ps-4 fw-bold text-muted">${logCountNum}</td>
-            <td class="text-start fw-bold text-primary">${mssv}</td>
-            <td class="text-start fw-medium">${name}</td>
-            <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-            <td class="text-success fw-medium">${timeStr}</td>
-            <td class="text-center">
-                <div class="position-relative d-inline-block">
-                    <img src="${imgUrl}" 
-                         onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';" 
-                         class="rounded-circle object-fit-cover border border-light shadow-sm" 
-                         style="width: 38px; height: 38px; background: #fff;" 
-                    />
-                    <div class="avatar bg-primary text-white justify-content-center align-items-center rounded-circle" 
-                         style="width: 38px; height: 38px; font-weight: bold; font-size: 0.9rem; display: none;">
-                        ${fallbackWord}
+            <td class="px-5 py-3 border-b border-outline-variant/50 text-xs font-bold text-on-surface-variant">${logCountNum}</td>
+            <td class="px-5 py-3 border-b border-outline-variant/50">
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <img src="${imgUrl}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';" class="w-8 h-8 rounded-full object-cover border border-outline-variant shadow-sm" />
+                        <div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px] hidden border border-primary/20">${fallbackWord}</div>
+                    </div>
+                    <div>
+                        <div class="font-bold text-sm text-on-surface leading-tight">${name} <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ml-1 ${badgeClass === 'bg-success' ? 'bg-secondary/10 text-secondary' : badgeClass === 'bg-danger' ? 'bg-error/10 text-error' : 'bg-warning/10 text-warning'}">${badgeText}</span></div>
+                        <div class="text-[11px] font-mono text-on-surface-variant mt-0.5">${mssv}</div>
                     </div>
                 </div>
             </td>
+            <td class="px-5 py-3 border-b border-outline-variant/50 text-right text-xs font-bold text-secondary">${timeStr}</td>
         `;
 
         logList.prepend(tr);

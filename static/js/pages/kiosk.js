@@ -258,8 +258,6 @@ function startPreview() {
             });
     } else if (source.startsWith('rtsp')) {
         let currentUrl = rtspUrl;
-        if (source === 'rtsp_lan') currentUrl = 'rtsp://admin:L2F0C994@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0';
-        else if (source === 'rtsp_wan') currentUrl = 'rtsp://admin:L2F0C994@192.168.1.80:554/cam/realmonitor?channel=1&subtype=0';
         
         previewRtsp.src = '/public/api/stream_kiosk?url=' + encodeURIComponent(currentUrl);
         previewRtsp.style.display = 'block';
@@ -334,8 +332,6 @@ if (btnGoLive) {
             video.style.display = 'none';
             rtspImg.style.display = 'block';
             let currentUrl = rtspUrl;
-            if (setupCamSource.value === 'rtsp_lan') currentUrl = 'rtsp://admin:L2F0C994@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0';
-            else if (setupCamSource.value === 'rtsp_wan') currentUrl = 'rtsp://admin:L2F0C994@192.168.1.80:554/cam/realmonitor?channel=1&subtype=0';
             
             rtspUrl = currentUrl; // Update global for captureAndRecognize
             rtspImg.src = '/public/api/stream_kiosk?url=' + encodeURIComponent(currentUrl);

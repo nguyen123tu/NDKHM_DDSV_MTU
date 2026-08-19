@@ -10,72 +10,58 @@
 {% block header_section %}{% endblock %}
 
 {% block content %}
-<div class="max-w-container-max mx-auto h-[calc(100vh-100px)] flex flex-col gap-xl overflow-hidden relative"
-    id="live-attendance-container">
+<div class="max-w-container-max mx-auto h-[calc(100vh-100px)] flex flex-col gap-4 overflow-hidden relative" id="live-attendance-container">
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-xl h-full pb-4">
+    <!-- Top: Configuration Panel -->
+    <div class="bg-surface rounded-2xl shadow-sm border border-outline-variant/50 p-4 shrink-0 flex flex-wrap lg:flex-nowrap items-end justify-between gap-4 z-20">
+        <form id="formStartDetection" class="flex flex-wrap items-end gap-4 w-full">
+            <div class="flex-1 min-w-[200px]">
+                <label class="text-[11px] font-bold text-on-surface uppercase tracking-wider mb-1 block">Camera Nguồn</label>
+                <select id="selectCamId" class="w-full bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm px-4 py-2.5 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23666%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_1rem_center] pr-10">
+                    <option value="browser">📸 Webcam Trình duyệt (Client-side AI)</option>
+                    {% for cam in cameras %}
+                    <option value="{{ cam.id }}">{{ cam.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1 min-w-[200px]" id="customRtspGroup" style="display: none;">
+                <label class="text-[11px] font-bold text-on-surface uppercase tracking-wider mb-1 block">Link RTSP</label>
+                <input type="text" id="inputCustomRtsp" placeholder="rtsp://..." class="w-full bg-surface border border-outline-variant/70 rounded-xl text-sm px-4 py-2.5 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
+            </div>
+            <div class="flex-1 min-w-[150px]">
+                <label class="text-[11px] font-bold text-on-surface uppercase tracking-wider mb-1 block">Lớp học</label>
+                <select id="selectLopId" class="w-full bg-surface border border-outline-variant/70 rounded-xl text-sm px-4 py-2.5 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23666%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_1rem_center] pr-10">
+                    <option value="">— Chọn lớp —</option>
+                    {% for lop in classes %}
+                    <option value="{{ lop.id }}" {% if current_class==lop.id %}selected{% endif %}>{{ lop.ma_lop }} - {{ lop.ten_lop }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-28">
+                <label class="text-[11px] font-bold text-on-surface uppercase tracking-wider mb-1 block">Giờ vào</label>
+                <input type="time" id="inputStartTime" value="07:00" class="w-full bg-surface border border-outline-variant/70 rounded-xl text-sm px-4 py-2.5 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
+            </div>
+            <div class="w-24 hidden lg:block">
+                <label class="text-[11px] font-bold text-on-surface uppercase tracking-wider mb-1 block">CD (s)</label>
+                <input type="number" id="inputCooldown" value="120" min="10" max="600" class="w-full bg-surface border border-outline-variant/70 rounded-xl text-sm px-4 py-2.5 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
+            </div>
+            
+            <div class="ml-auto shrink-0 flex items-center">
+                <button type="submit" id="btnStart" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-blue-700 hover:shadow-lg transition-all flex items-center justify-center gap-2 min-w-[140px] active:scale-95 {% if current_class %}hidden{% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">play_arrow</span> Khởi động
+                </button>
+                <button type="button" id="btnStop" class="bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-red-700 hover:shadow-lg transition-all flex items-center justify-center gap-2 min-w-[140px] active:scale-95 {% if not current_class %}hidden{% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">stop</span> Dừng Live
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 overflow-hidden pb-4">
 
         <!-- Left: Camera & HUD (Col span 8) -->
-        <div
-            class="lg:col-span-8 flex flex-col h-full rounded-[24px] overflow-hidden bg-primary-container relative border border-outline-variant shadow-2xl">
-
-            <!-- Setup & Controls Overlay (Glassmorphism) -->
-            <div class="absolute top-4 left-4 right-4 z-20 bg-surface/90 backdrop-blur-md border border-outline-variant rounded-xl p-4 shadow-lg transition-transform"
-                id="controlPanel">
-                <form id="formStartDetection" class="flex flex-wrap items-end gap-4 w-full">
-                    <div class="flex-1 min-w-[200px]">
-                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1 block">Camera
-                            Nguồn</label>
-                        <select id="selectCamId"
-                            class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-3 py-2 outline-none focus:border-secondary">
-                            <option value="browser">📸 Webcam Trình duyệt (Client-side AI)</option>
-                            {% for cam in cameras %}
-                            <option value="{{ cam.id }}">{{ cam.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="flex-1 min-w-[200px]" id="customRtspGroup" style="display: none;">
-                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1 block">Link
-                            RTSP</label>
-                        <input type="text" id="inputCustomRtsp" placeholder="rtsp://..."
-                            class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-3 py-2 outline-none">
-                    </div>
-                    <div class="flex-1 min-w-[150px]">
-                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1 block">Lớp
-                            học</label>
-                        <select id="selectLopId"
-                            class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-3 py-2 outline-none focus:border-secondary">
-                            <option value="">— Chọn lớp —</option>
-                            {% for lop in classes %}
-                            <option value="{{ lop.id }}" {% if current_class==lop.id %}selected{% endif %}>{{ lop.ma_lop
-                                }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="w-24">
-                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1 block">Giờ
-                            vào</label>
-                        <input type="time" id="inputStartTime" value="07:00"
-                            class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-3 py-2 outline-none">
-                    </div>
-                    <div class="w-20">
-                        <label class="text-xs font-bold text-on-surface uppercase tracking-wider mb-1 block">CD
-                            (s)</label>
-                        <input type="number" id="inputCooldown" value="120" min="10" max="600"
-                            class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-sm px-3 py-2 outline-none">
-                    </div>
-                    <div>
-                        <button type="submit" id="btnStart"
-                            class="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-blue-700 hover:shadow-lg transition-all flex items-center gap-2 {% if current_class %}hidden{% endif %}">
-                            <span class="material-symbols-outlined text-[20px]">play_arrow</span> Bắt đầu
-                        </button>
-                        <button type="button" id="btnStop"
-                            class="bg-red-600 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-red-700 hover:shadow-lg transition-all flex items-center gap-2 {% if not current_class %}hidden{% endif %}">
-                            <span class="material-symbols-outlined text-[20px]">stop</span> Dừng
-                        </button>
-                    </div>
-                </form>
-            </div>
+        <div class="lg:col-span-8 flex flex-col h-full rounded-2xl overflow-hidden bg-surface-container-highest relative border border-outline-variant/50 shadow-sm">
 
             <!-- Video Feed Container -->
             <div class="absolute inset-0 w-full h-full bg-surface-container-highest flex items-center justify-center">
@@ -100,30 +86,28 @@
             </div>
 
             <!-- Bottom Status Bar -->
-            <div
-                class="absolute bottom-0 left-0 right-0 p-6 flex justify-between items-end bg-gradient-to-t from-primary-container to-transparent z-20 pointer-events-none">
-                <div class="flex items-center gap-4">
-                    <div class="bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2"
+            <div class="absolute bottom-0 left-0 right-0 p-5 flex justify-between items-end bg-gradient-to-t from-black/80 via-black/40 to-transparent z-20 pointer-events-none">
+                <div class="flex items-center gap-3">
+                    <div class="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 flex items-center gap-2"
                         id="statusIndicatorBadge">
-                        <span class="w-3 h-3 rounded-full bg-error animate-pulse" id="statusIndicator"></span>
-                        <span class="text-white font-semibold text-sm" id="statusText">Camera Offline</span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-error animate-pulse" id="statusIndicator"></span>
+                        <span class="text-white font-medium text-xs" id="statusText">Camera Offline</span>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="text-white/70 text-xs font-bold uppercase tracking-wider mb-1">InsightFace.v1</div>
-                    <div class="flex items-center gap-2 justify-end">
-                        <span class="text-white font-mono text-sm">Processing Feed</span>
-                        <span class="material-symbols-outlined text-white animate-spin text-[18px]">refresh</span>
+                    <div class="text-white/70 text-[10px] font-bold uppercase tracking-wider mb-0.5">InsightFace.v1</div>
+                    <div class="flex items-center gap-1.5 justify-end opacity-80">
+                        <span class="text-white font-mono text-[11px]">Processing Feed</span>
+                        <span class="material-symbols-outlined text-white animate-spin text-[14px]">refresh</span>
                     </div>
                 </div>
             </div>
 
             <!-- Success Banner Overlay -->
-            <div class="absolute top-24 right-4 z-30 transition-all duration-300" style="display:none;"
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 z-30 transition-all duration-300" style="display:none;"
                 id="successBanner">
-                <div
-                    class="bg-secondary/90 backdrop-blur-md text-on-secondary px-6 py-3 rounded-xl font-bold shadow-2xl flex items-center gap-3 border border-secondary-fixed">
-                    <span class="material-symbols-outlined text-[24px]">verified</span>
+                <div class="bg-secondary/90 backdrop-blur-md text-on-secondary px-6 py-2.5 rounded-full font-bold shadow-lg flex items-center gap-2 border border-secondary-fixed">
+                    <span class="material-symbols-outlined text-[20px]">verified</span>
                     <span id="bannerName">Nguyễn Văn A</span>
                 </div>
             </div>
@@ -133,76 +117,61 @@
         <div class="lg:col-span-4 flex flex-col gap-4 h-full">
 
             <!-- Current Student Matched -->
-            <div
-                class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-5 h-[220px] flex flex-col justify-center relative overflow-hidden group">
-                <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wider absolute top-4 left-5">Kết
-                    quả nhận diện</h3>
+            <div class="bg-surface rounded-2xl border border-outline-variant/50 shadow-sm p-5 h-[180px] shrink-0 flex flex-col justify-center relative overflow-hidden group">
+                <h3 class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider absolute top-4 left-5 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px]">face</span> KẾT QUẢ NHẬN DIỆN MỚI NHẤT
+                </h3>
 
-                <div id="currentStudentInfo" class="w-full h-full flex flex-col items-center justify-center mt-4">
+                <div id="currentStudentInfo" class="w-full h-full flex flex-col items-center justify-center mt-3">
                     <!-- Wait State -->
-                    <div id="waitState" class="text-center w-full animate-pulse">
-                        <span
-                            class="material-symbols-outlined text-[48px] text-on-surface-variant/30 mb-2">face_retouching_natural</span>
-                        <p class="text-sm font-semibold text-on-surface-variant">Đang chờ quét khuôn mặt...</p>
+                    <div id="waitState" class="text-center w-full animate-pulse opacity-60">
+                        <span class="material-symbols-outlined text-[40px] text-on-surface-variant/50 mb-1">face_retouching_natural</span>
+                        <p class="text-xs font-medium text-on-surface-variant">Đang chờ AI nhận diện...</p>
                     </div>
 
                     <!-- Success State -->
-                    <div id="successState"
-                        class="hidden w-full h-full flex items-center gap-4 animate-[slideInRight_0.3s_ease-out]">
-                        <div
-                            class="w-20 h-20 rounded-full bg-secondary/20 flex items-center justify-center border-2 border-secondary-fixed flex-shrink-0 text-secondary">
-                            <span class="material-symbols-outlined text-[40px]">person_check</span>
+                    <div id="successState" class="hidden w-full h-full flex items-center gap-4 animate-[slideInRight_0.3s_ease-out]">
+                        <div class="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center border border-secondary/30 flex-shrink-0 text-secondary">
+                            <span class="material-symbols-outlined text-[32px]">person_check</span>
                         </div>
                         <div class="flex-1">
-                            <h4 class="text-lg font-bold text-on-surface" id="infoName">—</h4>
-                            <p class="text-sm text-on-surface-variant font-mono mt-1 mb-2">MSSV: <span
-                                    id="infoMssv">—</span></p>
-                            <div class="flex flex-wrap gap-2 text-xs font-bold">
-                                <span class="bg-primary-container/10 text-primary px-2 py-1 rounded"
-                                    id="infoLop">—</span>
-                                <span class="bg-secondary/10 text-secondary px-2 py-1 rounded flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[14px]">done_all</span> Đã điểm danh
+                            <h4 class="text-base font-bold text-on-surface leading-tight mb-1" id="infoName">—</h4>
+                            <p class="text-xs text-on-surface-variant font-mono mb-2">MSSV: <span id="infoMssv" class="font-bold">—</span></p>
+                            <div class="flex flex-wrap gap-1.5 text-[10px] font-bold">
+                                <span class="bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20" id="infoLop">—</span>
+                                <span class="bg-secondary/10 text-secondary px-2 py-0.5 rounded border border-secondary/20 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px]">done_all</span> <span id="infoTime">—</span>
                                 </span>
                             </div>
-                            <p class="text-[10px] text-on-surface-variant mt-2 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[12px]">schedule</span> <span
-                                    id="infoTime">—</span>
-                            </p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Attendance Log Table -->
-            <div
-                class="flex-1 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
-                <div
-                    class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low/30">
+            <div class="flex-1 bg-surface rounded-2xl border border-outline-variant/50 shadow-sm flex flex-col overflow-hidden">
+                <div class="px-5 py-3 border-b border-outline-variant/50 flex justify-between items-center bg-surface-container-lowest">
                     <h3 class="text-sm font-bold text-on-surface flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[18px]">history</span>
+                        <span class="material-symbols-outlined text-[18px] text-secondary">history</span>
                         Lịch sử điểm danh
                     </h3>
-                    <span class="bg-primary text-on-primary text-xs font-bold px-2 py-1 rounded-full"
-                        id="logCounter">0</span>
+                    <span class="bg-secondary text-on-secondary text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm" id="logCounter">0</span>
                 </div>
 
                 <div class="flex-1 overflow-y-auto custom-scrollbar">
-                    <table class="w-full text-left">
-                        <thead
-                            class="sticky top-0 bg-surface-container-low/90 backdrop-blur-sm z-10 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="sticky top-0 bg-surface-container-lowest/90 backdrop-blur-md z-10 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider shadow-sm">
                             <tr>
-                                <th class="px-4 py-3">STT</th>
-                                <th class="px-4 py-3">MSSV</th>
-                                <th class="px-4 py-3">Họ tên</th>
-                                <th class="px-4 py-3 text-right">Giờ</th>
+                                <th class="px-5 py-3 border-b border-outline-variant/50">STT</th>
+                                <th class="px-5 py-3 border-b border-outline-variant/50">MSSV / Họ Tên</th>
+                                <th class="px-5 py-3 border-b border-outline-variant/50 text-right">Giờ</th>
                             </tr>
                         </thead>
-                        <tbody id="attendanceLog" class="divide-y divide-outline-variant text-sm">
+                        <tbody id="attendanceLog" class="divide-y divide-outline-variant/50 text-sm">
                             <tr id="emptyLogMsg">
-                                <td colspan="4" class="py-12 text-center text-on-surface-variant">
-                                    <span
-                                        class="material-symbols-outlined text-[48px] opacity-30 mb-2">receipt_long</span>
-                                    <p class="font-semibold text-sm">Chưa có dữ liệu điểm danh</p>
+                                <td colspan="3" class="py-12 text-center text-on-surface-variant">
+                                    <span class="material-symbols-outlined text-[40px] opacity-20 mb-2">receipt_long</span>
+                                    <p class="font-medium text-xs">Chưa có dữ liệu điểm danh</p>
                                 </td>
                             </tr>
                         </tbody>

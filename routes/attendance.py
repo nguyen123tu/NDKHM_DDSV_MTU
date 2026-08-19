@@ -27,16 +27,6 @@ def live():
     # Danh sách camera test tạm, sau này sẽ lấy từ DB/CameraManager
     cameras = [
         {"id": 0, "name": "USB Camera Default"},
-        {"id": "http://192.168.1.158:81/stream", "name": "ESP32 Cam (Luồng video :81)"},
-        {"id": "http://192.168.1.158", "name": "ESP32 Cam (Luồng video :80)"},
-        {
-            "id": "rtsp://admin:L2F0C994@192.168.1.108/cam/realmonitor?channel=1&subtype=1",
-            "name": "📹 Camera IMOU (Cắm dây LAN)",
-        },
-        {
-            "id": "rtsp://admin:L2F0C994@192.168.1.80:554/cam/realmonitor?channel=1&subtype=0",
-            "name": "📹 Camera IMOU (Không Dây WAN)",
-        },
         {"id": "custom", "name": "🌐 Camera IP / RTSP tuỳ chỉnh (Khác)"},
     ]
 

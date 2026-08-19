@@ -32,11 +32,11 @@ document.getElementById('lookupForm').addEventListener('submit', async (e) => {
                 // Cập nhật Avatar
                 if(sv.avatar) {
                     document.getElementById('svAvatarImg').src = '/' + sv.avatar;
-                    document.getElementById('svAvatarImg').classList.remove('d-none');
-                    document.getElementById('svAvatar').classList.add('d-none');
+                    document.getElementById('svAvatarImg').classList.remove('hidden');
+                    document.getElementById('svAvatar').classList.add('hidden');
                 } else {
-                    document.getElementById('svAvatarImg').classList.add('d-none');
-                    document.getElementById('svAvatar').classList.remove('d-none');
+                    document.getElementById('svAvatarImg').classList.add('hidden');
+                    document.getElementById('svAvatar').classList.remove('hidden');
                     document.getElementById('svAvatar').innerText = sv.ho_ten.charAt(0);
                 }
                 
@@ -112,10 +112,10 @@ document.getElementById('lookupForm').addEventListener('submit', async (e) => {
                     }
                 }
                 
-                resultsPanel.classList.remove('d-none');
+                resultsPanel.classList.remove('hidden');
             } else {
                 alert(data.msg);
-                resultsPanel.classList.add('d-none');
+                resultsPanel.classList.add('hidden');
             }
         } catch(err) {
             alert('Lỗi kết nối máy chủ');
@@ -160,9 +160,8 @@ document.getElementById('lookupForm').addEventListener('submit', async (e) => {
                         }).then(() => {
                             supportForm.reset();
                             document.getElementById('spMssv').value = mssv;
-                            const modalEl = document.getElementById('supportModal');
-                            const modal = bootstrap.Modal.getInstance(modalEl);
-                            if(modal) modal.hide();
+                            const modalOverlay = document.getElementById('supportModalOverlay');
+                            if(modalOverlay) modalOverlay.classList.add('hidden');
                             
                             document.getElementById('lookupForm').dispatchEvent(new Event('submit'));
                         });
@@ -170,9 +169,8 @@ document.getElementById('lookupForm').addEventListener('submit', async (e) => {
                         alert('Gửi yêu cầu thành công! Quản trị viên sẽ sớm xử lý.');
                         supportForm.reset();
                         document.getElementById('spMssv').value = mssv;
-                        const modalEl = document.getElementById('supportModal');
-                        const modal = bootstrap.Modal.getInstance(modalEl);
-                        if(modal) modal.hide();
+                        const modalOverlay = document.getElementById('supportModalOverlay');
+                        if(modalOverlay) modalOverlay.classList.add('hidden');
                         document.getElementById('lookupForm').dispatchEvent(new Event('submit'));
                     }
                 } else {

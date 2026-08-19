@@ -3,51 +3,53 @@
 {% block title %}Lỗi {{ error_code }}{% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-center" style="min-height: 70vh;">
-    <div class="text-center">
+<div class="min-h-[70vh] flex items-center justify-center">
+    <div class="text-center bg-surface-container-low/50 backdrop-blur-md border border-outline-variant/50 p-10 rounded-[24px] shadow-2xl max-w-lg w-full relative overflow-hidden group">
+        
+        <!-- Background Glow -->
+        <div class="absolute -top-20 -right-20 w-40 h-40 bg-error/20 rounded-full blur-3xl pointer-events-none opacity-50"></div>
+        <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none opacity-50"></div>
+
         <!-- Animated Error Code -->
-        <div class="error-code-wrapper mb-4">
-            <h1 class="error-code" id="errorCode">{{ error_code }}</h1>
-            <div class="error-glow"></div>
+        <div class="relative z-10 mb-6">
+            <h1 class="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-error to-orange-400 drop-shadow-sm mb-2" style="font-family: 'Inter', sans-serif;">{{ error_code }}</h1>
         </div>
         
         <!-- Error Message -->
-        <h3 class="fw-bold text-dark mb-2">{{ error_title }}</h3>
-        <p class="text-muted mb-4" style="max-width: 450px; margin: 0 auto;">{{ error_message }}</p>
+        <h3 class="text-2xl font-bold text-on-surface mb-3 relative z-10">{{ error_title }}</h3>
+        <p class="text-on-surface-variant mb-8 text-sm max-w-[400px] mx-auto relative z-10">{{ error_message }}</p>
         
-        <!-- Error Icon Animation -->
-        <div class="error-icon mb-4">
+        <!-- Error Icon -->
+        <div class="mb-8 relative z-10">
             {% if error_code == 404 %}
-            <i class="fas fa-ghost text-secondary" style="font-size: 4rem; animation: float 3s ease-in-out infinite;"></i>
+            <span class="material-symbols-outlined text-[64px] text-secondary animate-bounce">search_off</span>
             {% elif error_code == 500 %}
-            <i class="fas fa-bug text-danger" style="font-size: 4rem; animation: shake 0.5s ease-in-out infinite;"></i>
+            <span class="material-symbols-outlined text-[64px] text-error animate-pulse">bug_report</span>
             {% elif error_code == 403 %}
-            <i class="fas fa-lock text-warning" style="font-size: 4rem; animation: pulse 2s infinite;"></i>
+            <span class="material-symbols-outlined text-[64px] text-yellow-500 animate-pulse">lock</span>
             {% else %}
-            <i class="fas fa-exclamation-triangle text-info" style="font-size: 4rem; animation: pulse 2s infinite;"></i>
+            <span class="material-symbols-outlined text-[64px] text-info animate-pulse">warning</span>
             {% endif %}
         </div>
         
         <!-- Action Buttons -->
-        <div class="d-flex gap-3 justify-content-center flex-wrap">
-            <a href="/" class="btn btn btn-primary shadow-sm px-4 py-2">
-                <i class="fas fa-home me-2"></i> Về Dashboard
+        <div class="flex gap-4 justify-center flex-wrap relative z-10">
+            <a href="/" class="bg-primary text-on-primary font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px]">home</span> Về Dashboard
             </a>
-            <button onclick="history.back()" class="btn btn-outline-secondary px-4 py-2">
-                <i class="fas fa-arrow-left me-2"></i> Quay Lại
+            <button onclick="history.back()" class="bg-surface-container-high text-on-surface font-bold px-6 py-2.5 rounded-xl border border-outline-variant/50 hover:bg-surface-container-highest transition-all flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span> Quay Lại
             </button>
         </div>
         
         <!-- Tech Details -->
-        <div class="mt-5 pt-4 border-top border-secondary border-opacity-25">
-            <p class="text-muted small mb-0">
-                <i class="fas fa-server me-1"></i> Face Attendance System v2.0 
-                <span class="mx-2">|</span>
-                <i class="fas fa-clock me-1"></i> {{ now }}
+        <div class="mt-8 pt-5 border-t border-outline-variant/30 relative z-10">
+            <p class="text-xs text-on-surface-variant/60 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[14px]">dns</span> Face Attendance System v2.0 
+                <span class="opacity-50">|</span>
+                <span class="material-symbols-outlined text-[14px]">schedule</span> {{ now }}
             </p>
         </div>
     </div>
 </div>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='css/errors_error_style_1.css') }}">
 {% endblock %}
